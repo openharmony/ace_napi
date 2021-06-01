@@ -1,0 +1,58 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+
+if (is_standard_system) {
+  module_output_path = "ace_engine_standard/napi"
+}
+
+ohos_unittest("test_quickjs_unittest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//foundation/ace/napi/interfaces/kits",
+    "//foundation/ace/napi/native_engine",
+    "//foundation/ace/napi/native_engine/impl/quickjs",
+    "//third_party/googletest/include",
+    "//third_party/node/src",
+    "//utils/native/base/include",
+  ]
+
+  cflags = [ "-g3" ]
+
+  sources = [
+    "test_napi.cpp",
+    "test_quickjs.cpp",
+  ]
+
+  deps = [
+    "//foundation/ace/napi/:ace_napi",
+    "//foundation/ace/napi/:ace_napi_quickjs",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gtest_main",
+    "//third_party/libuv:uv_static",
+    "//third_party/quickjs:qjs",
+    "//utils/native/base:utils",
+  ]
+
+  if (is_standard_system) {
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  }
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":test_quickjs_unittest" ]
+}

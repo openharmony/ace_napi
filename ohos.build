@@ -1,0 +1,20 @@
+{
+  "subsystem": "ace",
+  "parts": {
+    "napi": {
+      "variants": [
+        "wearable",
+        "phone"
+      ],
+      "module_list": [
+        "//foundation/ace/napi:napi_packages"
+      ],
+      "inner_kits": [
+      ],
+      "test_list": [
+        "//foundation/ace/napi:napi_packages_test",
+        "//foundation/ace/napi/test/unittest:unittest"
+      ]
+    }
+  }
+}

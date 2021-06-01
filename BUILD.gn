@@ -1,0 +1,136 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+config("ace_napi_quickjs_config") {
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//third_party/libuv/include",
+    "//third_party/quickjs",
+    "//utils/native/base/include",
+  ]
+}
+
+config("ace_napi_config") {
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//foundation/ace/napi/interfaces/kits",
+    "//third_party/node/src",
+  ]
+}
+
+ohos_shared_library("ace_napi") {
+  public_configs = [ ":ace_napi_config" ]
+
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//foundation/ace/napi/interfaces/kits",
+    "//third_party/libuv/include",
+    "//third_party/node/src",
+    "//utils/native/base/include",
+  ]
+
+  sources = [
+    "module_manager/native_module_manager.cpp",
+    "native_engine/native_api.cpp",
+    "native_engine/native_async_work.cpp",
+    "native_engine/native_engine.cpp",
+    "native_engine/native_node_api.cpp",
+    "scope_manager/native_scope_manager.cpp",
+  ]
+
+  if (target_cpu == "arm64") {
+    defines = [ "_ARM64_" ]
+  }
+
+  deps = [
+    "//third_party/libuv:uv_static",
+    "//utils/native/base:utilsecurec",
+  ]
+
+  cflags_cc = [ "-Wno-missing-braces" ]
+
+  if (is_standard_system) {
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  }
+
+  subsystem_name = "ace"
+  part_name = "napi"
+}
+
+ohos_shared_library("ace_napi_quickjs") {
+  public_configs = [ ":ace_napi_quickjs_config" ]
+
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//foundation/ace/napi/native_engine/impl/quickjs",
+    "//third_party/libuv/include",
+    "//third_party/quickjs",
+    "//utils/native/base/include",
+  ]
+
+  sources = [
+    "native_engine/impl/quickjs/native_value/quickjs_native_array.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_array_buffer.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_boolean.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_data_view.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_external.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_function.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_number.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_object.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_string.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_typed_array.cpp",
+    "native_engine/impl/quickjs/native_value/quickjs_native_value.cpp",
+    "native_engine/impl/quickjs/quickjs_ext.cpp",
+    "native_engine/impl/quickjs/quickjs_native_deferred.cpp",
+    "native_engine/impl/quickjs/quickjs_native_engine.cpp",
+    "native_engine/impl/quickjs/quickjs_native_reference.cpp",
+  ]
+
+  deps = [
+    ":ace_napi",
+    "//third_party/quickjs:qjs",
+  ]
+
+  cflags_cc = [ "-Wno-missing-braces" ]
+
+  if (is_standard_system) {
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  }
+
+  subsystem_name = "ace"
+  part_name = "napi"
+}
+
+group("napi_packages") {
+  deps = [
+    ":ace_napi",
+    ":ace_napi_quickjs",
+  ]
+}
+
+group("napi_packages_test") {
+  testonly = true
+
+  deps = [
+    "sample/native_module_demo:demo",
+    "sample/native_module_netserver:netserver",
+    "sample/native_module_storage:storage",
+    "test/unittest:unittest",
+  ]
+
+  if (is_standard_system) {
+    deps += [ "sample/native_module_ability:ability" ]
+  }
+}
