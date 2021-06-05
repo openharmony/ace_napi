@@ -122,16 +122,17 @@ static napi_value TestPromiseOrAsyncCallback(napi_env env, napi_callback_info in
                 napi_value callback = nullptr;
                 napi_value undefined = nullptr;
                 napi_value result = nullptr;
+                napi_value callbackResult = nullptr;
                 napi_create_string_utf8(env, "TestPromiseOrAsyncCallback", NAPI_AUTO_LENGTH, &result);
                 napi_get_undefined(env, &undefined);
 
                 if (true) {
                     napi_get_reference_value(env, asyncCallbackInfo->callback[0], &callback);
-                    napi_call_function(env, undefined, callback, 1, &result, nullptr);
+                    napi_call_function(env, undefined, callback, 1, &result, &callbackResult);
                 } else {
                     if (asyncCallbackInfo->callback[1]) {
                         napi_get_reference_value(env, asyncCallbackInfo->callback[1], &callback);
-                        napi_call_function(env, undefined, callback, 1, &result, nullptr);
+                        napi_call_function(env, undefined, callback, 1, &result, &callbackResult);
                     } else {
                         napi_throw_error(env, "error", "foo");
                     }
