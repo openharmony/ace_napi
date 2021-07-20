@@ -26,12 +26,14 @@ class NativeEngine;
 typedef NativeValue* (*RegisterCallback)(NativeEngine*, NativeValue*);
 
 struct NativeModule {
-    int version = 0;
     const char* name = nullptr;
     const char* fileName = nullptr;
     RegisterCallback registerCallback = nullptr;
+    int32_t version = 0;
     unsigned int refCount = 0;
     NativeModule* next = nullptr;
+    const char* jsCode = nullptr;
+    int32_t jsCodeLen = 0;
 };
 
 class NativeModuleManager {
@@ -40,14 +42,14 @@ public:
     static unsigned long Release();
 
     virtual void Register(NativeModule* nativeModule);
-    virtual NativeModule* LoadNativeModule(const char* moduleName);
+    virtual NativeModule* LoadNativeModule(const char* moduleName, bool internal = false);
 
 private:
     NativeModuleManager();
     virtual ~NativeModuleManager();
 
     bool GetNativeModulePath(const char* moduleName, char* nativeModulePath, int32_t pathLength);
-    virtual NativeModule* FindNativeModuleByDisk(const char* moduleName);
+    virtual NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal);
     virtual NativeModule* FindNativeModuleByCache(const char* moduleName);
 
     NativeModule* firstNativeModule_;
