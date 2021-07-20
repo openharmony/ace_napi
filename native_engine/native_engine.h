@@ -24,6 +24,7 @@
 
 #include "module_manager/native_module_manager.h"
 #include "scope_manager/native_scope_manager.h"
+#include <string>
 
 typedef struct uv_loop_s uv_loop_t;
 
@@ -96,6 +97,8 @@ public:
 
     virtual bool Throw(NativeValue* error) = 0;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) = 0;
+
+    virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) = 0;
 
     NativeErrorExtendedInfo* GetLastError();
     void SetLastError(int errorCode, uint32_t engineErrorCode = 0, void* engineReserved = nullptr);
