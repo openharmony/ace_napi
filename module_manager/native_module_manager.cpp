@@ -74,7 +74,7 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
     lastNativeModule_->next = nullptr;
 }
 
-NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName)
+NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName, bool internal)
 {
     if (moduleName == nullptr) {
         HILOG_ERROR("moduleName value is null");
@@ -89,7 +89,7 @@ NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName)
     NativeModule* nativeModule = FindNativeModuleByCache(moduleName);
     if (nativeModule == nullptr) {
         HILOG_INFO("not in cache: moduleName: %{public}s", moduleName);
-        nativeModule = FindNativeModuleByDisk(moduleName);
+        nativeModule = FindNativeModuleByDisk(moduleName, internal);
     }
 
     if (pthread_mutex_unlock(&mutex_) != 0) {
@@ -153,7 +153,8 @@ bool NativeModuleManager::GetNativeModulePath(const char* moduleName, char* nati
     return true;
 }
 
-NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName)
+using NAPIGetJSCode = void (*)(const char** buf, int* bufLen);
+NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal)
 {
     char nativeModulePath[PATH_MAX] = { 0 };
     if (!GetNativeModulePath(moduleName, nativeModulePath, sizeof(nativeModulePath))) {
@@ -169,6 +170,26 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
     if (lib == nullptr) {
         HILOG_ERROR("dlopen failed: %{public}s", dlerror());
         return nullptr;
+    }
+
+    if (!internal) {
+        char symbol[PATH_MAX] = { 0 };
+        if (sprintf_s(symbol, sizeof(symbol), "NAPI_%s_GetJSCode", moduleName) == -1) {
+            return nullptr;
+        }
+        auto getJSCode = reinterpret_cast<NAPIGetJSCode>(dlsym(lib, symbol));
+        if (getJSCode != nullptr) {
+            const char* buf = nullptr;
+            int bufLen = 0;
+            getJSCode(&buf, &bufLen);
+            if (lastNativeModule_ != nullptr) {
+                HILOG_INFO("get js code from module: bufLen: %{public}d", bufLen);
+                lastNativeModule_->jsCode = buf;
+                lastNativeModule_->jsCodeLen = bufLen;
+            }
+        } else {
+            HILOG_INFO("no %{public}s in %{public}s", symbol, nativeModulePath);
+        }
     }
 
     return lastNativeModule_;
