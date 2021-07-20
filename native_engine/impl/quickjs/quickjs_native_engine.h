@@ -77,6 +77,8 @@ public:
     virtual bool Throw(NativeValue* error) override;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
+    virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
+
     static NativeValue* JSValueToNativeValue(QuickJSNativeEngine* engine, JSValue value);
 
 private:
