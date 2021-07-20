@@ -297,6 +297,43 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
     return JSValueToNativeValue(this, result);
 }
 
+NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
+{
+    if (str == nullptr || fileName.empty()) {
+        HILOG_ERROR("Module name is nullptr or source code length is 0");
+        return nullptr;
+    }
+
+    JS_SetModuleLoaderFunc(runtime_, nullptr, js_module_loader, nullptr);
+    const char* moduleSource = JS_ToCString(context_, *str);
+    size_t len = strlen(moduleSource);
+    int flags = JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY;
+    JSValue moduleVal = JS_Eval(context_, moduleSource, len, fileName.c_str(), flags);
+    if (JS_IsException(moduleVal)) {
+        HILOG_ERROR("Eval source code exception");
+	JS_FreeCString(context_, moduleSource);
+        return nullptr;
+    }
+
+    JS_EvalFunction(context_, moduleVal);
+    if (JS_IsUndefined(moduleVal) || JS_IsNull(moduleVal)) {
+        HILOG_ERROR("Eval source code exception");
+	JS_FreeCString(context_, moduleSource);
+        return nullptr;
+    }
+
+    std::string exportName = "default";
+    JSAtom name= JS_NewAtom(context_, exportName.c_str());
+    JSValue ns = JS_GetNameSpace(context_, moduleVal);
+    JSValue result = JS_GetProperty(context_, ns, name);
+    JS_DupValue(context_, result);
+
+    JS_FreeValue(context_, ns);
+    JS_FreeCString(context_, moduleSource);
+    JS_FreeAtom(context_, name);
+    return JSValueToNativeValue(this, result);
+}
+
 NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
                                               NativeCallback callback,
                                               void* data,

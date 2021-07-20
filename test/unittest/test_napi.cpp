@@ -815,3 +815,36 @@ HWTEST_F(NativeEngineTest, StrictEqualsTest, testing::ext::TestSize.Level0)
     napi_strict_equals(env, testObject, testObject, &isStrictEquals);
     ASSERT_TRUE(isStrictEquals);
 }
+
+/**
+ * @tc.name: LoadModuleTest
+ * @tc.desc: Test LoadModule Func.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeEngineTest, LoadModuleTest, testing::ext::TestSize.Level0)
+{
+    napi_env env = (napi_env)engine_;
+
+    std::string sourceText = "var a = 1; let b = 2;"
+	                     "export function getA() {return a};"
+	                     "export function getB() {return b};"
+	                     "export default {'val': 4};"
+	                     "export var value = 4;";
+    auto sourceString = engine_->CreateString(sourceText.c_str(), sourceText.length());
+
+    std::string file = "file.js";
+    NativeValue *moduleValue = engine_->LoadModule(sourceString, file);
+    auto moduleObject = reinterpret_cast<NativeObject *>(moduleValue->GetInterface(NativeObject::INTERFACE_ID));
+
+    std::string key = "val";
+    auto keyString = engine_->CreateString(key.c_str(), key.length());
+    auto resultValue = moduleObject->GetProperty(keyString);
+
+    napi_value lvalue = reinterpret_cast<napi_value>(resultValue);
+    napi_value rvalue = nullptr;
+    napi_create_int32(env, 4, &rvalue);
+
+    bool result = false;
+    napi_strict_equals(env, lvalue, rvalue, &result);
+    ASSERT_TRUE(result);
+}
