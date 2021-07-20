@@ -361,22 +361,19 @@ NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string
         return nullptr;
     }
 
-    JS_EvalFunction(context_, moduleVal);
-    if (JS_IsUndefined(moduleVal) || JS_IsNull(moduleVal)) {
-        HILOG_ERROR("Eval source code exception");
+    JSValue evalRes = JS_EvalFunction(context_, moduleVal);
+    if (JS_IsException(evalRes)) {
+        HILOG_ERROR("Eval module exception");
 	JS_FreeCString(context_, moduleSource);
         return nullptr;
     }
 
-    std::string exportName = "default";
-    JSAtom name= JS_NewAtom(context_, exportName.c_str());
     JSValue ns = JS_GetNameSpace(context_, moduleVal);
-    JSValue result = JS_GetProperty(context_, ns, name);
-    JS_DupValue(context_, result);
+    JSValue result = JS_GetPropertyStr(context_, ns, "default");
 
     JS_FreeValue(context_, ns);
+    JS_FreeValue(context_, evalRes);
     JS_FreeCString(context_, moduleSource);
-    JS_FreeAtom(context_, name);
     return JSValueToNativeValue(this, result);
 }
 
