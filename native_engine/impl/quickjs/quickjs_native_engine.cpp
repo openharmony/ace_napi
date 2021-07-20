@@ -42,6 +42,36 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context)
 
     JSValue jsGlobal = JS_GetGlobalObject(context_);
     JSValue jsNativeEngine = (JSValue)JS_MKPTR(JS_TAG_INT, this);
+    JSValue jsRequireInternal = JS_NewCFunctionData(
+        context_,
+        [](JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv, int magic,
+           JSValue* funcData) -> JSValue {
+            JSValue result = JS_UNDEFINED;
+
+            QuickJSNativeEngine* that = (QuickJSNativeEngine*)JS_VALUE_GET_PTR(funcData[0]);
+
+            const char* moduleName = JS_ToCString(that->GetContext(), argv[0]);
+
+            if (moduleName == nullptr || strlen(moduleName) == 0) {
+                HILOG_ERROR("moduleName is nullptr or length is 0");
+                return result;
+            }
+
+            NativeModuleManager* moduleManager = that->GetModuleManager();
+            NativeModule* module = moduleManager->LoadNativeModule(moduleName, true);
+
+            if (module != nullptr && module->registerCallback != nullptr) {
+                NativeValue* value = new QuickJSNativeObject(that);
+                if (value != nullptr) {
+                    module->registerCallback(that, value);
+                    result = JS_DupValue(that->GetContext(), *value);
+                }
+            }
+            JS_FreeCString(that->GetContext(), moduleName);
+            return result;
+        },
+        0, 0, 1, &jsNativeEngine);
+
     JSValue jsRequire = JS_NewCFunctionData(
         context_,
         [](JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv, int magic,
@@ -61,15 +91,31 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context)
             NativeModule* module = moduleManager->LoadNativeModule(moduleName);
 
             if (module != nullptr) {
-                NativeValue* value = new QuickJSNativeObject(that);
-                module->registerCallback(that, value);
-                result = JS_DupValue(that->GetContext(), *value);
+                if (module->jsCode != nullptr) {
+                    HILOG_INFO("load js code");
+                    NativeValue* script = that->CreateString(module->jsCode, strlen(module->jsCode));
+                    NativeValue* exportObject = that->LoadModule(script, "testjsnapi.js");
+                    if (exportObject == nullptr) {
+                        HILOG_ERROR("load module failed");
+                        return result;
+                    }
+                    result = JS_DupValue(that->GetContext(), *exportObject);
+                    HILOG_ERROR("load module succ");
+                } else if (module->registerCallback != nullptr) {
+                    HILOG_INFO("load napi module");
+                    NativeValue* value = new QuickJSNativeObject(that);
+                    module->registerCallback(that, value);
+                    result = JS_DupValue(that->GetContext(), *value);
+                } else {
+                    HILOG_ERROR("init module failed");
+                }
             }
             JS_FreeCString(that->GetContext(), moduleName);
             return result;
         },
         0, 0, 1, &jsNativeEngine);
 
+    JS_SetPropertyStr(context_, jsGlobal, "requireInternal", jsRequireInternal);
     JS_SetPropertyStr(context_, jsGlobal, "requireNapi", jsRequire);
     JS_FreeValue(context_, jsGlobal);
 }
