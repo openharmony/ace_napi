@@ -64,11 +64,13 @@ JSValue JS_NewExternal(JSContext* context, void* value, JSFinalizer finalizer, v
     JSValue result = JS_CallConstructor(context, external, 0, nullptr);
 
     auto info = new JSObjectInfo();
-    info->context = context;
-    info->finalizer = finalizer;
-    info->data = value;
-    info->hint = hint;
-    JS_SetOpaque(result, info);
+    if (info != nullptr) {
+        info->context = context;
+        info->finalizer = finalizer;
+        info->data = value;
+        info->hint = hint;
+        JS_SetOpaque(result, info);
+    }
 
     JS_FreeValue(context, external);
     JS_FreeValue(context, global);
@@ -117,10 +119,12 @@ void JS_SetNativePointer(JSContext* context, JSValue value, void* pointer, JSFin
     auto* info = reinterpret_cast<JSObjectInfo*>(JS_GetOpaque(value, GetBaseClassID()));
     if (info == nullptr) {
         info = new JSObjectInfo();
-        info->context = context;
-        info->finalizer = finalizer;
-        info->data = pointer;
-        info->hint = hint;
+        if (info != nullptr) {
+            info->context = context;
+            info->finalizer = finalizer;
+            info->data = pointer;
+            info->hint = hint;
+        }
     } else if (pointer == nullptr) {
         delete info;
         info = nullptr;

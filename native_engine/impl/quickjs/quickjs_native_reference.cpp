@@ -18,14 +18,10 @@
 #include "native_value/quickjs_native_value.h"
 #include "quickjs_native_reference.h"
 
-QuickJSNativeReference::QuickJSNativeReference(QuickJSNativeEngine* engine,
-                                               NativeValue* value,
-                                               uint32_t initialRefcount)
+QuickJSNativeReference::QuickJSNativeReference(
+    QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount)
+    : engine_(engine), value_(*value), refCount_(initialRefcount)
 {
-    engine_ = engine;
-    value_ = *value;
-    refCount_ = initialRefcount;
-
     for (uint32_t i = 0; i < initialRefcount; i++) {
         JS_DupValue(engine_->GetContext(), value_);
     }

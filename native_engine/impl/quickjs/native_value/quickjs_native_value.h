@@ -38,13 +38,14 @@ public:
     virtual bool IsTypedArray() override;
     virtual bool IsDataView() override;
     virtual bool IsPromise() override;
+    virtual bool IsCallable() override;
 
     virtual NativeValue* ToBoolean() override;
     virtual NativeValue* ToNumber() override;
     virtual NativeValue* ToString() override;
     virtual NativeValue* ToObject() override;
 
-    virtual bool operator==(NativeValue* value) override;
+    virtual bool StrictEquals(NativeValue* value) override;
 
 protected:
     QuickJSNativeEngine* engine_;

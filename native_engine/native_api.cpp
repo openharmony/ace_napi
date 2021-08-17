@@ -17,7 +17,7 @@
 
 #include "native_engine/native_property.h"
 #include "native_engine/native_value.h"
-
+#include "securec.h"
 #include "utils/log.h"
 
 NAPI_EXTERN napi_status napi_get_last_error_info(napi_env env, const napi_extended_error_info** result)
@@ -798,7 +798,7 @@ NAPI_EXTERN napi_status napi_strict_equals(napi_env env, napi_value lhs, napi_va
     auto nativeLhs = reinterpret_cast<NativeValue*>(lhs);
     auto nativeRhs = reinterpret_cast<NativeValue*>(rhs);
 
-    *result = *nativeLhs == nativeRhs;
+    *result = nativeLhs->StrictEquals(nativeRhs);
     return napi_clear_last_error(env);
 }
 
@@ -1240,7 +1240,7 @@ NAPI_EXTERN napi_status napi_throw(napi_env env, napi_value error)
     RETURN_STATUS_IF_FALSE(env, nativeValue->IsError(), napi_invalid_arg);
 
     engine->Throw(nativeValue);
-    return napi_generic_failure;
+    return napi_clear_last_error(env);
 }
 
 NAPI_EXTERN napi_status napi_throw_error(napi_env env, const char* code, const char* msg)
@@ -1251,7 +1251,7 @@ NAPI_EXTERN napi_status napi_throw_error(napi_env env, const char* code, const c
     auto engine = reinterpret_cast<NativeEngine*>(env);
 
     engine->Throw(NativeErrorType::NATIVE_COMMON_ERROR, code, msg);
-    return napi_generic_failure;
+    return napi_clear_last_error(env);
 }
 
 NAPI_EXTERN napi_status napi_throw_type_error(napi_env env, const char* code, const char* msg)
@@ -1593,5 +1593,115 @@ NAPI_EXTERN napi_status napi_adjust_external_memory(napi_env env, int64_t change
     CHECK_ENV(env);
     CHECK_ARG(env, adjusted_value);
 
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_callable(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsCallable();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_runtime(napi_env env, napi_env* result_env)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result_env);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+
+    auto result = engine->CreateRuntime();
+    *result_env = reinterpret_cast<napi_env>(result);
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_serialize(napi_env env, napi_value object, napi_value transfer_list, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, object);
+    CHECK_ARG(env, transfer_list);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto nativeValue = reinterpret_cast<NativeValue*>(object);
+    auto transferList = reinterpret_cast<NativeValue*>(transfer_list);
+
+    auto resultValue = engine->Serialize(engine, nativeValue, transferList);
+    *result = reinterpret_cast<napi_value>(resultValue);
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_deserialize(napi_env env, napi_value recorder, napi_value* object)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, recorder);
+    CHECK_ARG(env, object);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto recorderValue = reinterpret_cast<NativeValue*>(recorder);
+
+    auto result = engine->Deserialize(engine, recorderValue);
+    *object = reinterpret_cast<napi_value>(result);
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_allocator(napi_env env, uint32_t type, void** result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    *result = engine->CreateAllocator(type);
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_delete_serialization_data(napi_env env, napi_value value)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+    engine->DeleteSerializationData(nativeValue);
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_exception_info_for_worker(napi_env env, napi_value obj)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, obj);
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    ExceptionInfo* exceptionInfo = engine->GetExceptionForWorker();
+    if (exceptionInfo == nullptr) {
+        HILOG_INFO("engine get exception info error");
+        return napi_invalid_arg;
+    }
+
+    napi_value lineno = nullptr;
+    napi_create_int32(env, exceptionInfo->lineno_, &lineno);
+    napi_set_named_property(env, obj, "lineno", lineno);
+
+    napi_value colno = nullptr;
+    napi_create_int32(env, exceptionInfo->colno_, &colno);
+    napi_set_named_property(env, obj, "colno", colno);
+
+    if (exceptionInfo->message_ != nullptr) {
+        napi_value messageValue = nullptr;
+        uint32_t messageLen = strlen(exceptionInfo->message_);
+        napi_create_string_utf8(env, exceptionInfo->message_, messageLen, &messageValue);
+        napi_set_named_property(env, obj, "message", messageValue);
+    }
+
+    delete exceptionInfo;
     return napi_clear_last_error(env);
 }

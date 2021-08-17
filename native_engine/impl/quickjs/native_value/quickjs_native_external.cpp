@@ -21,18 +21,22 @@ QuickJSNativeExternal::QuickJSNativeExternal(QuickJSNativeEngine* engine,
                                              void* hint)
     : QuickJSNativeValue(engine, JS_UNDEFINED)
 {
-    NativeObjectInfo* info = new NativeObjectInfo();
-    info->engine = engine;
-    info->nativeObject = value;
-    info->callback = callback;
-    info->hint = hint;
+    NativeObjectInfo* info = NativeObjectInfo::CreateNewInstance();
+    if (info != nullptr) {
+        info->engine = engine;
+        info->nativeObject = value;
+        info->callback = callback;
+        info->hint = hint;
+    }
 
     value_ = JS_NewExternal(
         engine->GetContext(), info,
         [](JSContext* context, void* data, void* hint) {
             auto info = reinterpret_cast<NativeObjectInfo*>(data);
-            info->callback(info->engine, info->nativeObject, info->hint);
-            delete info;
+            if (info != nullptr) {
+                info->callback(info->engine, info->nativeObject, info->hint);
+                delete info;
+            }
         },
         nullptr);
 }

@@ -10,6 +10,17 @@
         "//foundation/ace/napi:napi_packages"
       ],
       "inner_kits": [
+        {
+          "header": {
+            "header_base": "//foundation/ace/napi/interfaces/kits/napi",
+            "header_files": [
+              "native_api.h",
+              "native_common.h",
+              "native_node_api.h"
+            ]
+          },
+          "name": "//foundation/ace/napi:ace_napi"
+        }
       ],
       "test_list": [
         "//foundation/ace/napi:napi_packages_test",

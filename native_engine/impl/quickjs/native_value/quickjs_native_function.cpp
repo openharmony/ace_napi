@@ -32,11 +32,12 @@ QuickJSNativeFunction::QuickJSNativeFunction(QuickJSNativeEngine* engine,
                                              void* value)
     : QuickJSNativeObject(engine, JS_UNDEFINED)
 {
-    NativeFunctionInfo* info = new NativeFunctionInfo();
-
-    info->engine = engine;
-    info->callback = cb;
-    info->data = value;
+    NativeFunctionInfo* info = NativeFunctionInfo::CreateNewInstance();
+    if (info != nullptr) {
+        info->engine = engine;
+        info->callback = cb;
+        info->data = value;
+    }
 
     JSValue functionContext = JS_NewExternal(engine_->GetContext(), info,
                                              [](JSContext* ctx, void* data, void* hint) {
@@ -67,6 +68,11 @@ JSValue QuickJSNativeFunction::JSCFunctionData(JSContext* ctx,
                                                JSValue* funcData)
 {
     auto info = (NativeFunctionInfo*)JS_ExternalToNativeObject(ctx, *funcData);
+    if (info == nullptr) {
+        HILOG_ERROR("info is null");
+        return JS_UNDEFINED;
+    }
+
     NativeValue* value = nullptr;
     NativeCallbackInfo callbackInfo = {0};
 
@@ -89,7 +95,7 @@ JSValue QuickJSNativeFunction::JSCFunctionData(JSContext* ctx,
     callbackInfo.functionInfo = info;
     if (callbackInfo.argc > 0) {
         callbackInfo.argv = new NativeValue*[argc];
-        for (int i = 0; i < argc; i++) {
+        for (int i = 0; i < argc && callbackInfo.argv != nullptr; i++) {
             callbackInfo.argv[i] = QuickJSNativeEngine::JSValueToNativeValue(engine, JS_DupValue(ctx, argv[i]));
         }
     }
