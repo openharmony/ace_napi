@@ -119,6 +119,11 @@ bool QuickJSNativeValue::IsPromise()
     return JS_IsPromise(engine_->GetContext(), value_);
 }
 
+bool QuickJSNativeValue::IsCallable()
+{
+    return JS_IsFunction(engine_->GetContext(), value_);
+}
+
 NativeValue* QuickJSNativeValue::ToBoolean()
 {
     bool cValue = JS_ToBool(engine_->GetContext(), value_);
@@ -143,7 +148,7 @@ NativeValue* QuickJSNativeValue::ToObject()
     return nullptr;
 }
 
-bool QuickJSNativeValue::operator==(NativeValue* value)
+bool QuickJSNativeValue::StrictEquals(NativeValue* value)
 {
     return JS_StrictEquals(engine_->GetContext(), value_, *value);
 }

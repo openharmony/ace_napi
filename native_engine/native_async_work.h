@@ -36,10 +36,7 @@ private:
     static void AsyncAfterWorkCallback(uv_work_t* req, int status);
 
     uv_work_t work_;
-
     NativeEngine* engine_;
-
-    int status_;
     NativeAsyncExecuteCallback execute_;
     NativeAsyncCompleteCallback complete_;
     void* data_;

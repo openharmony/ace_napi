@@ -27,7 +27,7 @@ public:
     JSRuntime* GetRuntime();
     JSContext* GetContext();
 
-    virtual void Loop() override;
+    virtual void Loop(LoopMode mode) override;
 
     virtual NativeValue* GetGlobal() override;
     virtual NativeValue* CreateNull() override;
@@ -77,10 +77,21 @@ public:
     virtual bool Throw(NativeValue* error) override;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
+    virtual void* CreateRuntime() override;
+    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
+    virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
+    virtual void* CreateAllocator(int32_t type) override;
+    virtual void DeleteSerializationData(NativeValue* value) override;
+    virtual ExceptionInfo* GetExceptionForWorker() override;
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
 
     static NativeValue* JSValueToNativeValue(QuickJSNativeEngine* engine, JSValue value);
-
+    virtual void EncodeToUtf8(NativeValue* nativeValue,
+                              char* buffer,
+                              int32_t* written,
+                              size_t bufferSize,
+                              int32_t* nchars) override;
+    virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 private:
     JSRuntime* runtime_;
     JSContext* context_;

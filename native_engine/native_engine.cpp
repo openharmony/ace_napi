@@ -45,6 +45,11 @@ const char* g_errorMessages[] = {
 
 NativeEngine::NativeEngine()
 {
+    Init();
+}
+
+void NativeEngine::Init()
+{
     moduleManager_ = NativeModuleManager::GetInstance();
     scopeManager_ = new NativeScopeManager();
     loop_ = uv_loop_new();
@@ -54,7 +59,9 @@ NativeEngine::NativeEngine()
 NativeEngine::~NativeEngine()
 {
     uv_loop_close(loop_);
-    delete scopeManager_;
+    if (scopeManager_ != nullptr) {
+        delete scopeManager_;
+    }
 }
 
 NativeScopeManager* NativeEngine::GetScopeManager()
@@ -72,10 +79,22 @@ uv_loop_t* NativeEngine::GetUVLoop() const
     return loop_;
 }
 
-void NativeEngine::Loop()
+void NativeEngine::Loop(LoopMode mode)
 {
     bool more = true;
-    more = uv_run(loop_, UV_RUN_DEFAULT);
+    switch (mode) {
+        case LOOP_DEFAULT:
+            more = uv_run(loop_, UV_RUN_DEFAULT);
+            break;
+        case LOOP_ONCE:
+            more = uv_run(loop_, UV_RUN_ONCE);
+            break;
+        case LOOP_NOWAIT:
+            more = uv_run(loop_, UV_RUN_NOWAIT);
+            break;
+        default:
+            return;
+    }
     if (more == false) {
         more = uv_loop_alive(loop_);
     }

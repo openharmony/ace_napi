@@ -16,6 +16,7 @@
 #include "native_scope_manager.h"
 
 #include "native_engine/native_value.h"
+#include "utils/log.h"
 
 struct NativeHandle {
     NativeValue* value = nullptr;
@@ -23,6 +24,7 @@ struct NativeHandle {
 };
 
 struct NativeScope {
+    static NativeScope* CreateNewInstance() { return new NativeScope(); }
     NativeHandle* handlePtr = nullptr;
     size_t handleCount = 0;
     bool escaped = false;
@@ -33,7 +35,7 @@ struct NativeScope {
 
 NativeScopeManager::NativeScopeManager()
 {
-    root_ = new NativeScope();
+    root_ = NativeScope::CreateNewInstance();
     current_ = root_;
 }
 
@@ -58,10 +60,17 @@ NativeScopeManager::~NativeScopeManager()
 
 NativeScope* NativeScopeManager::Open()
 {
+    if (current_ == nullptr) {
+        HILOG_ERROR("current scope is null when open scope");
+        return nullptr;
+    }
+
     auto scope = new NativeScope();
-    current_->child = scope;
-    scope->parent = current_;
-    current_ = scope;
+    if (scope != nullptr) {
+        current_->child = scope;
+        scope->parent = current_;
+        current_ = scope;
+    }
 
     return scope;
 }
@@ -141,15 +150,23 @@ NativeValue* NativeScopeManager::Escape(NativeScope* scope, NativeValue* value)
 
 void NativeScopeManager::CreateHandle(NativeValue* value)
 {
+    if (current_ == nullptr) {
+        HILOG_ERROR("current scope is null when create handle");
+        return;
+    }
+    auto handlePtr = new NativeHandle();
+    if (handlePtr == nullptr) {
+        HILOG_ERROR("create handle ptr failed");
+        return;
+    }
     if (current_->handlePtr == nullptr) {
-        current_->handlePtr = new NativeHandle();
+        current_->handlePtr = handlePtr;
         current_->handlePtr->value = value;
         current_->handlePtr->sibling = nullptr;
     } else {
-        auto temp = new NativeHandle();
-        temp->sibling = current_->handlePtr;
-        temp->value = value;
-        current_->handlePtr = temp;
+        handlePtr->sibling = current_->handlePtr;
+        handlePtr->value = value;
+        current_->handlePtr = handlePtr;
     }
     current_->handleCount++;
 }

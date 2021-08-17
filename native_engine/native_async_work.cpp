@@ -15,6 +15,7 @@
 
 #include "native_async_work.h"
 
+#include "napi/native_api.h"
 #include "native_engine.h"
 #include "utils/log.h"
 
@@ -22,14 +23,9 @@ NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
                                  NativeAsyncExecuteCallback execute,
                                  NativeAsyncCompleteCallback complete,
                                  void* data)
+    : work_({ 0 }), engine_(engine), execute_(execute), complete_(complete), data_(data)
 {
-    work_ = { 0 };
     work_.data = this;
-    engine_ = engine;
-    status_ = 0;
-    execute_ = execute;
-    complete_ = complete;
-    data_ = data;
 }
 
 NativeAsyncWork::~NativeAsyncWork() {}
@@ -92,6 +88,22 @@ void NativeAsyncWork::AsyncAfterWorkCallback(uv_work_t* req, int status)
         return;
     }
 
-    that->complete_(that->engine_, status, that->data_);
+    napi_status nstatus = napi_generic_failure;
+
+    switch (status) {
+        case 0:
+            status = napi_ok;
+            break;
+        case (int)UV_EINVAL:
+            status = napi_invalid_arg;
+            break;
+        case (int)UV_ECANCELED:
+            status = napi_cancelled;
+            break;
+        default:
+            status = napi_generic_failure;
+    }
+
+    that->complete_(that->engine_, nstatus, that->data_);
     scopeManager->Close(scope);
 }

@@ -60,9 +60,18 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
 
     if (firstNativeModule_ == lastNativeModule_ && lastNativeModule_ == nullptr) {
         firstNativeModule_ = new NativeModule();
+        if (firstNativeModule_ == nullptr) {
+            HILOG_ERROR("first NativeModule create failed");
+            return;
+        }
         lastNativeModule_ = firstNativeModule_;
     } else {
-        lastNativeModule_->next = new NativeModule();
+        auto next = new NativeModule();
+        if (next == nullptr) {
+            HILOG_ERROR("next NativeModule create failed");
+            return;
+        }
+        lastNativeModule_->next = next;
         lastNativeModule_ = lastNativeModule_->next;
     }
 
@@ -163,7 +172,7 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
     }
 
     HILOG_INFO("get module path: %{public}s", nativeModulePath);
-    if (strlen(nativeModulePath) <= 0) {
+    if (strlen(nativeModulePath) == 0) {
         return nullptr;
     }
     void* lib = dlopen(nativeModulePath, RTLD_LAZY);

@@ -132,10 +132,10 @@ JSContext* QuickJSNativeEngine::GetContext()
     return context_;
 }
 
-void QuickJSNativeEngine::Loop()
+void QuickJSNativeEngine::Loop(LoopMode mode)
 {
     JSContext* context = nullptr;
-    NativeEngine::Loop();
+    NativeEngine::Loop(mode);
     int err = JS_ExecutePendingJob(runtime_, &context);
     if (err < 0) {
         js_std_dump_error(context);
@@ -276,7 +276,7 @@ NativeValue* QuickJSNativeEngine::CreateInstance(NativeValue* constructor, Nativ
     JSValue* params = nullptr;
     if (argc > 0) {
         params = new JSValue[argc];
-        for (size_t i = 0; i < argc; i++) {
+        for (size_t i = 0; i < argc && params != nullptr; i++) {
             params[i] = *argv[i];
         }
     }
@@ -312,7 +312,7 @@ NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
     JSValue* args = nullptr;
     if (argc > 0) {
         args = new JSValue[argc];
-        for (size_t i = 0; i < argc; i++) {
+        for (size_t i = 0; i < argc && args != nullptr; i++) {
             if (argv[i] != nullptr) {
                 args[i] = *argv[i];
             } else {
@@ -346,7 +346,7 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
 NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
 {
     if (str == nullptr || fileName.empty()) {
-        HILOG_ERROR("Module name is nullptr or source code length is 0");
+        HILOG_ERROR("moduleName is nullptr or source code length is 0");
         return nullptr;
     }
 
@@ -357,14 +357,14 @@ NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string
     JSValue moduleVal = JS_Eval(context_, moduleSource, len, fileName.c_str(), flags);
     if (JS_IsException(moduleVal)) {
         HILOG_ERROR("Eval source code exception");
-	JS_FreeCString(context_, moduleSource);
+        JS_FreeCString(context_, moduleSource);
         return nullptr;
     }
 
     JSValue evalRes = JS_EvalFunction(context_, moduleVal);
     if (JS_IsException(evalRes)) {
         HILOG_ERROR("Eval module exception");
-	JS_FreeCString(context_, moduleSource);
+        JS_FreeCString(context_, moduleSource);
         return nullptr;
     }
 
@@ -396,6 +396,10 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
         context_,
         [](JSContext* ctx, JSValueConst newTarget, int argc, JSValueConst* argv) -> JSValue {
             auto callbackInfo = new NativeCallbackInfo();
+            if (callbackInfo == nullptr) {
+                HILOG_ERROR("callbackInfo is nullptr");
+                return JS_UNDEFINED;
+            }
             JSValue prototype = JS_GetPropertyStr(ctx, newTarget, "prototype");
             JSValue classContext = JS_GetPropertyStr(ctx, newTarget, "_classContext");
 
@@ -427,7 +431,7 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
 
             if (callbackInfo->argc > 0) {
                 callbackInfo->argv = new NativeValue*[argc];
-                for (size_t i = 0; i < callbackInfo->argc; i++) {
+                for (size_t i = 0; i < callbackInfo->argc && callbackInfo->argv != nullptr; i++) {
                     callbackInfo->argv[i] = JSValueToNativeValue(engine, JS_DupValue(ctx, argv[i]));
                 }
             }
@@ -457,7 +461,17 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
     JSValue proto = JS_NewObject(context_);
 
     QuickJSNativeObject* nativeClass = new QuickJSNativeObject(this, JS_DupValue(context_, classConstructor));
+    if (nativeClass == nullptr) {
+        delete functionInfo;
+        return nullptr;
+    }
+
     QuickJSNativeObject* nativeClassProto = new QuickJSNativeObject(this, proto);
+    if (nativeClassProto == nullptr) {
+        delete functionInfo;
+        delete nativeClass;
+        return nullptr;
+    }
 
     for (size_t i = 0; i < length; i++) {
         if (properties[i].attributes & NATIVE_STATIC) {
@@ -563,4 +577,47 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
             HILOG_DEBUG("JS_VALUE_GET_NORM_TAG %{public}d", tag);
     }
     return result;
+}
+
+void* QuickJSNativeEngine::CreateRuntime()
+{
+    return nullptr;
+}
+
+NativeValue* QuickJSNativeEngine::Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer)
+{
+    return nullptr;
+}
+
+NativeValue* QuickJSNativeEngine::Deserialize(NativeEngine* context, NativeValue* recorder)
+{
+    return nullptr;
+}
+
+void* QuickJSNativeEngine::CreateAllocator(int32_t type)
+{
+    return nullptr;
+}
+
+void QuickJSNativeEngine::DeleteSerializationData(NativeValue* value)
+{
+}
+
+ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker()
+{
+    return nullptr;
+}
+
+NativeValue* QuickJSNativeEngine::ValueToNativeValue(JSValueWrapper& value)
+{
+    JSValue quickValue = value;
+    return JSValueToNativeValue(this, quickValue);
+}
+
+void QuickJSNativeEngine::EncodeToUtf8(NativeValue* nativeValue,
+                                       char* buffer,
+                                       int32_t* written,
+                                       size_t bufferSize,
+                                       int32_t* nchars)
+{
 }

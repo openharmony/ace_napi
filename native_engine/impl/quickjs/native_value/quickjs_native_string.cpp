@@ -64,3 +64,8 @@ size_t QuickJSNativeString::GetLength()
     GetCString(nullptr, 0, &length);
     return length;
 }
+
+size_t QuickJSNativeString::EncodeWriteUtf8(char* buffer, size_t bufferszie, int32_t* nchars)
+{
+    return 0;
+}
