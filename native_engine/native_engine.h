@@ -99,6 +99,7 @@ public:
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) = 0;
 
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) = 0;
+    void EncodeToUtf8(NativeValue* nativeValue, char* buffer, int32_t* written, size_t bufferSize, int32_t* nchars);
 
     NativeErrorExtendedInfo* GetLastError();
     void SetLastError(int errorCode, uint32_t engineErrorCode = 0, void* engineReserved = nullptr);
