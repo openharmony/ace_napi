@@ -29,6 +29,7 @@ public:
 
     virtual void GetCString(char* buffer, size_t size, size_t* length) override;
     virtual size_t GetLength() override;
+    virtual size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_STRING_H */
