@@ -357,15 +357,13 @@ NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string
     JSValue moduleVal = JS_Eval(context_, moduleSource, len, fileName.c_str(), flags);
     if (JS_IsException(moduleVal)) {
         HILOG_ERROR("Eval source code exception");
-	JS_FreeCString(context_, moduleSource);
+        JS_FreeCString(context_, moduleSource);
         return nullptr;
     }
 
     JSValue evalRes = JS_EvalFunction(context_, moduleVal);
     if (JS_IsException(evalRes)) {
         HILOG_ERROR("Eval module exception");
-	JS_FreeCString(context_, moduleSource);
-        return nullptr;
     }
 
     JSValue ns = JS_GetNameSpace(context_, moduleVal);

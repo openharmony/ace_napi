@@ -64,3 +64,53 @@ size_t QuickJSNativeString::GetLength()
     GetCString(nullptr, 0, &length);
     return length;
 }
+
+size_t QuickJSNativeString::EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars)
+{
+    if (buffer == nullptr || nchars == nullptr) {
+        HILOG_ERROR("buffer is null or nchars is null");
+        return 0;
+    }
+
+    JSContext *ctx = engine_->GetContext();
+    JSValue lengthVal = JS_GetPropertyStr(ctx, value_, "length");
+    if (JS_IsException(lengthVal)) {
+        HILOG_ERROR("Failed to obtain the length");
+        return 0;
+    }
+    uint32_t len = 0;
+    if (JS_ToUint32(ctx, &len, lengthVal)) {
+        JS_FreeValue(ctx, lengthVal);
+        HILOG_ERROR("Cannot convert length to uint32_t");
+        return 0;
+    }
+
+    size_t pos = 0;
+    size_t writableSize = bufferSize;
+    uint32_t i = 0;
+    for (; i < len; i++) {
+        JSValue ch = JS_GetPropertyUint32(ctx, value_, i);
+        size_t chLen = 0;
+        const char* str = JS_ToCStringLen(ctx, &chLen, ch);
+        JS_FreeValue(ctx, ch);
+        if (chLen > writableSize) {
+            JS_FreeCString(ctx, str);
+            break;
+        }
+
+        int ret = memcpy_s((buffer + pos), writableSize, str, chLen);
+        if (ret != EOK) {
+            HILOG_ERROR("memcpy_s failed");
+            JS_FreeCString(ctx, str);
+            break;
+        }
+
+        writableSize -= chLen;
+        pos = bufferSize - writableSize;
+        JS_FreeCString(ctx, str);
+    }
+
+    *nchars = i;
+    JS_FreeValue(ctx, lengthVal);
+    return pos;
+}
