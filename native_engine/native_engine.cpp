@@ -14,6 +14,7 @@
  */
 
 #include "native_engine.h"
+#include "utils/log.h"
 
 #include <uv.h>
 
@@ -123,4 +124,20 @@ NativeValue* NativeEngine::GetAndClearLastException()
     NativeValue* temp = lastException_;
     lastException_ = nullptr;
     return temp;
+}
+
+void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
+                                char* buffer,
+                                int32_t* written,
+                                size_t bufferSize,
+                                int32_t* nchars)
+{
+    if (nativeValue == nullptr || nchars == nullptr || written == nullptr) {
+        HILOG_ERROR("NativeEngine EncodeToUtf8 args is nullptr");
+        return;
+    }
+
+    auto nativeString = reinterpret_cast<NativeString*>(nativeValue->GetInterface(NativeString::INTERFACE_ID));
+
+    *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
 }
