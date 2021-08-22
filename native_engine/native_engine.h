@@ -35,6 +35,25 @@ struct NativeErrorExtendedInfo {
     int errorCode = 0;
 };
 
+struct ExceptionInfo {
+    const char* message_ = nullptr;
+    int32_t lineno_ = 0;
+    int32_t colno_ = 0;
+
+    ~ExceptionInfo()
+    {
+        if (message_ != nullptr) {
+            delete[] message_;
+        }
+    }
+};
+
+enum LoopMode {
+    LOOP_DEFAULT, LOOP_ONCE, LOOP_NOWAIT
+};
+
+using PostTask = std::function<void()>;
+
 class NativeEngine {
 public:
     NativeEngine();
@@ -44,7 +63,9 @@ public:
     virtual NativeModuleManager* GetModuleManager();
     virtual uv_loop_t* GetUVLoop() const;
 
-    virtual void Loop();
+    virtual void Loop(LoopMode mode);
+    virtual void SetPostTask(PostTask postTask);
+    virtual void TriggerPostTask();
 
     virtual NativeValue* GetGlobal() = 0;
 
@@ -93,10 +114,21 @@ public:
                                              NativeAsyncExecuteCallback execute,
                                              NativeAsyncCompleteCallback complete,
                                              void* data);
+
+    virtual NativeAsyncWork* CreateAsyncWork(NativeAsyncExecuteCallback execute,
+                                             NativeAsyncCompleteCallback complete,
+                                             void* data);
+
     virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) = 0;
 
     virtual bool Throw(NativeValue* error) = 0;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) = 0;
+
+    virtual void* CreateRuntime() = 0;
+    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) = 0;
+    virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) = 0;
+    virtual ExceptionInfo* GetExceptionForWorker() const = 0;
+    virtual void DeleteSerializationData(NativeValue* value) const = 0;
 
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) = 0;
     void EncodeToUtf8(NativeValue* nativeValue, char* buffer, int32_t* written, size_t bufferSize, int32_t* nchars);
@@ -107,14 +139,29 @@ public:
     bool IsExceptionPending() const;
     NativeValue* GetAndClearLastException();
 
+    void MarkSubThread()
+    {
+        isMainThread_ = false;
+    }
+
+    bool IsMainThread() const
+    {
+        return isMainThread_;
+    }
+
+
 protected:
-    NativeModuleManager* moduleManager_;
-    NativeScopeManager* scopeManager_;
+    NativeModuleManager* moduleManager_ { nullptr };
+    NativeScopeManager* scopeManager_ { nullptr };
 
     NativeErrorExtendedInfo lastError_;
-    NativeValue* lastException_;
+    NativeValue* lastException_ { nullptr };
 
     uv_loop_t* loop_;
+
+private:
+    bool isMainThread_ { true };
+    PostTask postTask_ { nullptr };
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H */

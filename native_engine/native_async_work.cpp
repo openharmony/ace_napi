@@ -60,6 +60,53 @@ bool NativeAsyncWork::Cancel()
     return true;
 }
 
+void NativeAsyncWork::AsyncWorkRecvCallback(const uv_async_t* req)
+{
+    NativeAsyncWork* that = NativeAsyncWork::DereferenceOf(&NativeAsyncWork::workAsyncHandler_, req);
+    if (that == nullptr) {
+        return;
+    }
+    NativeAsyncWorkDataPointer res;
+    while (that->PopData(&res)) {
+        if (that->execute_ != nullptr) {
+            that->execute_(that->engine_, res.data_);
+        }
+        if (that->complete_ != nullptr) {
+            that->complete_(that->engine_, -1, res.data_);
+        }
+    }
+}
+
+void NativeAsyncWork::Send(void* data)
+{
+    std::lock_guard<std::mutex> lock(workAsyncMutex_);
+    NativeAsyncWorkDataPointer dataPointer(data);
+    asyncWorkRecvData_.push(dataPointer);
+    uv_async_send(&workAsyncHandler_);
+}
+
+bool NativeAsyncWork::PopData(NativeAsyncWorkDataPointer* data)
+{
+    std::lock_guard<std::mutex> lock(workAsyncMutex_);
+    if (asyncWorkRecvData_.empty()) {
+        return false;
+    }
+    *data = asyncWorkRecvData_.front();
+    asyncWorkRecvData_.pop();
+    return true;
+}
+
+bool NativeAsyncWork::Init()
+{
+    uv_loop_t* loop = engine_->GetUVLoop();
+    if (loop == nullptr) {
+        HILOG_ERROR("Get loop failed");
+        return false;
+    }
+    uv_async_init(loop, &workAsyncHandler_, reinterpret_cast<uv_async_cb>(AsyncWorkRecvCallback));
+    return true;
+}
+
 void NativeAsyncWork::AsyncWorkCallback(uv_work_t* req)
 {
     if (req == nullptr) {

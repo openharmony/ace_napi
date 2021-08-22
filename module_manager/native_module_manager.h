@@ -41,16 +41,17 @@ public:
     static NativeModuleManager* GetInstance();
     static unsigned long Release();
 
-    virtual void Register(NativeModule* nativeModule);
-    virtual NativeModule* LoadNativeModule(const char* moduleName, bool internal = false);
+    void Register(NativeModule* nativeModule);
+    NativeModule* LoadNativeModule(const char* moduleName, const char* path, bool internal = false);
 
 private:
     NativeModuleManager();
     virtual ~NativeModuleManager();
 
-    bool GetNativeModulePath(const char* moduleName, char* nativeModulePath, int32_t pathLength);
-    virtual NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal);
-    virtual NativeModule* FindNativeModuleByCache(const char* moduleName);
+    bool GetNativeModulePath(
+        const char* moduleName, const char* path, char* nativeModulePath, int32_t pathLength) const;
+    NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const char* path);
+    NativeModule* FindNativeModuleByCache(const char* moduleName) const;
 
     NativeModule* firstNativeModule_;
     NativeModule* lastNativeModule_;
