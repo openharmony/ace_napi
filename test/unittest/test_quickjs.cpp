@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 
     int ret = RUN_ALL_TESTS();
 
-    g_nativeEngine->Loop();
+    g_nativeEngine->Loop(LOOP_DEFAULT);
 
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
