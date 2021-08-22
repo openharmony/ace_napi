@@ -38,6 +38,7 @@ public:
     virtual bool IsTypedArray() override;
     virtual bool IsDataView() override;
     virtual bool IsPromise() override;
+    virtual bool IsCallable() override;
 
     virtual NativeValue* ToBoolean() override;
     virtual NativeValue* ToNumber() override;

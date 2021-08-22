@@ -59,7 +59,7 @@ uint32_t QuickJSNativeReference::Unref()
 
 NativeValue* QuickJSNativeReference::Get()
 {
-    return new QuickJSNativeValue(engine_, JS_DupValue(engine_->GetContext(), value_));
+    return QuickJSNativeEngine::JSValueToNativeValue(engine_, JS_DupValue(engine_->GetContext(), value_));
 }
 
 QuickJSNativeReference::operator NativeValue*()

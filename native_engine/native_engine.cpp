@@ -73,10 +73,22 @@ uv_loop_t* NativeEngine::GetUVLoop() const
     return loop_;
 }
 
-void NativeEngine::Loop()
+void NativeEngine::Loop(LoopMode mode)
 {
     bool more = true;
-    more = uv_run(loop_, UV_RUN_DEFAULT);
+    switch (mode) {
+        case LOOP_DEFAULT:
+            more = uv_run(loop_, UV_RUN_DEFAULT);
+            break;
+        case LOOP_ONCE:
+            more = uv_run(loop_, UV_RUN_ONCE);
+            break;
+        case LOOP_NOWAIT:
+            more = uv_run(loop_, UV_RUN_NOWAIT);
+            break;
+        default:
+            return;
+    }
     if (more == false) {
         more = uv_loop_alive(loop_);
     }
@@ -90,6 +102,13 @@ NativeAsyncWork* NativeEngine::CreateAsyncWork(NativeValue* asyncResource,
 {
     (void)asyncResource;
     (void)asyncResourceName;
+    return new NativeAsyncWork(this, execute, complete, data);
+}
+
+NativeAsyncWork* NativeEngine::CreateAsyncWork(NativeAsyncExecuteCallback execute,
+                                               NativeAsyncCompleteCallback complete,
+                                               void* data)
+{
     return new NativeAsyncWork(this, execute, complete, data);
 }
 
@@ -140,4 +159,18 @@ void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
     auto nativeString = reinterpret_cast<NativeString*>(nativeValue->GetInterface(NativeString::INTERFACE_ID));
 
     *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
+}
+void NativeEngine::SetPostTask(PostTask postTask)
+{
+    HILOG_INFO("SetPostTask in");
+    postTask_ = postTask;
+}
+
+void NativeEngine::TriggerPostTask()
+{
+    if (postTask_ == nullptr) {
+        HILOG_ERROR("postTask_ is nullptr");
+        return;
+    }
+    postTask_();
 }

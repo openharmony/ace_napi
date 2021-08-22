@@ -74,6 +74,11 @@
         (name), nullptr, (func), nullptr, nullptr, nullptr, napi_default, nullptr \
     }
 
+#define DECLARE_NAPI_FUNCTION_WITH_DATA(name, func, data)                         \
+    {                                                                             \
+        (name), nullptr, (func), nullptr, nullptr, nullptr, napi_default, data    \
+    }
+
 #define DECLARE_NAPI_STATIC_FUNCTION(name, func)                                 \
     {                                                                            \
         (name), nullptr, (func), nullptr, nullptr, nullptr, napi_static, nullptr \
