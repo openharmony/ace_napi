@@ -94,6 +94,7 @@ public:
     virtual bool IsTypedArray() = 0;
     virtual bool IsDataView() = 0;
     virtual bool IsPromise() = 0;
+    virtual bool IsCallable() = 0;
 
     virtual NativeValue* ToBoolean() = 0;
     virtual NativeValue* ToNumber() = 0;

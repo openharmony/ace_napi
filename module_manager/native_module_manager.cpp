@@ -74,7 +74,7 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
     lastNativeModule_->next = nullptr;
 }
 
-NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName, bool internal)
+NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName, const char* path, bool internal)
 {
     if (moduleName == nullptr) {
         HILOG_ERROR("moduleName value is null");
@@ -89,7 +89,7 @@ NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName, bool
     NativeModule* nativeModule = FindNativeModuleByCache(moduleName);
     if (nativeModule == nullptr) {
         HILOG_INFO("not in cache: moduleName: %{public}s", moduleName);
-        nativeModule = FindNativeModuleByDisk(moduleName, internal);
+        nativeModule = FindNativeModuleByDisk(moduleName, internal, path);
     }
 
     if (pthread_mutex_unlock(&mutex_) != 0) {
@@ -100,15 +100,21 @@ NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName, bool
     return nativeModule;
 }
 
-bool NativeModuleManager::GetNativeModulePath(const char* moduleName, char* nativeModulePath, int32_t pathLength)
+bool NativeModuleManager::GetNativeModulePath(
+    const char* moduleName,  const char* path, char* nativeModulePath, int32_t pathLength) const
 {
     const char* soPostfix = ".so";
 #ifdef _ARM64_
-    const char* prefix = "/system/lib64/module";
+    const char* sysPrefix = "/system/lib64/module";
 #else
-    const char* prefix = "/system/lib/module";
+    const char* sysPrefix = "/system/lib/module";
 #endif
-
+    const char* prefix = nullptr;
+    if (path) {
+        prefix = path;
+    } else {
+        prefix = sysPrefix;
+    }
     int32_t lengthOfModuleName = strlen(moduleName);
     char dupModuleName[PATH_MAX] = { 0 };
     if (strcpy_s(dupModuleName, PATH_MAX, moduleName) != 0) {
@@ -154,10 +160,10 @@ bool NativeModuleManager::GetNativeModulePath(const char* moduleName, char* nati
 }
 
 using NAPIGetJSCode = void (*)(const char** buf, int* bufLen);
-NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal)
+NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal, const char* path)
 {
     char nativeModulePath[PATH_MAX] = { 0 };
-    if (!GetNativeModulePath(moduleName, nativeModulePath, sizeof(nativeModulePath))) {
+    if (!GetNativeModulePath(moduleName, path, nativeModulePath, sizeof(nativeModulePath))) {
         HILOG_ERROR("get module filed");
         return nullptr;
     }
@@ -195,7 +201,7 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
     return lastNativeModule_;
 }
 
-NativeModule* NativeModuleManager::FindNativeModuleByCache(const char* moduleName)
+NativeModule* NativeModuleManager::FindNativeModuleByCache(const char* moduleName) const
 {
     NativeModule* result = nullptr;
     for (NativeModule* temp = firstNativeModule_; temp != nullptr; temp = temp->next) {

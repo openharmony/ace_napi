@@ -26,7 +26,7 @@ struct JSObjectInfo {
     void* hint = nullptr;
 };
 
-JSClassID g_baseClassId = 0;
+JSClassID g_baseClassId = 1;
 
 void AddIntrinsicExternal(JSContext* context)
 {
