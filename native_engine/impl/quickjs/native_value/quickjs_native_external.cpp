@@ -14,6 +14,7 @@
  */
 
 #include "quickjs_native_external.h"
+#include "utils/log.h"
 
 QuickJSNativeExternal::QuickJSNativeExternal(QuickJSNativeEngine* engine,
                                              void* value,
@@ -22,19 +23,22 @@ QuickJSNativeExternal::QuickJSNativeExternal(QuickJSNativeEngine* engine,
     : QuickJSNativeValue(engine, JS_UNDEFINED)
 {
     NativeObjectInfo* info = new NativeObjectInfo();
-    info->engine = engine;
-    info->nativeObject = value;
-    info->callback = callback;
-    info->hint = hint;
-
-    value_ = JS_NewExternal(
-        engine->GetContext(), info,
-        [](JSContext* context, void* data, void* hint) {
-            auto info = reinterpret_cast<NativeObjectInfo*>(data);
-            info->callback(info->engine, info->nativeObject, info->hint);
-            delete info;
-        },
-        nullptr);
+    if (info) {
+        info->engine = engine;
+        info->nativeObject = value;
+        info->callback = callback;
+        info->hint = hint;
+        value_ = JS_NewExternal(
+            engine->GetContext(), info,
+            [](JSContext* context, void* data, void* hint) {
+                auto info = reinterpret_cast<NativeObjectInfo*>(data);
+                info->callback(info->engine, info->nativeObject, info->hint);
+                delete info;
+            },
+            nullptr);
+    } else {
+        HILOG_ERROR("NativeObjectInfo instance create fail.");
+    }
 }
 
 QuickJSNativeExternal::QuickJSNativeExternal(QuickJSNativeEngine* engine, JSValue value)
