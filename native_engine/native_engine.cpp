@@ -48,8 +48,12 @@ NativeEngine::NativeEngine()
 {
     moduleManager_ = NativeModuleManager::GetInstance();
     scopeManager_ = new NativeScopeManager();
-    loop_ = uv_loop_new();
-    lastException_ = nullptr;
+    if (scopeManager_) {
+        loop_ = uv_loop_new();
+        lastException_ = nullptr;
+    } else {
+        HILOG_ERROR("contruct NativeEngine error.");
+    }
 }
 
 NativeEngine::~NativeEngine()
@@ -158,7 +162,11 @@ void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
 
     auto nativeString = reinterpret_cast<NativeString*>(nativeValue->GetInterface(NativeString::INTERFACE_ID));
 
-    *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
+    if (nativeString) {
+        *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
+    } else {
+        HILOG_ERROR("NativeEngine EncodeToUtf8 nativeString is nullptr");
+    }
 }
 void NativeEngine::SetPostTask(PostTask postTask)
 {

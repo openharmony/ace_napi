@@ -16,6 +16,7 @@
 #include "native_scope_manager.h"
 
 #include "native_engine/native_value.h"
+#include "utils/log.h"
 
 struct NativeHandle {
     NativeValue* value = nullptr;
@@ -34,7 +35,11 @@ struct NativeScope {
 NativeScopeManager::NativeScopeManager()
 {
     root_ = new NativeScope();
-    current_ = root_;
+    if (root_) {
+        current_ = root_;
+    } else {
+        HILOG_ERROR("Construct NativeScopeManager error.");
+    }
 }
 
 NativeScopeManager::~NativeScopeManager()
