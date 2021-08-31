@@ -582,8 +582,18 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
  void* QuickJSNativeEngine::CreateRuntime()
  {
     JSRuntime* runtime = JS_NewRuntime();
+    if (runtime == nullptr) {
+        return nullptr;
+    }
     JSContext* context = JS_NewContext(runtime);
-    return reinterpret_cast<void*>(new QuickJSNativeEngine(runtime, context));
+    if (context == nullptr) {
+        return nullptr;
+    }
+    auto qjsEngine = new QuickJSNativeEngine(runtime, context);
+    if (qjsEngine) {
+        return reinterpret_cast<void*>(qjsEngine);
+    }
+    return nullptr;
 }
 
 bool QuickJSNativeEngine::CheckTransferList(JSValue transferList)
@@ -667,6 +677,7 @@ ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker() const
     const char* error = "Error: ";
     int len = strlen(exceptionStr) + strlen(error) + 1;
     if (len <= 0) {
+        delete exceptionInfo;
         return nullptr;
     }
     char* exceptionMessage = new char[len] { 0 };

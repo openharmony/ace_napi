@@ -33,22 +33,23 @@ QuickJSNativeFunction::QuickJSNativeFunction(QuickJSNativeEngine* engine,
     : QuickJSNativeObject(engine, JS_UNDEFINED)
 {
     NativeFunctionInfo* info = new NativeFunctionInfo();
-
-    info->engine = engine;
-    info->callback = cb;
-    info->data = value;
-
-    JSValue functionContext = JS_NewExternal(engine_->GetContext(), info,
-                                             [](JSContext* ctx, void* data, void* hint) {
-                                                 auto info = (NativeFunctionInfo*)data;
-                                                 if (info != nullptr) {
-                                                     delete info;
-                                                 }
-                                             },
-                                             nullptr);
-
-    value_ = JS_NewCFunctionData(engine_->GetContext(), JSCFunctionData, 0, 0, 1, &functionContext);
-    JS_DefinePropertyValueStr(engine_->GetContext(), value_, "_functionContext", functionContext, 0);
+    if (info) {
+        info->engine = engine;
+        info->callback = cb;
+        info->data = value;
+        JSValue functionContext = JS_NewExternal(engine_->GetContext(), info,
+            [](JSContext* ctx, void* data, void* hint) {
+                auto info = (NativeFunctionInfo*)data;
+                if (info != nullptr) {
+                    delete info;
+                }
+            },
+        nullptr);
+        value_ = JS_NewCFunctionData(engine_->GetContext(), JSCFunctionData, 0, 0, 1, &functionContext);
+        JS_DefinePropertyValueStr(engine_->GetContext(), value_, "_functionContext", functionContext, 0);
+    } else {
+        HILOG_ERROR("NativeFunctionInfo instance create fail.");
+    }
 }
 
 QuickJSNativeFunction::~QuickJSNativeFunction() {}
