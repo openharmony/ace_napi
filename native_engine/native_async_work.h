@@ -68,8 +68,6 @@ private:
     uv_work_t work_;
     uv_async_t workAsyncHandler_;
     NativeEngine* engine_;
-
-    int status_;
     NativeAsyncExecuteCallback execute_;
     NativeAsyncCompleteCallback complete_;
     void* data_;

@@ -52,20 +52,23 @@ enum LoopMode {
     LOOP_DEFAULT, LOOP_ONCE, LOOP_NOWAIT
 };
 
-using PostTask = std::function<void()>;
+using PostTask = std::function<void(bool needSync)>;
 
 class NativeEngine {
 public:
-    NativeEngine();
+    NativeEngine(void *jsEngine);
     virtual ~NativeEngine();
 
     virtual NativeScopeManager* GetScopeManager();
     virtual NativeModuleManager* GetModuleManager();
     virtual uv_loop_t* GetUVLoop() const;
 
-    virtual void Loop(LoopMode mode);
+    virtual void Loop(LoopMode mode, bool needSync = false);
     virtual void SetPostTask(PostTask postTask);
     virtual void TriggerPostTask();
+    virtual void CheckUVLoop();
+    virtual void CancelCheckUVLoop();
+    virtual void* GetJsEngine();
 
     virtual NativeValue* GetGlobal() = 0;
 
@@ -129,15 +132,18 @@ public:
     virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) = 0;
     virtual ExceptionInfo* GetExceptionForWorker() const = 0;
     virtual void DeleteSerializationData(NativeValue* value) const = 0;
-
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) = 0;
-    void EncodeToUtf8(NativeValue* nativeValue, char* buffer, int32_t* written, size_t bufferSize, int32_t* nchars);
 
     NativeErrorExtendedInfo* GetLastError();
     void SetLastError(int errorCode, uint32_t engineErrorCode = 0, void* engineReserved = nullptr);
     void ClearLastError();
     bool IsExceptionPending() const;
     NativeValue* GetAndClearLastException();
+    void EncodeToUtf8(NativeValue* nativeValue, char* buffer, int32_t* written, size_t bufferSize, int32_t* nchars);
+    NativeEngine(NativeEngine&) = delete;
+    virtual NativeEngine& operator=(NativeEngine&) = delete;
+
+    virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) = 0;
 
     void MarkSubThread()
     {
@@ -149,19 +155,29 @@ public:
         return isMainThread_;
     }
 
-
 protected:
-    NativeModuleManager* moduleManager_ { nullptr };
-    NativeScopeManager* scopeManager_ { nullptr };
+    NativeModuleManager* moduleManager_ = nullptr;
+    NativeScopeManager* scopeManager_ = nullptr;
 
     NativeErrorExtendedInfo lastError_;
-    NativeValue* lastException_ { nullptr };
+    NativeValue* lastException_ = nullptr;
 
     uv_loop_t* loop_;
 
+    void *jsEngine_;
+
 private:
     bool isMainThread_ { true };
-    PostTask postTask_ { nullptr };
+    static void UVThreadRunner(void* nativeEngine);
+
+    void Init();
+    void PostLoopTask();
+
+    bool checkUVLoop_ = false;
+    PostTask postTask_ = nullptr;
+    uv_thread_t uvThread_;
+    uv_sem_t uvSem_;
+    uv_async_t uvAsync_;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H */

@@ -19,6 +19,8 @@
 #include <pthread.h>
 #include <stdint.h>
 
+#define PATH_MAX 4096
+
 class NativeValue;
 
 class NativeEngine;
@@ -42,19 +44,22 @@ public:
     static unsigned long Release();
 
     void Register(NativeModule* nativeModule);
-    NativeModule* LoadNativeModule(const char* moduleName, const char* path, bool internal = false);
+    void SetAppLibPath(const char* appLibPath);
+    NativeModule* LoadNativeModule(const char* moduleName, const char* path, bool isAppModule, bool internal = false);
 
 private:
     NativeModuleManager();
     virtual ~NativeModuleManager();
 
     bool GetNativeModulePath(
-        const char* moduleName, const char* path, char* nativeModulePath, int32_t pathLength) const;
-    NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const char* path);
+        const char* moduleName, const bool isAppModule, char nativeModulePath[][PATH_MAX], int32_t pathLength) const;
+    NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule);
     NativeModule* FindNativeModuleByCache(const char* moduleName) const;
+    void* LoadLibrary(const char* path) const;
 
     NativeModule* firstNativeModule_;
     NativeModule* lastNativeModule_;
+    char* appLibPath_;
 
     static NativeModuleManager instance_;
     pthread_mutex_t mutex_;
