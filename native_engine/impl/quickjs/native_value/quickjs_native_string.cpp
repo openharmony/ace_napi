@@ -100,7 +100,7 @@ size_t QuickJSNativeString::EncodeWriteUtf8(char* buffer, size_t bufferSize, int
 
         int ret = memcpy_s((buffer + pos), writableSize, str, chLen);
         if (ret != EOK) {
-            HILOG_ERROR("memcpy_s failed");
+            HILOG_ERROR("strncpy_s failed");
             JS_FreeCString(ctx, str);
             break;
         }

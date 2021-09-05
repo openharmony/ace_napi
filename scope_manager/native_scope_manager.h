@@ -35,6 +35,9 @@ public:
     virtual void CreateHandle(NativeValue* value);
     virtual NativeValue* Escape(NativeScope* scope, NativeValue* value);
 
+    NativeScopeManager(NativeScopeManager&) = delete;
+    virtual NativeScopeManager& operator=(NativeScopeManager&) = delete;
+
 private:
     NativeScope* root_;
     NativeScope* current_;
