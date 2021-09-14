@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//ark/js_runtime/js_runtime_config.gni")
 import("//build/ohos.gni")
 
 config("ace_napi_quickjs_config") {
@@ -18,6 +19,14 @@ config("ace_napi_quickjs_config") {
     "//foundation/ace/napi",
     "//third_party/libuv/include",
     "//third_party/quickjs",
+    "//utils/native/base/include",
+  ]
+}
+
+config("ace_napi_ark_config") {
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//third_party/libuv/include",
     "//utils/native/base/include",
   ]
 }
@@ -113,9 +122,62 @@ ohos_shared_library("ace_napi_quickjs") {
   part_name = "napi"
 }
 
+ohos_shared_library("ace_napi_ark") {
+  public_configs = [ ":ace_napi_ark_config" ]
+
+  configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
+
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//foundation/ace/napi/native_engine",
+    "//foundation/ace/napi/native_engine/impl/ark",
+    "//third_party/libuv/include",
+    "//utils/native/base/include",
+  ]
+
+  defines = [ "USE_ARK_ENGINE" ]
+
+  if (target_cpu == "arm64") {
+    defines += [ "APP_USE_ARM64" ]
+  } else if (target_cpu == "arm") {
+    defines += [ "APP_USE_ARM" ]
+  }
+
+  sources = [
+    "native_engine/impl/ark/ark_native_deferred.cpp",
+    "native_engine/impl/ark/ark_native_engine.cpp",
+    "native_engine/impl/ark/ark_native_reference.cpp",
+    "native_engine/impl/ark/native_value/ark_native_array.cpp",
+    "native_engine/impl/ark/native_value/ark_native_array_buffer.cpp",
+    "native_engine/impl/ark/native_value/ark_native_boolean.cpp",
+    "native_engine/impl/ark/native_value/ark_native_data_view.cpp",
+    "native_engine/impl/ark/native_value/ark_native_external.cpp",
+    "native_engine/impl/ark/native_value/ark_native_function.cpp",
+    "native_engine/impl/ark/native_value/ark_native_number.cpp",
+    "native_engine/impl/ark/native_value/ark_native_object.cpp",
+    "native_engine/impl/ark/native_value/ark_native_string.cpp",
+    "native_engine/impl/ark/native_value/ark_native_typed_array.cpp",
+    "native_engine/impl/ark/native_value/ark_native_value.cpp",
+  ]
+  deps = [
+    ":ace_napi",
+    "//ark/js_runtime:libark_jsruntime",
+  ]
+
+  if (is_standard_system) {
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  } else {
+    external_deps = [ "hilog:libhilog" ]
+  }
+
+  subsystem_name = "ace"
+  part_name = "napi"
+}
+
 group("napi_packages") {
   deps = [
     ":ace_napi",
+    ":ace_napi_ark",
     ":ace_napi_quickjs",
   ]
 }

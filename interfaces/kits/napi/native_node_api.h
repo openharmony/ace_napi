@@ -18,7 +18,7 @@
 
 #include "native_common.h"
 
-#include <node_api.h>
+#include "node_api.h"
 
 DEPRECATED napi_status napi_async_init(napi_env env,
                                        napi_value async_resource,
