@@ -30,10 +30,8 @@ struct EventListener {
 };
 
 EventTarget::EventTarget(napi_env env, napi_value thisVar)
+    : env_(env), thisVarRef_(nullptr), first_(nullptr), last_(nullptr)
 {
-    env_ = env;
-    first_ = last_ = nullptr;
-    thisVarRef_ = nullptr;
     napi_create_reference(env, thisVar, 1, &thisVarRef_);
 }
 
