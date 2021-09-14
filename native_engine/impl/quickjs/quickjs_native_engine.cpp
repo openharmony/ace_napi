@@ -29,15 +29,11 @@
 #include "native_value/quickjs_native_typed_array.h"
 #include "quickjs_native_deferred.h"
 #include "quickjs_native_reference.h"
-#include "securec.h"
 
-#include "utils/assert.h"
 #include "utils/log.h"
 
-const int JS_WRITE_OBJ = (1 << 2) | (1 << 3);
-const int JS_ATOM_MESSAGE = 51;
-
-QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context)
+QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context, void* jsEngine)
+    : NativeEngine(jsEngine)
 {
     runtime_ = runtime;
     context_ = context;
@@ -63,7 +59,7 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context)
             }
 
             NativeModuleManager* moduleManager = that->GetModuleManager();
-            NativeModule* module = moduleManager->LoadNativeModule(moduleName, nullptr, true);
+            NativeModule* module = moduleManager->LoadNativeModule(moduleName, nullptr, false, true);
 
             if (module != nullptr && module->registerCallback != nullptr) {
                 NativeValue* value = new QuickJSNativeObject(that);
@@ -95,7 +91,7 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context)
                 path = JS_ToCString(that->GetContext(), argv[1]);
             }
             NativeModuleManager* moduleManager = that->GetModuleManager();
-            NativeModule* module = moduleManager->LoadNativeModule(moduleName, nullptr);
+            NativeModule* module = moduleManager->LoadNativeModule(moduleName, nullptr, false);
 
             if (module != nullptr) {
                 if (module->jsCode != nullptr) {
@@ -139,10 +135,10 @@ JSContext* QuickJSNativeEngine::GetContext()
     return context_;
 }
 
-void QuickJSNativeEngine::Loop(LoopMode mode)
+void QuickJSNativeEngine::Loop(LoopMode mode, bool needSync)
 {
     JSContext* context = nullptr;
-    NativeEngine::Loop(mode);
+    NativeEngine::Loop(mode, needSync);
     int err = JS_ExecutePendingJob(runtime_, &context);
     if (err < 0) {
         js_std_dump_error(context);
@@ -283,7 +279,7 @@ NativeValue* QuickJSNativeEngine::CreateInstance(NativeValue* constructor, Nativ
     JSValue* params = nullptr;
     if (argc > 0) {
         params = new JSValue[argc];
-        for (size_t i = 0; i < argc; i++) {
+        for (size_t i = 0; i < argc && params != nullptr; i++) {
             params[i] = *argv[i];
         }
     }
@@ -319,7 +315,7 @@ NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
     JSValue* args = nullptr;
     if (argc > 0) {
         args = new JSValue[argc];
-        for (size_t i = 0; i < argc; i++) {
+        for (size_t i = 0; i < argc && args != nullptr; i++) {
             if (argv[i] != nullptr) {
                 args[i] = *argv[i];
             } else {
@@ -337,10 +333,6 @@ NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
 
     scopeManager_->Close(scope);
 
-    if (JS_IsError(context_, result) || JS_IsException(result)) {
-        return nullptr;
-    }
-
     return JSValueToNativeValue(this, result);
 }
 
@@ -350,17 +342,19 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
     const char* cScript = JS_ToCString(context_, *script);
     result = JS_Eval(context_, cScript, strlen(cScript), "<input>", JS_EVAL_TYPE_GLOBAL);
     JS_FreeCString(context_, cScript);
-    if (JS_IsError(context_, result) || JS_IsException(result)) {
-        return nullptr;
-    }
 
     return JSValueToNativeValue(this, result);
+}
+
+NativeValue* QuickJSNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
+{
+    return nullptr;
 }
 
 NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
 {
     if (str == nullptr || fileName.empty()) {
-        HILOG_ERROR("Module name is nullptr or source code length is 0");
+        HILOG_ERROR("moduleName is nullptr or source code length is 0");
         return nullptr;
     }
 
@@ -377,9 +371,7 @@ NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string
 
     JSValue evalRes = JS_EvalFunction(context_, moduleVal);
     if (JS_IsException(evalRes)) {
-        HILOG_ERROR("Eval module exception");
-        JS_FreeCString(context_, moduleSource);
-        return nullptr;
+        HILOG_ERROR("An exception occurred during Eval module");
     }
 
     JSValue ns = JS_GetNameSpace(context_, moduleVal);
@@ -410,6 +402,10 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
         context_,
         [](JSContext* ctx, JSValueConst newTarget, int argc, JSValueConst* argv) -> JSValue {
             auto callbackInfo = new NativeCallbackInfo();
+            if (callbackInfo == nullptr) {
+                HILOG_ERROR("callbackInfo is nullptr");
+                return JS_UNDEFINED;
+            }
             JSValue prototype = JS_GetPropertyStr(ctx, newTarget, "prototype");
             JSValue classContext = JS_GetPropertyStr(ctx, newTarget, "_classContext");
 
@@ -441,7 +437,7 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
 
             if (callbackInfo->argc > 0) {
                 callbackInfo->argv = new NativeValue*[argc];
-                for (size_t i = 0; i < callbackInfo->argc; i++) {
+                for (size_t i = 0; i < callbackInfo->argc && callbackInfo->argv != nullptr; i++) {
                     callbackInfo->argv[i] = JSValueToNativeValue(engine, JS_DupValue(ctx, argv[i]));
                 }
             }
@@ -471,7 +467,17 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
     JSValue proto = JS_NewObject(context_);
 
     QuickJSNativeObject* nativeClass = new QuickJSNativeObject(this, JS_DupValue(context_, classConstructor));
+    if (nativeClass == nullptr) {
+        delete functionInfo;
+        return nullptr;
+    }
+
     QuickJSNativeObject* nativeClassProto = new QuickJSNativeObject(this, proto);
+    if (nativeClassProto == nullptr) {
+        delete functionInfo;
+        delete nativeClass;
+        return nullptr;
+    }
 
     for (size_t i = 0; i < length; i++) {
         if (properties[i].attributes & NATIVE_STATIC) {
@@ -579,120 +585,32 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
     return result;
 }
 
- void* QuickJSNativeEngine::CreateRuntime()
- {
-    JSRuntime* runtime = JS_NewRuntime();
-    if (runtime == nullptr) {
-        return nullptr;
-    }
-    JSContext* context = JS_NewContext(runtime);
-    if (context == nullptr) {
-        return nullptr;
-    }
-    auto qjsEngine = new QuickJSNativeEngine(runtime, context);
-    if (qjsEngine) {
-        return reinterpret_cast<void*>(qjsEngine);
-    }
+void* QuickJSNativeEngine::CreateRuntime()
+{
     return nullptr;
-}
-
-bool QuickJSNativeEngine::CheckTransferList(JSValue transferList)
-{
-    if (JS_IsUndefined(transferList)) {
-        return true;
-    }
-    if (!JS_IsArray(context_, transferList)) {
-        JS_ThrowTypeError(context_, "postMessage second parameter not a list or undefined");
-        return false;
-    }
-    int64_t len = 0;
-    js_get_length64(context_, &len, transferList);
-    for (int64_t i = 0; i < len; i++) {
-        JSValue tmp = JS_GetPropertyInt64(context_, transferList, i);
-        if (!JS_IsException(tmp)) {
-            if (!JS_IsArrayBuffer(context_, tmp)) {
-                HILOG_ERROR("JS_ISArrayBuffer fail");
-                return false;
-            }
-        } else {
-            HILOG_ERROR("JS_GetPropertyInt64 fail");
-            return false;
-        }
-    }
-    return true;
-}
-
-bool QuickJSNativeEngine::DetachTransferList(JSValue transferList)
-{
-    if (JS_IsUndefined(transferList)) {
-        return true;
-    }
-    int64_t len = 0;
-    js_get_length64(context_, &len, transferList);
-    for (int64_t i = 0; i < len; i++) {
-        JSValue tmp = JS_GetPropertyInt64(context_, transferList, i);
-        if (!JS_IsException(tmp)) {
-            JS_DetachArrayBuffer(context_, tmp);
-        } else {
-            return false;
-        }
-    }
-    return true;
-
 }
 
 NativeValue* QuickJSNativeEngine::Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer)
 {
-    if (!CheckTransferList(*transfer)) {
-        return nullptr;
-    }
-    size_t dataLen;
-    uint8_t *data = JS_WriteObject(context_, &dataLen, *value, JS_WRITE_OBJ);
-    DetachTransferList(*transfer);
-    return reinterpret_cast<NativeValue*>(new SerializeData(dataLen, data));
+    return nullptr;
 }
- 
+
 NativeValue* QuickJSNativeEngine::Deserialize(NativeEngine* context, NativeValue* recorder)
 {
-    std::unique_ptr<SerializeData> data(reinterpret_cast<SerializeData*>(recorder));
-    JSValue result = JS_ReadObject(context_, data->GetData(), data->GetSize(), JS_WRITE_OBJ);
-    return JSValueToNativeValue(this, result);
+    return nullptr;
 }
- 
+
 void QuickJSNativeEngine::DeleteSerializationData(NativeValue* value) const
 {
-    SerializeData* data = reinterpret_cast<SerializeData*>(value);
-    delete data;
 }
- 
+
 ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker() const
 {
-    JSValue exception = JS_GetCurrentException(runtime_);
-    ASSERT(JS_IsObject(exception));
-    JSValue msg;
-    ExceptionInfo* exceptionInfo = new ExceptionInfo();
-    msg = JS_GetProperty(context_, exception, JS_ATOM_MESSAGE);
-    ASSERT(JS_IsString(msg));
-    const char* exceptionStr  = reinterpret_cast<char *>(JS_GetStringFromObject(msg));
-    const char* error = "Error: ";
-    int len = strlen(exceptionStr) + strlen(error) + 1;
-    if (len <= 0) {
-        delete exceptionInfo;
-        return nullptr;
-    }
-    char* exceptionMessage = new char[len] { 0 };
-    if (memcpy_s(exceptionMessage, len, error, strlen(error)) != EOK) {
-        HILOG_INFO("worker:: memcpy_s error");
-        delete exceptionInfo;
-        delete[] exceptionMessage;
-        return nullptr;
-    }
-    if (memcpy_s(exceptionMessage + strlen(error), len, exceptionStr, strlen(exceptionStr)) != EOK) {
-        HILOG_INFO("worker:: memcpy_s error");
-        delete exceptionInfo;
-        delete[] exceptionMessage;
-        return nullptr;
-    }
-    exceptionInfo->message_ = exceptionMessage;
-    return exceptionInfo;
+    return nullptr;
+}
+
+NativeValue* QuickJSNativeEngine::ValueToNativeValue(JSValueWrapper& value)
+{
+    JSValue quickValue = value;
+    return JSValueToNativeValue(this, quickValue);
 }
