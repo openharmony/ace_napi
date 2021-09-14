@@ -16,10 +16,8 @@
 #include "quickjs_native_deferred.h"
 
 QuickJSNativeDeferred::QuickJSNativeDeferred(QuickJSNativeEngine* engine, JSValue values[2])
+    : engine_(engine), resolve_(values[0]), reject_(values[1])
 {
-    engine_ = engine;
-    resolve_ = values[0];
-    reject_ = values[1];
 }
 
 QuickJSNativeDeferred::~QuickJSNativeDeferred()

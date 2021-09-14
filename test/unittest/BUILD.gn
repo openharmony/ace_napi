@@ -45,7 +45,6 @@ ohos_unittest("test_quickjs_unittest") {
     "//third_party/libuv:uv_static",
     "//third_party/quickjs:qjs",
     "//utils/native/base:utils",
-    "//utils/native/base:utilsecurec",
   ]
 
   if (is_standard_system) {
@@ -53,7 +52,50 @@ ohos_unittest("test_quickjs_unittest") {
   }
 }
 
+ohos_unittest("test_ark_unittest") {
+  module_out_path = module_output_path
+
+  configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
+
+  include_dirs = [
+    "//ark/js_runtime",
+    "//foundation/ace/napi",
+    "//foundation/ace/napi/interfaces/kits",
+    "//foundation/ace/napi/native_engine",
+    "//foundation/ace/napi/native_engine/impl/ark",
+    "//third_party/googletest/include",
+    "//third_party/node/src",
+    "//utils/native/base/include",
+  ]
+
+  cflags = [ "-g3" ]
+
+  sources = [
+    "test_ark.cpp",
+    "test_napi.cpp",
+  ]
+
+  deps = [
+    "//ark/js_runtime:libark_jsruntime",
+    "//foundation/ace/napi/:ace_napi",
+    "//foundation/ace/napi/:ace_napi_ark",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gtest_main",
+    "//third_party/libuv:uv_static",
+    "//utils/native/base:utils",
+  ]
+
+  if (is_standard_system) {
+    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  } else {
+    external_deps = [ "hilog:libhilog" ]
+  }
+}
+
 group("unittest") {
   testonly = true
-  deps = [ ":test_quickjs_unittest" ]
+  deps = [
+    ":test_ark_unittest",
+    ":test_quickjs_unittest",
+  ]
 }
