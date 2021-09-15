@@ -32,6 +32,7 @@ typedef void (*NativeAsyncExecuteCallback)(NativeEngine* engine, void* data);
 typedef void (*NativeAsyncCompleteCallback)(NativeEngine* engine, int status, void* data);
 
 struct NativeObjectInfo {
+    static NativeObjectInfo* CreateNewInstance() { return new NativeObjectInfo(); }
     NativeEngine* engine = nullptr;
     void* nativeObject = nullptr;
     NativeFinalize callback = nullptr;
@@ -39,6 +40,7 @@ struct NativeObjectInfo {
 };
 
 struct NativeFunctionInfo {
+    static NativeFunctionInfo* CreateNewInstance() { return new NativeFunctionInfo(); }
     NativeEngine* engine = nullptr;
     NativeCallback callback = nullptr;
     void* data = nullptr;
@@ -65,6 +67,34 @@ enum NativeValueType {
     NATIVE_FUNCTION,
     NATIVE_EXTERNAL,
     NATIVE_BIGINT,
+};
+
+struct JSValueWrapper {
+    JSValueWrapper()
+    {
+        u.ptr = 0;
+        tag = 0;
+    }
+    template<typename T>
+    JSValueWrapper(T value)
+    {
+        *(T*)this = value;
+    }
+    template<typename T> operator T()
+    {
+        return *(T*)this;
+    }
+    template<typename T> JSValueWrapper& operator=(T value)
+    {
+        *(T*)this = value;
+        return *this;
+    }
+    union {
+        int32_t int32;
+        double float64;
+        void* ptr;
+    } u;
+    int64_t tag;
 };
 
 class NativeValue {
@@ -101,26 +131,10 @@ public:
     virtual NativeValue* ToString() = 0;
     virtual NativeValue* ToObject() = 0;
 
-    virtual bool operator==(NativeValue* value) = 0;
+    virtual bool StrictEquals(NativeValue* value) = 0;
 
 protected:
-    struct {
-        template<typename T> operator T()
-        {
-            return *(T*)this;
-        }
-        template<typename T> T operator=(T value)
-        {
-            *(T*)this = value;
-            return *this;
-        }
-        union {
-            int32_t int32;
-            double float64;
-            void* ptr;
-        } u;
-        int64_t tag;
-    } value_;
+    JSValueWrapper value_;
 };
 
 class NativeBoolean {

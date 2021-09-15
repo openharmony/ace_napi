@@ -15,9 +15,9 @@
 
 #include "quickjs_native_array_buffer.h"
 #include "native_engine/native_engine.h"
-#include "utils/log.h"
 
 struct QuickJsArrayCallback {
+    static QuickJsArrayCallback* CreateNewInstance() { return new QuickJsArrayCallback(); }
     NativeEngine* engine = nullptr;
     NativeFinalize cb = nullptr;
     void* hint = nullptr;
@@ -43,22 +43,22 @@ QuickJSNativeArrayBuffer::QuickJSNativeArrayBuffer(QuickJSNativeEngine* engine,
                                                    void* hint)
     : QuickJSNativeObject(engine, JS_NULL)
 {
-    auto cbinfo = new QuickJsArrayCallback();
-    if (cbinfo) {
+    auto cbinfo = QuickJsArrayCallback::CreateNewInstance();
+    if (cbinfo != nullptr) {
         cbinfo->engine = engine_;
         cbinfo->cb = cb;
         cbinfo->hint = hint;
-        value_ = JS_NewArrayBuffer(
-            engine_->GetContext(), data, length,
-            [](JSRuntime* rt, void* opaque, void* ptr) -> void {
-                auto cbinfo = reinterpret_cast<QuickJsArrayCallback*>(opaque);
+    }
+    value_ = JS_NewArrayBuffer(
+        engine_->GetContext(), data, length,
+        [](JSRuntime* rt, void* opaque, void* ptr) -> void {
+            auto cbinfo = reinterpret_cast<QuickJsArrayCallback*>(opaque);
+            if (cbinfo != nullptr) {
                 cbinfo->cb(cbinfo->engine, ptr, cbinfo->hint);
                 delete cbinfo;
-            },
-            (void*)cbinfo, false);
-    } else {
-        HILOG_ERROR("QuickJsArrayCallback instance create fail.");
-    }
+            }
+        },
+        (void*)cbinfo, false);
 }
 
 QuickJSNativeArrayBuffer::~QuickJSNativeArrayBuffer() {}

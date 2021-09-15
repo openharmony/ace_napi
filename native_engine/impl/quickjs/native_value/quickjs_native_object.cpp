@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
+#include "quickjs_native_object.h"
+
 #include "native_engine/native_engine.h"
 #include "native_engine/native_property.h"
 
 #include "quickjs_headers.h"
-
-#include "quickjs_native_engine.h"
-
 #include "quickjs_native_array.h"
+#include "quickjs_native_engine.h"
 #include "quickjs_native_function.h"
-#include "quickjs_native_object.h"
 #include "quickjs_native_string.h"
+#include "utils/log.h"
 
 QuickJSNativeObject::QuickJSNativeObject(QuickJSNativeEngine* engine)
     : QuickJSNativeObject(engine, JS_NewObject(engine->GetContext()))
@@ -41,10 +41,12 @@ void QuickJSNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, voi
     NativeObjectInfo* info = (NativeObjectInfo*)JS_GetNativePointer(engine_->GetContext(), value_);
     if (info == nullptr) {
         info = new NativeObjectInfo();
-        info->callback = cb;
-        info->engine = engine_;
-        info->nativeObject = pointer;
-        info->hint = hint;
+        if (info != nullptr) {
+            info->callback = cb;
+            info->engine = engine_;
+            info->nativeObject = pointer;
+            info->hint = hint;
+        }
         JS_SetNativePointer(
             engine_->GetContext(), value_, info,
             [](JSContext* context, void* data, void* hint) {
@@ -80,6 +82,10 @@ NativeValue* QuickJSNativeObject::GetPropertyNames()
     JS_GetOwnPropertyNames(engine_->GetContext(), &tab, &len, value_, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY);
 
     QuickJSNativeArray* propertyNames = new QuickJSNativeArray(engine_, (uint32_t)0);
+    if (propertyNames == nullptr) {
+        HILOG_ERROR("create property names failed");
+        return nullptr;
+    }
 
     for (uint32_t i = 0; i < len; i++) {
         QuickJSNativeString* name = new QuickJSNativeString(engine_, tab[i].atom);
@@ -107,17 +113,22 @@ bool QuickJSNativeObject::DefineProperty(NativePropertyDescriptor propertyDescri
     } else if (propertyDescriptor.method) {
         NativeValue* function = new QuickJSNativeFunction(engine_, propertyDescriptor.utf8name,
                                                           propertyDescriptor.method, propertyDescriptor.data);
-        result = JS_DefinePropertyValue(engine_->GetContext(), value_, jKey,
-                                        JS_DupValue(engine_->GetContext(), *function),
-                                        JS_PROP_CONFIGURABLE | JS_PROP_WRITABLE);
+        if (function != nullptr) {
+            result = JS_DefinePropertyValue(engine_->GetContext(), value_, jKey,
+                                            JS_DupValue(engine_->GetContext(), *function),
+                                            JS_PROP_CONFIGURABLE | JS_PROP_WRITABLE);
+        }
     } else if (propertyDescriptor.getter || propertyDescriptor.setter) {
         NativeValue* getter =
             new QuickJSNativeFunction(engine_, nullptr, propertyDescriptor.getter, propertyDescriptor.data);
         NativeValue* setter =
             new QuickJSNativeFunction(engine_, nullptr, propertyDescriptor.setter, propertyDescriptor.data);
-        result =
-            JS_DefinePropertyGetSet(engine_->GetContext(), value_, jKey, JS_DupValue(engine_->GetContext(), *getter),
-                                    JS_DupValue(engine_->GetContext(), *setter), JS_PROP_C_W_E);
+        if (getter != nullptr && setter != nullptr) {
+            result = JS_DefinePropertyGetSet(engine_->GetContext(), value_, jKey,
+                                             JS_DupValue(engine_->GetContext(), *getter),
+                                             JS_DupValue(engine_->GetContext(), *setter),
+                                             JS_PROP_C_W_E);
+        }
     }
 
     JS_FreeAtom(engine_->GetContext(), jKey);
