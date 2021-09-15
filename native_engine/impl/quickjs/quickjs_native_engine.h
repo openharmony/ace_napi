@@ -19,41 +19,15 @@
 #include "native_engine/native_engine.h"
 #include "quickjs_headers.h"
 
-class SerializeData {
-public:
-    SerializeData(size_t size, uint8_t *data) : dataSize_(size), value_(data) {}
-    ~SerializeData() = default;
-
-    uint8_t* GetData() const
-    {
-        return value_.get();
-    }
-    size_t GetSize() const
-    {
-        return dataSize_;
-    }
-
-private:
-    struct Deleter {
-        void operator()(uint8_t* ptr) const
-        {
-            free(ptr);
-        }
-    };
-
-    size_t dataSize_;
-    std::unique_ptr<uint8_t, Deleter> value_;
-};
-
 class QuickJSNativeEngine : public NativeEngine {
 public:
-    QuickJSNativeEngine(JSRuntime* runtime, JSContext* context);
+    QuickJSNativeEngine(JSRuntime* runtime, JSContext* contex, void* jsEngine);
     virtual ~QuickJSNativeEngine();
 
     JSRuntime* GetRuntime();
     JSContext* GetContext();
 
-    virtual void Loop(LoopMode mode) override;
+    virtual void Loop(LoopMode mode, bool needSync = false) override;
 
     virtual NativeValue* GetGlobal() override;
     virtual NativeValue* CreateNull() override;
@@ -99,22 +73,20 @@ public:
                                      size_t length) override;
 
     virtual NativeValue* RunScript(NativeValue* script) override;
+    virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
 
     virtual bool Throw(NativeValue* error) override;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
     virtual void* CreateRuntime() override;
-    bool CheckTransferList(JSValue transferList);
-    bool DetachTransferList(JSValue transferList);
     virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
     virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
     virtual void DeleteSerializationData(NativeValue* value) const override;
     virtual ExceptionInfo* GetExceptionForWorker() const override;
-
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
 
     static NativeValue* JSValueToNativeValue(QuickJSNativeEngine* engine, JSValue value);
-
+    virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 private:
     JSRuntime* runtime_;
     JSContext* context_;
