@@ -45,7 +45,7 @@ public:
     virtual NativeValue* ToString() override;
     virtual NativeValue* ToObject() override;
 
-    virtual bool operator==(NativeValue* value) override;
+    virtual bool StrictEquals(NativeValue* value) override;
 
 protected:
     QuickJSNativeEngine* engine_;

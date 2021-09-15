@@ -14,9 +14,11 @@
  */
 
 #include "native_engine.h"
-#include "utils/log.h"
 
+#include <sys/epoll.h>
 #include <uv.h>
+
+#include "utils/log.h"
 
 namespace {
 const char* g_errorMessages[] = {
@@ -44,22 +46,31 @@ const char* g_errorMessages[] = {
 };
 } // namespace
 
-NativeEngine::NativeEngine()
+NativeEngine::NativeEngine(void* jsEngine) : jsEngine_(jsEngine)
+{
+    Init();
+}
+
+void NativeEngine::Init()
 {
     moduleManager_ = NativeModuleManager::GetInstance();
     scopeManager_ = new NativeScopeManager();
-    if (scopeManager_) {
-        loop_ = uv_loop_new();
-        lastException_ = nullptr;
-    } else {
-        HILOG_ERROR("contruct NativeEngine error.");
+    loop_ = uv_loop_new();
+    if (loop_ == nullptr) {
+        return;
     }
+    uv_async_init(loop_, &uvAsync_, nullptr);
+    uv_sem_init(&uvSem_, 0);
+    lastException_ = nullptr;
 }
 
 NativeEngine::~NativeEngine()
 {
+    uv_close((uv_handle_t*)&uvAsync_, nullptr);
     uv_loop_close(loop_);
-    delete scopeManager_;
+    if (scopeManager_ != nullptr) {
+        delete scopeManager_;
+    }
 }
 
 NativeScopeManager* NativeEngine::GetScopeManager()
@@ -77,7 +88,7 @@ uv_loop_t* NativeEngine::GetUVLoop() const
     return loop_;
 }
 
-void NativeEngine::Loop(LoopMode mode)
+void NativeEngine::Loop(LoopMode mode, bool needSync)
 {
     bool more = true;
     switch (mode) {
@@ -96,13 +107,14 @@ void NativeEngine::Loop(LoopMode mode)
     if (more == false) {
         more = uv_loop_alive(loop_);
     }
+
+    if (needSync) {
+        uv_sem_post(&uvSem_);
+    }
 }
 
-NativeAsyncWork* NativeEngine::CreateAsyncWork(NativeValue* asyncResource,
-                                               NativeValue* asyncResourceName,
-                                               NativeAsyncExecuteCallback execute,
-                                               NativeAsyncCompleteCallback complete,
-                                               void* data)
+NativeAsyncWork* NativeEngine::CreateAsyncWork(NativeValue* asyncResource, NativeValue* asyncResourceName,
+    NativeAsyncExecuteCallback execute, NativeAsyncCompleteCallback complete, void* data)
 {
     (void)asyncResource;
     (void)asyncResourceName;
@@ -162,12 +174,54 @@ void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
 
     auto nativeString = reinterpret_cast<NativeString*>(nativeValue->GetInterface(NativeString::INTERFACE_ID));
 
-    if (nativeString) {
-        *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
-    } else {
-        HILOG_ERROR("NativeEngine EncodeToUtf8 nativeString is nullptr");
+    if (nativeString == nullptr) {
+        HILOG_ERROR("nativeValue GetInterface is nullptr");
+        return;
+    }
+    *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
+}
+
+void NativeEngine::CheckUVLoop()
+{
+    checkUVLoop_ = true;
+    uv_thread_create(&uvThread_, NativeEngine::UVThreadRunner, this);
+}
+
+void NativeEngine::CancelCheckUVLoop()
+{
+    checkUVLoop_ = false;
+
+    uv_async_send(&uvAsync_);
+    uv_thread_join(&uvThread_);
+}
+
+void NativeEngine::PostLoopTask()
+{
+    postTask_(true);
+    uv_sem_wait(&uvSem_);
+}
+
+void NativeEngine::UVThreadRunner(void* nativeEngine)
+{
+    auto engine = static_cast<NativeEngine *>(nativeEngine);
+    engine->PostLoopTask();
+    while (engine->checkUVLoop_) {
+        int32_t fd = uv_backend_fd(engine->loop_);
+        int32_t timeout = uv_backend_timeout(engine->loop_);
+        struct epoll_event ev;
+        int32_t result = epoll_wait(fd, &ev, 1, timeout);
+        if (!engine->checkUVLoop_) {
+            HILOG_INFO("break thread");
+            break;
+        }
+        if (result != -1 && errno != EINTR) {
+            engine->PostLoopTask();
+        } else {
+            HILOG_ERROR("epoll wait fail");
+        }
     }
 }
+
 void NativeEngine::SetPostTask(PostTask postTask)
 {
     HILOG_INFO("SetPostTask in");
@@ -180,5 +234,10 @@ void NativeEngine::TriggerPostTask()
         HILOG_ERROR("postTask_ is nullptr");
         return;
     }
-    postTask_();
+    postTask_(false);
+}
+
+void* NativeEngine::GetJsEngine()
+{
+    return jsEngine_;
 }
