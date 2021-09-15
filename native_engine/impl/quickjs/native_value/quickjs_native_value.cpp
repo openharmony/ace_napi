@@ -148,7 +148,7 @@ NativeValue* QuickJSNativeValue::ToObject()
     return nullptr;
 }
 
-bool QuickJSNativeValue::operator==(NativeValue* value)
+bool QuickJSNativeValue::StrictEquals(NativeValue* value)
 {
     return JS_StrictEquals(engine_->GetContext(), value_, *value);
 }

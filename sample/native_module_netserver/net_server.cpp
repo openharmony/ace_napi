@@ -77,7 +77,7 @@ void NetServer::OnClose(uv_handle_t* peer)
         return;
     }
 
-    NetServer* that = (NetServer*)peer->data;
+    NetServer* that = static_cast<NetServer*>(peer->data);
     that->Emit("disconnect", nullptr);
     free(peer);
 }
@@ -89,7 +89,7 @@ void NetServer::OnConnection(uv_stream_t* server, int status)
         return;
     }
 
-    NetServer* that = (NetServer*)server->data;
+    NetServer* that = static_cast<NetServer*>(server->data);
 
     if (status != 0) {
         that->Emit("error", nullptr);
@@ -118,7 +118,7 @@ void NetServer::OnServerClose(uv_handle_t* handle)
         return;
     }
 
-    NetServer* that = (NetServer*)handle->data;
+    NetServer* that = static_cast<NetServer*>(handle->data);
 
     for (NetClient* i = that->clients_; i != nullptr; i = i->next) {
         uv_close((uv_handle_t*)&i->tcp, nullptr);
@@ -135,9 +135,9 @@ void NetServer::AfterWrite(uv_write_t* req, int status)
         return;
     }
 
-    NetServer* that = (NetServer*)req->data;
+    NetServer* that = static_cast<NetServer*>(req->data);
 
-    WriteReq* wr = (WriteReq*)req;
+    WriteReq* wr = reinterpret_cast<WriteReq*>(req);
 
     free(wr->buf.base);
     free(wr);
@@ -162,7 +162,7 @@ void NetServer::AfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* bu
         return;
     }
 
-    NetServer* that = (NetServer*)handle->data;
+    NetServer* that = static_cast<NetServer*>(handle->data);
     WriteReq* wr = nullptr;
     uv_shutdown_t* sreq = nullptr;
 
@@ -201,7 +201,7 @@ void NetServer::AfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* bu
 
     that->Emit("read", nullptr);
 
-    wr = (WriteReq*)malloc(sizeof(WriteReq));
+    wr = static_cast<WriteReq*>(malloc(sizeof(WriteReq)));
     if (wr == nullptr) {
         HILOG_ERROR("wr is null");
         free(buf->base);

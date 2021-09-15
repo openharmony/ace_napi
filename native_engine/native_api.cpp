@@ -17,7 +17,7 @@
 
 #include "native_engine/native_property.h"
 #include "native_engine/native_value.h"
-
+#include "securec.h"
 #include "utils/log.h"
 
 NAPI_EXTERN napi_status napi_get_last_error_info(napi_env env, const napi_extended_error_info** result)
@@ -798,7 +798,7 @@ NAPI_EXTERN napi_status napi_strict_equals(napi_env env, napi_value lhs, napi_va
     auto nativeLhs = reinterpret_cast<NativeValue*>(lhs);
     auto nativeRhs = reinterpret_cast<NativeValue*>(rhs);
 
-    *result = *nativeLhs == nativeRhs;
+    *result = nativeLhs->StrictEquals(nativeRhs);
     return napi_clear_last_error(env);
 }
 
@@ -1240,7 +1240,7 @@ NAPI_EXTERN napi_status napi_throw(napi_env env, napi_value error)
     RETURN_STATUS_IF_FALSE(env, nativeValue->IsError(), napi_invalid_arg);
 
     engine->Throw(nativeValue);
-    return napi_generic_failure;
+    return napi_clear_last_error(env);
 }
 
 NAPI_EXTERN napi_status napi_throw_error(napi_env env, const char* code, const char* msg)
@@ -1251,7 +1251,7 @@ NAPI_EXTERN napi_status napi_throw_error(napi_env env, const char* code, const c
     auto engine = reinterpret_cast<NativeEngine*>(env);
 
     engine->Throw(NativeErrorType::NATIVE_COMMON_ERROR, code, msg);
-    return napi_generic_failure;
+    return napi_clear_last_error(env);
 }
 
 NAPI_EXTERN napi_status napi_throw_type_error(napi_env env, const char* code, const char* msg)
@@ -1578,11 +1578,20 @@ NAPI_EXTERN napi_status napi_run_script(napi_env env, napi_value script, napi_va
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     auto scriptValue = reinterpret_cast<NativeValue*>(script);
-
     RETURN_STATUS_IF_FALSE(env, scriptValue->TypeOf() == NATIVE_STRING, napi_status::napi_string_expected);
-
     auto resultValue = engine->RunScript(scriptValue);
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
 
+// Runnint a buffer script, only used in ark
+NAPI_EXTERN napi_status napi_run_buffer_script(napi_env env, std::vector<uint8_t>& buffer, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->RunBufferScript(buffer);
     *result = reinterpret_cast<napi_value>(resultValue);
     return napi_clear_last_error(env);
 }
@@ -1603,8 +1612,8 @@ NAPI_EXTERN napi_status napi_is_callable(napi_env env, napi_value value, bool* r
     CHECK_ARG(env, result);
 
     auto nativeValue = reinterpret_cast<NativeValue*>(value);
-    *result = nativeValue->IsCallable();
 
+    *result = nativeValue->IsCallable();
     return napi_clear_last_error(env);
 }
 
@@ -1660,7 +1669,6 @@ NAPI_EXTERN napi_status napi_delete_serialization_data(napi_env env, napi_value 
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     auto nativeValue = reinterpret_cast<NativeValue*>(value);
-
     engine->DeleteSerializationData(nativeValue);
 
     return napi_clear_last_error(env);
@@ -1670,7 +1678,6 @@ NAPI_EXTERN napi_status napi_get_exception_info_for_worker(napi_env env, napi_va
 {
     CHECK_ENV(env);
     CHECK_ARG(env, obj);
-
     auto engine = reinterpret_cast<NativeEngine*>(env);
     ExceptionInfo* exceptionInfo = engine->GetExceptionForWorker();
     if (exceptionInfo == nullptr) {
@@ -1683,7 +1690,7 @@ NAPI_EXTERN napi_status napi_get_exception_info_for_worker(napi_env env, napi_va
     napi_set_named_property(env, obj, "lineno", lineno);
 
     napi_value colno = nullptr;
-    napi_create_int32(env, exceptionInfo->colno_, &lineno);
+    napi_create_int32(env, exceptionInfo->colno_, &colno);
     napi_set_named_property(env, obj, "colno", colno);
 
     if (exceptionInfo->message_ != nullptr) {
@@ -1695,4 +1702,13 @@ NAPI_EXTERN napi_status napi_get_exception_info_for_worker(napi_env env, napi_va
 
     delete exceptionInfo;
     return napi_clear_last_error(env);
+}
+
+napi_status napi_get_jsEngine(napi_env env, void** pEngine)
+{
+    CHECK_ENV(env);
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    *pEngine = engine->GetJsEngine();
+    return napi_clear_last_error(env);
+
 }
