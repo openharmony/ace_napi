@@ -284,7 +284,7 @@ NativeModule* NativeModuleManager::FindNativeModuleByCache(const char* moduleNam
 {
     NativeModule* result = nullptr;
     for (NativeModule* temp = firstNativeModule_; temp != nullptr; temp = temp->next) {
-        if (!strcmp(temp->name, moduleName)) {
+        if (!strcasecmp(temp->name, moduleName)) {
             result = temp;
             break;
         }
