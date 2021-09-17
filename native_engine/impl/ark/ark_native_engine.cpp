@@ -69,7 +69,7 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                     if (module->jsCode != nullptr) {
                         HILOG_INFO("load js code");
                         NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
-                        char fileName[PATH_MAX] = { 0 };
+                        char fileName[NAPI_PATH_MAX] = { 0 };
                         const char* name = module->name;
                         if (sprintf_s(fileName, sizeof(fileName), "lib%s.z.so/%s.js", name, name) == -1) {
                             HILOG_ERROR("sprintf_s file name failed");

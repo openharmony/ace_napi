@@ -11,91 +11,135 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/test.gni")
+if (defined(ohos_lite)) {
+  import("//build/lite/config/component/lite_component.gni")
+  import("//build/lite/config/subsystem/aafwk/config.gni")
+  import("//build/lite/config/test.gni")
 
-if (is_standard_system) {
-  module_output_path = "ace_engine_standard/napi"
-}
+  test_output_root = "$root_out_dir/test/unittest/jsfwk"
 
-ohos_unittest("test_quickjs_unittest") {
-  module_out_path = module_output_path
+  executable("test_jerryscript_unittest") {
+    output_extension = "bin"
+    output_dir = test_output_root
 
-  include_dirs = [
-    "//foundation/ace/napi",
-    "//foundation/ace/napi/interfaces/kits",
-    "//foundation/ace/napi/native_engine",
-    "//foundation/ace/napi/native_engine/impl/quickjs",
-    "//third_party/googletest/include",
-    "//third_party/node/src",
-    "//utils/native/base/include",
-  ]
+    include_dirs = [
+      "//utils/native/base/include",
+      "//third_party/node/src",
+      "//foundation/ace/napi",
+      "//foundation/ace/napi/interfaces/kits",
+      "//third_party/googletest/include",
+      "//foundation/ace/napi/native_engine",
+      "//foundation/ace/napi/native_engine/impl/jerryscript",
+    ]
 
-  cflags = [ "-g3" ]
+    cflags = [ "-g3" ]
 
-  sources = [
-    "test_napi.cpp",
-    "test_quickjs.cpp",
-  ]
+    sources = [
+      "test_jerryscript.cpp",
+      "test_napi.cpp",
+    ]
 
-  deps = [
-    "//foundation/ace/napi/:ace_napi",
-    "//foundation/ace/napi/:ace_napi_quickjs",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gtest_main",
-    "//third_party/libuv:uv_static",
-    "//third_party/quickjs:qjs",
-    "//utils/native/base:utils",
-  ]
+    deps = [
+      "//base//hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
+      "//foundation/ace/napi/:ace_napi",
+      "//foundation/ace/napi/:ace_napi_jerryscript",
+      "//test/developertest/third_party/lib/cpp:gtest_main",
+      "//third_party/jerryscript/jerry-core:jerry-core_shared",
+      "//third_party/jerryscript/jerry-ext:jerry-ext_shared",
+      "//third_party/jerryscript/jerry-port/default:jerry-port-default_shared",
+    ]
+  }
+
+  group("unittest") {
+    deps = [ ":test_jerryscript_unittest" ]
+  }
+} else {
+  import("//build/test.gni")
 
   if (is_standard_system) {
-    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    module_output_path = "ace_engine_standard/napi"
   }
-}
 
-ohos_unittest("test_ark_unittest") {
-  module_out_path = module_output_path
+  ohos_unittest("test_quickjs_unittest") {
+    module_out_path = module_output_path
 
-  configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
+    include_dirs = [
+      "//foundation/ace/napi",
+      "//foundation/ace/napi/interfaces/kits",
+      "//foundation/ace/napi/native_engine",
+      "//foundation/ace/napi/native_engine/impl/quickjs",
+      "//third_party/googletest/include",
+      "//third_party/node/src",
+      "//utils/native/base/include",
+    ]
 
-  include_dirs = [
-    "//ark/js_runtime",
-    "//foundation/ace/napi",
-    "//foundation/ace/napi/interfaces/kits",
-    "//foundation/ace/napi/native_engine",
-    "//foundation/ace/napi/native_engine/impl/ark",
-    "//third_party/googletest/include",
-    "//third_party/node/src",
-    "//utils/native/base/include",
-  ]
+    cflags = [ "-g3" ]
 
-  cflags = [ "-g3" ]
+    sources = [
+      "test_napi.cpp",
+      "test_quickjs.cpp",
+    ]
 
-  sources = [
-    "test_ark.cpp",
-    "test_napi.cpp",
-  ]
+    deps = [
+      "//foundation/ace/napi/:ace_napi",
+      "//foundation/ace/napi/:ace_napi_quickjs",
+      "//third_party/googletest:gtest",
+      "//third_party/googletest:gtest_main",
+      "//third_party/libuv:uv_static",
+      "//third_party/quickjs:qjs",
+      "//utils/native/base:utils",
+    ]
 
-  deps = [
-    "//ark/js_runtime:libark_jsruntime",
-    "//foundation/ace/napi/:ace_napi",
-    "//foundation/ace/napi/:ace_napi_ark",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gtest_main",
-    "//third_party/libuv:uv_static",
-    "//utils/native/base:utils",
-  ]
-
-  if (is_standard_system) {
-    external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-  } else {
-    external_deps = [ "hilog:libhilog" ]
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
   }
-}
 
-group("unittest") {
-  testonly = true
-  deps = [
-    ":test_ark_unittest",
-    ":test_quickjs_unittest",
-  ]
+  ohos_unittest("test_ark_unittest") {
+    module_out_path = module_output_path
+
+    configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
+
+    include_dirs = [
+      "//ark/js_runtime",
+      "//foundation/ace/napi",
+      "//foundation/ace/napi/interfaces/kits",
+      "//foundation/ace/napi/native_engine",
+      "//foundation/ace/napi/native_engine/impl/ark",
+      "//third_party/googletest/include",
+      "//third_party/node/src",
+      "//utils/native/base/include",
+    ]
+
+    cflags = [ "-g3" ]
+
+    sources = [
+      "test_ark.cpp",
+      "test_napi.cpp",
+    ]
+
+    deps = [
+      "//ark/js_runtime:libark_jsruntime",
+      "//foundation/ace/napi/:ace_napi",
+      "//foundation/ace/napi/:ace_napi_ark",
+      "//third_party/googletest:gtest",
+      "//third_party/googletest:gtest_main",
+      "//third_party/libuv:uv_static",
+      "//utils/native/base:utils",
+    ]
+
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    } else {
+      external_deps = [ "hilog:libhilog" ]
+    }
+  }
+
+  group("unittest") {
+    testonly = true
+    deps = [
+      ":test_ark_unittest",
+      ":test_quickjs_unittest",
+    ]
+  }
 }

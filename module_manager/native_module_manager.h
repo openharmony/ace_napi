@@ -19,7 +19,7 @@
 #include <pthread.h>
 #include <stdint.h>
 
-#define PATH_MAX 4096
+#define NAPI_PATH_MAX 4096
 
 class NativeValue;
 
@@ -53,7 +53,7 @@ private:
     virtual ~NativeModuleManager();
 
     bool GetNativeModulePath(
-        const char* moduleName, const bool isAppModule, char nativeModulePath[][PATH_MAX], int32_t pathLength) const;
+        const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX], int32_t pathLength) const;
     NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule, bool isArk);
     NativeModule* FindNativeModuleByCache(const char* moduleName) const;
     void* LoadLibrary(const char* path) const;

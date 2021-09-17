@@ -11,23 +11,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
+if (defined(ohos_lite)) {
+  import("//build/lite/config/component/lite_component.gni")
+  import("//build/lite/config/subsystem/aafwk/config.gni")
+  import("//build/lite/config/test.gni")
 
-ohos_shared_library("demo") {
-  include_dirs = [
-    "//third_party/node/src",
-    "//foundation/ace/napi/interfaces/kits",
-  ]
+  shared_library("demo") {
+    include_dirs = [
+      "//third_party/node/src",
+      "//foundation/ace/napi/interfaces/kits",
+    ]
 
-  sources = [
-    "demo_javascript_class.cpp",
-    "native_module_demo.cpp",
-  ]
+    sources = [
+      "demo_javascript_class.cpp",
+      "native_module_demo.cpp",
+    ]
 
-  deps = [ "//foundation/ace/napi:ace_napi" ]
+    cflags = [ "-std=c++14" ]
+    cflags_cc = cflags
 
-  relative_install_dir = "module"
+    deps = [
+      "//base//hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
+      "//foundation/ace/napi:ace_napi",
+    ]
+  }
+} else {
+  import("//build/ohos.gni")
 
-  subsystem_name = "ace"
-  part_name = "napi"
+  ohos_shared_library("demo") {
+    include_dirs = [
+      "//third_party/node/src",
+      "//foundation/ace/napi/interfaces/kits",
+    ]
+
+    sources = [
+      "demo_javascript_class.cpp",
+      "native_module_demo.cpp",
+    ]
+
+    deps = [ "//foundation/ace/napi:ace_napi" ]
+
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    } else {
+      external_deps = [ "hilog:libhilog" ]
+    }
+
+    relative_install_dir = "module"
+
+    subsystem_name = "ace"
+    part_name = "napi"
+  }
 }
