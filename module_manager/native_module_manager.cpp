@@ -93,13 +93,13 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
 
 void NativeModuleManager::SetAppLibPath(const char* appLibPath)
 {
-    char* tmp = new char[PATH_MAX];
+    char* tmp = new char[NAPI_PATH_MAX];
     errno_t err = EOK;
-    err = memset_s(tmp, PATH_MAX, 0, PATH_MAX);
+    err = memset_s(tmp, NAPI_PATH_MAX, 0, NAPI_PATH_MAX);
     if (err != EOK) {
         return;
     }
-    err = strcpy_s(tmp, PATH_MAX, appLibPath);
+    err = strcpy_s(tmp, NAPI_PATH_MAX, appLibPath);
     if (err != EOK) {
         delete[] tmp;
         return;
@@ -136,7 +136,7 @@ NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName,
 }
 
 bool NativeModuleManager::GetNativeModulePath(
-    const char* moduleName, const bool isAppModule, char nativeModulePath[][PATH_MAX], int32_t pathLength) const
+    const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX], int32_t pathLength) const
 {
     const char* soPostfix = ".so";
 #ifdef _ARM64_
@@ -151,8 +151,8 @@ bool NativeModuleManager::GetNativeModulePath(
         prefix = sysPrefix;
     }
     int32_t lengthOfModuleName = strlen(moduleName);
-    char dupModuleName[PATH_MAX] = { 0 };
-    if (strcpy_s(dupModuleName, PATH_MAX, moduleName) != 0) {
+    char dupModuleName[NAPI_PATH_MAX] = { 0 };
+    if (strcpy_s(dupModuleName, NAPI_PATH_MAX, moduleName) != 0) {
         HILOG_ERROR("strcpy moduleName failed");
         return false;
     }
@@ -231,8 +231,8 @@ using NAPIGetJSCode = void (*)(const char** buf, int* bufLen);
 NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule,
                                                           bool isArk)
 {
-    char nativeModulePath[NATIVE_PATH_NUMBER][PATH_MAX] = { 0 };
-    if (!GetNativeModulePath(moduleName, isAppModule, nativeModulePath, PATH_MAX)) {
+    char nativeModulePath[NATIVE_PATH_NUMBER][NAPI_PATH_MAX] = { 0 };
+    if (!GetNativeModulePath(moduleName, isAppModule, nativeModulePath, NAPI_PATH_MAX)) {
         HILOG_ERROR("get module filed");
         return nullptr;
     }
@@ -252,7 +252,7 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
     }
 
     if (!internal) {
-        char symbol[PATH_MAX] = { 0 };
+        char symbol[NAPI_PATH_MAX] = { 0 };
         if (!isArk) {
             if (sprintf_s(symbol, sizeof(symbol), "NAPI_%s_GetJSCode", moduleName) == -1) {
                 return nullptr;
