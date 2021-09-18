@@ -399,7 +399,8 @@ NativeValue* V8NativeEngine::RunScript(NativeValue* script)
 
 NativeValue* V8NativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
-    return nullptr;
+    NativeValue* script = CreateString(reinterpret_cast<char*>(buffer.data()), buffer.size());
+    return RunScript(script);
 }
 
 namespace {
