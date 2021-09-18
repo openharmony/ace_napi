@@ -1,0 +1,79 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//ark/js_runtime/js_runtime_config.gni")
+import("//build/ohos.gni")
+import("//foundation/ace/ace_engine/ace_config.gni")
+
+config("ace_napi_ark_config") {
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//third_party/libuv/include",
+    "//utils/native/base/include",
+  ]
+}
+
+template("ace_napi_impl") {
+  ohos_source_set(target_name) {
+    public_configs = [ ":ace_napi_ark_config" ]
+    defines = invoker.engine_defines
+    configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
+
+    include_dirs = [ "//foundation/ace/napi/native_engine/impl/ark" ]
+
+    sources = [
+      "ark_native_deferred.cpp",
+      "ark_native_engine.cpp",
+      "ark_native_reference.cpp",
+      "native_value/ark_native_array.cpp",
+      "native_value/ark_native_array_buffer.cpp",
+      "native_value/ark_native_boolean.cpp",
+      "native_value/ark_native_data_view.cpp",
+      "native_value/ark_native_external.cpp",
+      "native_value/ark_native_function.cpp",
+      "native_value/ark_native_number.cpp",
+      "native_value/ark_native_object.cpp",
+      "native_value/ark_native_string.cpp",
+      "native_value/ark_native_typed_array.cpp",
+      "native_value/ark_native_value.cpp",
+    ]
+
+    if (target_cpu == "arm64") {
+      defines += [ "APP_USE_ARM64" ]
+    } else if (target_cpu == "arm") {
+      defines += [ "APP_USE_ARM" ]
+    }
+
+    deps = [
+      "//ark/js_runtime:libark_jsruntime",
+      "//foundation/ace/napi:ace_napi",
+    ]
+
+    cflags_cc = [ "-Wno-missing-braces" ]
+    external_deps = hilog_deps
+  }
+}
+
+foreach(item, ace_platforms) {
+  if (item.name == "ohos") {
+    engine_config = item.config
+    support_engines = engine_config.js_engines
+    foreach(engine, support_engines) {
+      if (engine.engine_name == "ark") {
+        ace_napi_impl("ace_napi_impl_ark") {
+          engine_defines = engine.engine_defines
+        }
+      }
+    }
+  }
+}
