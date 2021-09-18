@@ -17,12 +17,8 @@
 #include "securec.h"
 #include "utils/log.h"
 
-#include <codecvt>
-#include <locale>
-#include <string>
-#include <uchar.h>
-
 using panda::StringRef;
+using panda::ObjectRef;
 ArkNativeString::ArkNativeString(ArkNativeEngine* engine, const char* value, size_t length)
     : ArkNativeString(engine, JSValueRef::Undefined(engine->GetEcmaVm()))
 {
@@ -77,32 +73,24 @@ size_t ArkNativeString::EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t
     auto vm = engine_->GetEcmaVm();
     LocalScope scope(vm);
     Global<StringRef> val = value_;
-    std::string valString = val->ToString();
-    std::u16string src = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.from_bytes(valString);
-    char* oldLocale = setlocale(LC_CTYPE, "");
-    setlocale(LC_CTYPE, "en_US.UTF-8");
+    int32_t length = val->Length();
 
-    mbstate_t state;
-    size_t pos = 0;
-    size_t writableSize = bufferSize;
-    char u8Char[4] = {};
-    uint32_t i = 0;
-    for (; i < src.length(); i++) {
-        size_t rc = c16rtomb(u8Char, src.at(i), &state);
-        if (rc == -1 || rc > writableSize) {
+    int32_t pos = 0;
+    int32_t writableSize = bufferSize;
+    int32_t i = 0;
+    Local<ObjectRef> strObj = Local<ObjectRef>(val.ToLocal(vm));
+    for (; i < length; i++) {
+        Local<StringRef> str = Local<StringRef>(strObj->Get(vm, i));
+        int32_t len = str->Utf8Length() - 1;
+        if (len > writableSize) {
             break;
         }
 
-        int ret = memcpy_s((buffer + pos), writableSize, u8Char, rc);
-        if (ret != EOK) {
-            HILOG_ERROR("memcpy_s failed");
-            break;
-        }
-        writableSize -= rc;
-        pos += rc;
+        str->WriteUtf8((buffer + pos), writableSize);
+        writableSize -= len;
+        pos += len;
     }
 
-    setlocale(LC_CTYPE, oldLocale);
     *nchars = i;
     buffer[bufferSize] = '\0';
     HILOG_DEBUG("EncodeWriteUtf8 the result of buffer: %{public}s", buffer);
