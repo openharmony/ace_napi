@@ -825,11 +825,7 @@ HWTEST_F(NativeEngineTest, CreateRuntimeTest, testing::ext::TestSize.Level0)
 
     napi_env newEnv = nullptr;
     napi_create_runtime(env, &newEnv);
-#ifdef USE_V8_ENGINE
     ASSERT_NE(newEnv, nullptr);
-#elif USE_QUICKJS_ENGINE
-    ASSERT_EQ(newEnv, nullptr);
-#endif
 }
 
 /**
@@ -843,7 +839,6 @@ HWTEST_F(NativeEngineTest, SerializeDeSerializeTest, testing::ext::TestSize.Leve
 
     napi_value undefined = nullptr;
     napi_get_undefined(env, &undefined);
-#ifdef USE_V8_ENGINE
     napi_value num = nullptr;
     uint32_t value = 1000;
     napi_create_uint32(env, value, &num);
@@ -859,7 +854,6 @@ HWTEST_F(NativeEngineTest, SerializeDeSerializeTest, testing::ext::TestSize.Leve
     ASSERT_EQ(resultData, 1000);
 
     napi_delete_serialization_data(env, data);
-#endif
 }
 
 /**
