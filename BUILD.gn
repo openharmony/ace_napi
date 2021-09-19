@@ -68,6 +68,8 @@ ohos_shared_library("ace_napi") {
     "//utils/native/base:utilsecurec",
   ]
 
+  cflags_cc = [ "-Wno-missing-braces" ]
+
   if (is_standard_system) {
     external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   }
@@ -109,6 +111,8 @@ ohos_shared_library("ace_napi_quickjs") {
     ":ace_napi",
     "//third_party/quickjs:qjs",
   ]
+
+  cflags_cc = [ "-Wno-missing-braces" ]
 
   if (is_standard_system) {
     external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
