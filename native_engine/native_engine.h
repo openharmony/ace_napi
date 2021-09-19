@@ -69,7 +69,7 @@ public:
     virtual void TriggerPostTask();
     virtual void CheckUVLoop();
     virtual void CancelCheckUVLoop();
-    virtual void* GetJsEngine();
+    virtual void* GetJsEngine() const;
 
     virtual NativeValue* GetGlobal() = 0;
 
@@ -157,6 +157,8 @@ public:
         return isMainThread_;
     }
 
+    void *jsEngine_;
+
 protected:
     NativeModuleManager* moduleManager_ = nullptr;
     NativeScopeManager* scopeManager_ = nullptr;
@@ -165,8 +167,6 @@ protected:
     NativeValue* lastException_ = nullptr;
 
     uv_loop_t* loop_;
-
-    void *jsEngine_;
 
 private:
     bool isMainThread_ { true };

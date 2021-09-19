@@ -237,7 +237,7 @@ void NativeEngine::TriggerPostTask()
     postTask_(false);
 }
 
-void* NativeEngine::GetJsEngine()
+void* NativeEngine::GetJsEngine() const
 {
     return jsEngine_;
 }
