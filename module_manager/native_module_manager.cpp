@@ -97,6 +97,7 @@ void NativeModuleManager::SetAppLibPath(const char* appLibPath)
     errno_t err = EOK;
     err = memset_s(tmp, PATH_MAX, 0, PATH_MAX);
     if (err != EOK) {
+        delete[] tmp;
         return;
     }
     err = strcpy_s(tmp, PATH_MAX, appLibPath);
@@ -231,7 +232,7 @@ using NAPIGetJSCode = void (*)(const char** buf, int* bufLen);
 NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule,
                                                           bool isArk)
 {
-    char nativeModulePath[NATIVE_PATH_NUMBER][PATH_MAX] = { 0 };
+    char nativeModulePath[NATIVE_PATH_NUMBER][PATH_MAX] = { { 0 }, { 0 } };
     if (!GetNativeModulePath(moduleName, isAppModule, nativeModulePath, PATH_MAX)) {
         HILOG_ERROR("get module filed");
         return nullptr;
