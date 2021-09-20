@@ -34,10 +34,10 @@ ArkNativeArrayBuffer::ArkNativeArrayBuffer(ArkNativeEngine* engine, uint8_t** va
 }
 
 ArkNativeArrayBuffer::ArkNativeArrayBuffer(ArkNativeEngine* engine,
-                                         uint8_t* value,
-                                         size_t length,
-                                         NativeFinalize cb,
-                                         void* hint)
+    uint8_t* value,
+    size_t length,
+    NativeFinalize cb,
+    void* hint)
     : ArkNativeArrayBuffer(engine, JSValueRef::Undefined(engine->GetEcmaVm()))
 {
     auto vm = engine->GetEcmaVm();
