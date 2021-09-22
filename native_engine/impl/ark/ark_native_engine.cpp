@@ -129,7 +129,7 @@ void ArkNativeEngine::Loop(LoopMode mode, bool needSync)
 {
     LocalScope scope(vm_);
     NativeEngine::Loop(mode, needSync);
-    // panda::JSNApi::ExecutePendingJob(vm_);
+    panda::JSNApi::ExecutePendingJob(vm_);
 }
 
 NativeValue* ArkNativeEngine::GetGlobal()
