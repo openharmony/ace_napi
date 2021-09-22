@@ -529,7 +529,7 @@ HWTEST_F(NativeEngineTest, ErrorTest, testing::ext::TestSize.Level0)
         bool isError = false;
         napi_is_error(env, error, &isError);
         ASSERT_TRUE(isError);
-        //napi_throw(env, error);
+        // napi_throw(env, error);
     }
 
     {
@@ -558,12 +558,12 @@ HWTEST_F(NativeEngineTest, ErrorTest, testing::ext::TestSize.Level0)
         ASSERT_TRUE(isError);
     }
 
-    //napi_throw_error(env, "500", "Common error");
-    //napi_throw_range_error(env, "500", "Range error");
-    //napi_throw_type_error(env, "500", "Type error");
+    // napi_throw_error(env, "500", "Common error");
+    // napi_throw_range_error(env, "500", "Range error");
+    // napi_throw_type_error(env, "500", "Type error");
     bool isExceptionPending = false;
     napi_is_exception_pending(env, &isExceptionPending);
-    //ASSERT_TRUE(isExceptionPending);
+    // ASSERT_TRUE(isExceptionPending);
 }
 
 /**
