@@ -145,6 +145,7 @@ public:
 
     NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 
+    bool ExecuteJsBin(const std::string& fileName);
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;
