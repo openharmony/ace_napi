@@ -34,7 +34,8 @@ ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, void* value, Nativ
     value_ = Global<NativePointerRef>(vm, object);
 }
 
-ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, Local<JSValueRef> value) : ArkNativeValue(engine, value) {}
+ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, Local<JSValueRef> value)
+    : ArkNativeValue(engine, value) {}
 
 ArkNativeExternal::~ArkNativeExternal()
 {

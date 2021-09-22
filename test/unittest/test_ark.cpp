@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     // const int64_t poolSize = 0x10000000;  // 256M
     const int64_t poolSize = 0x1000000;  // 16M
     option.SetGcPoolSize(poolSize);
-    //option.SetPandaStdFile("pandastdlib/arkstdlib.abc");
+    // option.SetPandaStdFile("pandastdlib/arkstdlib.abc");
     option.SetLogLevel(RuntimeOption::LOG_LEVEL::ERROR);
     option.SetDebuggerLibraryPath("");
     EcmaVM* vm = panda::JSNApi::CreateJSVM(option);
