@@ -572,3 +572,13 @@ NativeValue* ArkNativeEngine::ValueToNativeValue(JSValueWrapper& value)
     Global<JSValueRef> arkValue = value;
     return ArkValueToNativeValue(this, arkValue.ToLocal(vm_));
 }
+
+bool ArkNativeEngine::ExecuteJsBin(const std::string& fileName)
+{
+    panda::JSExecutionScope executionScope(vm_);
+    LocalScope scope(vm_);
+    Local<StringRef> file = StringRef::NewFromUtf8(vm_, fileName.c_str());
+    Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
+    bool ret = JSNApi::Execute(vm_, file, entryPoint);
+    return ret;
+}
