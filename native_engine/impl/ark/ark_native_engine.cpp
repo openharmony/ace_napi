@@ -431,7 +431,6 @@ void* ArkNativeEngine::CreateRuntime()
     option.SetGcType(panda::RuntimeOption::GC_TYPE::GEN_GC);
     const int64_t poolSize = 0x1000000;
     option.SetGcPoolSize(poolSize);
-    // option.SetPandaStdFile("pandastdlib/arkstdlib.abc");
     option.SetLogLevel(panda::RuntimeOption::LOG_LEVEL::ERROR);
     option.SetDebuggerLibraryPath("");
     EcmaVM* vm = panda::JSNApi::CreateJSVM(option);
@@ -489,7 +488,6 @@ void ArkNativeEngine::DeleteSerializationData(NativeValue* value) const
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
-    // panda::JSNApi::EnableUserUncaughtErrorHandler(vm_);
     panda::JSExecutionScope executionScope(vm_);
     bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), entryPoint);
 
