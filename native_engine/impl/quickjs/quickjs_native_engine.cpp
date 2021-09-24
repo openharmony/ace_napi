@@ -340,6 +340,10 @@ NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
 
     scopeManager_->Close(scope);
 
+    if (JS_IsError(context_, result) || JS_IsException(result)) {
+        return nullptr;
+    }
+
     return JSValueToNativeValue(this, result);
 }
 
@@ -349,7 +353,9 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
     const char* cScript = JS_ToCString(context_, *script);
     result = JS_Eval(context_, cScript, strlen(cScript), "<input>", JS_EVAL_TYPE_GLOBAL);
     JS_FreeCString(context_, cScript);
-
+    if (JS_IsError(context_, result) || JS_IsException(result)) {
+        return nullptr;
+    }
     return JSValueToNativeValue(this, result);
 }
 
@@ -357,6 +363,9 @@ NativeValue* QuickJSNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     JSValue result =
         JS_Eval(context_, reinterpret_cast<char*>(buffer.data()), buffer.size(), "<input>", JS_EVAL_TYPE_GLOBAL);
+    if (JS_IsError(context_, result) || JS_IsException(result)) {
+        return nullptr;
+    }
     return JSValueToNativeValue(this, result);
 }
 
