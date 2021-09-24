@@ -200,7 +200,7 @@ NativeValue* QuickJSNativeEngine::CreateString(const char* value, size_t length)
 
 NativeValue* QuickJSNativeEngine::CreateSymbol(NativeValue* value)
 {
-    JSValue symbol = { 0 };
+    JSValue symbol = JS_UNDEFINED;
 
     JSValue global = JS_GetGlobalObject(context_);
     JSValue symbolCotr = JS_GetPropertyStr(context_, global, "Symbol");
@@ -260,8 +260,8 @@ NativeValue* QuickJSNativeEngine::CreateTypedArray(NativeTypedArrayType type,
 
 NativeValue* QuickJSNativeEngine::CreatePromise(NativeDeferred** deferred)
 {
-    JSValue promise = { 0 };
-    JSValue resolvingFuncs[2] = { 0 };
+    JSValue promise = JS_UNDEFINED;
+    JSValue resolvingFuncs[2] = { JS_UNDEFINED, JS_UNDEFINED };
     promise = JS_NewPromiseCapability(context_, resolvingFuncs);
     *deferred = new QuickJSNativeDeferred(this, resolvingFuncs);
     return new QuickJSNativeValue(this, promise);
