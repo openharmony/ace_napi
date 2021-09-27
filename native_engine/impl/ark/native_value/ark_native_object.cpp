@@ -71,7 +71,6 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
         objInfo);
 
     Local<StringRef> key = StringRef::NewFromUtf8(vm, "_napiwrapper");
-    // bool has = value->Has(vm, key);
     value->Set(vm, key, object);
 }
 
