@@ -1,0 +1,582 @@
+[
+    {
+        "first_introduced": "7",
+        "name": "napi_module_register"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_set_instance_data"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_instance_data"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_last_error_info"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_throw"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_throw_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_throw_type_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_throw_range_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_type_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_range_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_and_clear_last_exception"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_exception_pending"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_fatal_exception"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_fatal_error"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_open_handle_scope"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_close_handle_scope"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_open_escapable_handle_scope"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_close_escapable_handle_scope"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_escape_handle"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_reference"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_delete_reference"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_reference_ref"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_reference_unref"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_reference_value"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_add_env_cleanup_hook"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_remove_env_cleanup_hook"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_add_async_cleanup_hook"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_remove_async_cleanup_hook"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_array"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_array_with_length"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_arraybuffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_buffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_buffer_copy"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_date"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_external"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_external_arraybuffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_external_buffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_object"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_symbol"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_typedarray"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_dataview"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_int32"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_uint32"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_int64"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_double"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_bigint_int64"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_bigint_uint64"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_bigint_words"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_string_latin1"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_string_utf16"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_string_utf8"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_array_length"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_arraybuffer_info"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_buffer_info"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_prototype"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_typedarray_info"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_dataview_info"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_date_value"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_bool"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_double"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_bigint_int64"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_bigint_uint64"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_bigint_words"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_external"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_int32"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_int64"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_string_latin1"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_string_utf8"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_string_utf16"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_value_uint32"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_boolean"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_global"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_null"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_undefined"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_coerce_to_bool"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_coerce_to_number"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_coerce_to_object"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_coerce_to_string"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_typeof"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_instanceof"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_array"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_arraybuffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_buffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_date"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_typedarray"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_dataview"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_strict_equals"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_detach_arraybuffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_detached_arraybuffer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_property_names"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_all_property_names"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_set_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_has_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_delete_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_has_own_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_set_named_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_named_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_has_named_property"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_set_element"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_element"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_has_element"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_delete_element"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_define_properties"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_object_freeze"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_object_seal"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_call_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_cb_info"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_new_target"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_new_instance"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_define_class"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_wrap"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_unwrap"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_remove_wrap"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_type_tag_object"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_check_object_type_tag"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_add_finalizer"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_async_work"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_delete_async_work"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_queue_async_work"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_cancel_async_work"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_async_init"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_async_destroy"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_make_callback"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_open_callback_scope"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_close_callback_scope"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_node_version"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_version"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_adjust_external_memory"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_promise"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_resolve_deferred"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_reject_deferred"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_is_promise"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_run_script"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_uv_event_loop"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_create_threadsafe_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_get_threadsafe_function_context"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_call_threadsafe_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_acquire_threadsafe_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_release_threadsafe_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_ref_threadsafe_function"
+    },
+    {
+        "first_introduced": "7",
+        "name": "napi_unref_threadsafe_function"
+    }
+]

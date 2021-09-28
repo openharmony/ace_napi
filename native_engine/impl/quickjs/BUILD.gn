@@ -1,0 +1,73 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/ace/ace_engine/ace_config.gni")
+
+config("ace_napi_quickjs_config") {
+  include_dirs = [
+    "//foundation/ace/napi",
+    "//third_party/libuv/include",
+    "//third_party/quickjs",
+    "//utils/native/base/include",
+  ]
+}
+
+template("ace_napi_impl") {
+  ohos_source_set(target_name) {
+    public_configs = [ ":ace_napi_quickjs_config" ]
+    defines = invoker.engine_defines
+
+    include_dirs = [ "//foundation/ace/napi/native_engine/impl/quickjs" ]
+
+    sources = [
+      "native_value/quickjs_native_array.cpp",
+      "native_value/quickjs_native_array_buffer.cpp",
+      "native_value/quickjs_native_boolean.cpp",
+      "native_value/quickjs_native_data_view.cpp",
+      "native_value/quickjs_native_external.cpp",
+      "native_value/quickjs_native_function.cpp",
+      "native_value/quickjs_native_number.cpp",
+      "native_value/quickjs_native_object.cpp",
+      "native_value/quickjs_native_string.cpp",
+      "native_value/quickjs_native_typed_array.cpp",
+      "native_value/quickjs_native_value.cpp",
+      "quickjs_ext.cpp",
+      "quickjs_native_deferred.cpp",
+      "quickjs_native_engine.cpp",
+      "quickjs_native_reference.cpp",
+    ]
+
+    deps = [
+      "//foundation/ace/napi:ace_napi",
+      "//third_party/quickjs:qjs",
+    ]
+
+    cflags_cc = [ "-Wno-missing-braces" ]
+    external_deps = hilog_deps
+  }
+}
+
+foreach(item, ace_platforms) {
+  if (item.name == "ohos") {
+    engine_config = item.config
+    support_engines = engine_config.js_engines
+    foreach(engine, support_engines) {
+      if (engine.engine_name == "qjs") {
+        ace_napi_impl("ace_napi_impl_quickjs") {
+          engine_defines = engine.engine_defines
+        }
+      }
+    }
+  }
+}
