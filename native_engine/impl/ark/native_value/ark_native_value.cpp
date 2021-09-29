@@ -61,7 +61,7 @@ NativeValueType ArkNativeValue::TypeOf()
         result = NATIVE_STRING;
     } else if (value->IsFunction()) {
         result = NATIVE_FUNCTION;
-    } else if (value->IsNativeObject() || value->IsNativePointer()) {
+    } else if (value->IsNativePointer()) {
         result = NATIVE_EXTERNAL;
     } else if (value->IsNull()) {
         result = NATIVE_NULL;
