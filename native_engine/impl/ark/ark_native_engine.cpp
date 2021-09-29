@@ -555,7 +555,7 @@ NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Loc
         result = new ArkNativeDataView(engine, value);
     } else if (value->IsTypedArray()) {
         result = new ArkNativeTypedArray(engine, value);
-    } else if (value->IsNativeObject() || value->IsNativePointer()) {
+    } else if (value->IsNativePointer()) {
         result = new ArkNativeExternal(engine, value);
     } else if (value->IsObject()) {
         result = new ArkNativeObject(engine, value);

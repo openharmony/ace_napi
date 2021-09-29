@@ -59,7 +59,9 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
     objInfo->callback = cb;
     objInfo->hint = hint;
 
-    Local<NativePointerRef> object = NativePointerRef::New(vm, pointer,
+    Local<ObjectRef> object = ObjectRef::New(vm);
+    object->SetNativePointerFieldCount(1);
+    object->SetNativePointerField(0, pointer,
         [](void* data, void* info) {
             auto externalInfo = reinterpret_cast<NativeObjectInfo*>(info);
             auto engine = externalInfo->engine;
@@ -85,9 +87,9 @@ void* ArkNativeObject::GetNativePointer()
     Local<StringRef> key = StringRef::NewFromUtf8(vm, "_napiwrapper");
     Local<JSValueRef> val = value->Get(vm, key);
     void* result = nullptr;
-    if (val->IsNativeObject() || val->IsNativePointer()) {
-        Local<NativePointerRef> ext(val);
-        result = ext->Value();
+    if (val->IsObject()) {
+        Local<ObjectRef> ext(val);
+        result = ext->GetNativePointerField(0);
     }
     return result;
 }
