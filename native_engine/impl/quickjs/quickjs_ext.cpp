@@ -220,6 +220,7 @@ bool JS_StrictEquals(JSContext* context, JSValue v1, JSValue v2)
     bool result = JS_ToBool(context, ret);
     JS_FreeValue(context, func);
     JS_FreeValue(context, ret);
+    js_std_loop(context);
 
     return result;
 }
