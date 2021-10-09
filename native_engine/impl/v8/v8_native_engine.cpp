@@ -203,7 +203,7 @@ v8::Local<v8::Object> V8NativeEngine::LoadModuleByName(
         paramProperty.utf8name = "param";
         paramProperty.value = paramValue;
 
-        auto instanceValue = new V8NativeObject(this);
+        V8NativeObject* instanceValue = new V8NativeObject(this);
         instanceValue->SetNativePointer(instance, nullptr, nullptr);
         instanceProperty.utf8name = instanceName.c_str();
         instanceProperty.value = instanceValue;

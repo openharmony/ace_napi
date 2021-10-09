@@ -117,10 +117,12 @@ public:
 
     static NativeValue* JSValueToNativeValue(QuickJSNativeEngine* engine, JSValue value);
     virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
-
     JSValue GetModuleFromName(
         const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
         const std::string& instanceName, void** instance);
+    JSValue LoadModuleByName(
+        const std::string& moduleName, bool isAppModule, const std::string& param,
+        const std::string& instanceName, void* instance);
 private:
     JSRuntime* runtime_;
     JSContext* context_;

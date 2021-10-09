@@ -183,6 +183,37 @@ JSValue QuickJSNativeEngine::GetModuleFromName(
     return exports;
 }
 
+JSValue QuickJSNativeEngine::LoadModuleByName(
+    const std::string& moduleName, bool isAppModule, const std::string& param,
+    const std::string& instanceName, void* instance)
+{
+    JSValue exports = JS_UNDEFINED;
+    NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
+    NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
+    if (module != nullptr) {
+        NativeValue* exportObject = new QuickJSNativeObject(this);
+        QuickJSNativeObject* exportObj = reinterpret_cast<QuickJSNativeObject*>(exportObject);
+
+        NativePropertyDescriptor paramProperty, instanceProperty;
+
+        NativeValue* paramValue = new QuickJSNativeString(this, param.c_str(), param.size());
+        paramProperty.utf8name = "param";
+        paramProperty.value = paramValue;
+
+        auto instanceValue = new QuickJSNativeObject(this);
+        instanceValue->SetNativePointer(instance, nullptr, nullptr);
+        instanceProperty.utf8name = instanceName.c_str();
+        instanceProperty.value = instanceValue;
+
+        exportObj->DefineProperty(paramProperty);
+        exportObj->DefineProperty(instanceProperty);
+
+        module->registerCallback(this, exportObject);
+        exports = JS_DupValue(GetContext(), *exportObject);
+    }
+    return exports;
+}
+
 JSRuntime* QuickJSNativeEngine::GetRuntime()
 {
     return runtime_;
