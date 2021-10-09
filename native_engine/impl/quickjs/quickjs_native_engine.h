@@ -19,6 +19,32 @@
 #include "native_engine/native_engine.h"
 #include "quickjs_headers.h"
 
+class SerializeData {
+public:
+    SerializeData(size_t size, uint8_t *data) : dataSize_(size), value_(data) {}
+    ~SerializeData() = default;
+
+    uint8_t* GetData() const
+    {
+        return value_.get();
+    }
+    size_t GetSize() const
+    {
+        return dataSize_;
+    }
+
+private:
+    struct Deleter {
+        void operator()(uint8_t* ptr) const
+        {
+            free(ptr);
+        }
+    };
+
+    size_t dataSize_;
+    std::unique_ptr<uint8_t, Deleter> value_;
+};
+
 class QuickJSNativeEngine : public NativeEngine {
 public:
     QuickJSNativeEngine(JSRuntime* runtime, JSContext* contex, void* jsEngine);
@@ -80,6 +106,8 @@ public:
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
     virtual void* CreateRuntime() override;
+    bool CheckTransferList(JSValue transferList);
+    bool DetachTransferList(JSValue transferList);
     virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
     virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
     virtual void DeleteSerializationData(NativeValue* value) const override;
