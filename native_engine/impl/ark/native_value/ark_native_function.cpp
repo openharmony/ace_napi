@@ -144,18 +144,16 @@ Local<JSValueRef> ArkNativeFunction::NativeFunctionCallBack(EcmaVM* vm,
     Global<JSValueRef> ret(vm, JSValueRef::Undefined(vm));
     if (result == nullptr) {
         if (engine->IsExceptionPending()) {
-            NativeValue* error = engine->GetAndClearLastException();
-            if (error != nullptr) {
-                ret = *error;
-            }  
-        } else {
-            ret = Global<JSValueRef>(vm, JSValueRef::Undefined(vm));
+            [[maybe_unused]] NativeValue *error = engine->GetAndClearLastException();
         }
     } else {
         ret = *result;
     }
     auto localRet = ret.ToLocal(vm);
     scopeManager->Close(nativeScope);
+    if (localRet.IsEmpty()) {
+        return scope.Escape(JSValueRef::Undefined(vm));
+    }
     return scope.Escape(localRet);
 }
 
@@ -207,18 +205,16 @@ Local<JSValueRef> ArkNativeFunction::NativeClassFunctionCallBack(EcmaVM* vm,
     Global<JSValueRef> ret(vm, JSValueRef::Undefined(vm));
     if (result == nullptr) {
         if (engine->IsExceptionPending()) {
-            NativeValue* error = engine->GetAndClearLastException();
-            if (error != nullptr) {
-                ret = *error;
-            }  
-        } else {
-            ret = Global<JSValueRef>(vm, JSValueRef::Undefined(vm));
+            [[maybe_unused]] NativeValue *error = engine->GetAndClearLastException();
         }
     } else {
         ret = *result;
     }
     auto localRet = ret.ToLocal(vm);
     scopeManager->Close(nativeScope);
+    if (localRet.IsEmpty()) {
+        return scope.Escape(JSValueRef::Undefined(vm));
+    }
     return scope.Escape(localRet);
 }
 
