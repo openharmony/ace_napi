@@ -14,6 +14,7 @@
  */
 
 #include "ark_native_array_buffer.h"
+#include "utils/log.h"
 
 using panda::ArrayBufferRef;
 ArkNativeArrayBuffer::ArkNativeArrayBuffer(ArkNativeEngine* engine, Local<JSValueRef> value)
@@ -34,16 +35,20 @@ ArkNativeArrayBuffer::ArkNativeArrayBuffer(ArkNativeEngine* engine, uint8_t** va
 }
 
 ArkNativeArrayBuffer::ArkNativeArrayBuffer(ArkNativeEngine* engine,
-                                         uint8_t* value,
-                                         size_t length,
-                                         NativeFinalize cb,
-                                         void* hint)
+                                           uint8_t* value,
+                                           size_t length,
+                                           NativeFinalize cb,
+                                           void* hint)
     : ArkNativeArrayBuffer(engine, JSValueRef::Undefined(engine->GetEcmaVm()))
 {
     auto vm = engine->GetEcmaVm();
     LocalScope scope(vm);
 
     NativeObjectInfo* cbinfo = NativeObjectInfo::CreateNewInstance();
+    if (cbinfo == nullptr) {
+        HILOG_ERROR("cbinfo is nullptr");
+        return;
+    }
     cbinfo->engine = engine_;
     cbinfo->callback = cb;
     cbinfo->hint = hint;

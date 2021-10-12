@@ -15,6 +15,7 @@
 
 #include "v8_native_engine.h"
 
+#include "utils/log.h"
 #include "v8_native_reference.h"
 
 V8NativeReference::V8NativeReference(V8NativeEngine* engine,
@@ -32,16 +33,30 @@ V8NativeReference::V8NativeReference(V8NativeEngine* engine,
       data_(data),
       hint_(hint)
 {
-    deleteSelf_ = false;
     v8::Local<v8::Value> v8Value = *value;
     value_.Reset(engine->GetIsolate(), v8Value);
     if (initialRefcount == 0) {
         value_.SetWeak(this, FinalizeCallback, v8::WeakCallbackType::kParameter);
     }
+    if (deleteSelf) {
+        NativeReferenceManager* referenceManager = engine->GetReferenceManager();
+        if (referenceManager != nullptr) {
+            referenceManager->CreateHandler(this);
+        }
+    }
 }
 
 V8NativeReference::~V8NativeReference()
 {
+    if (deleteSelf_) {
+        engine_->GetReferenceManager()->ReleaseHandler(this);
+    }
+    if (value_.IsEmpty()) {
+        HILOG_WARN("V8NativeReference::~V8NativeReference value is empty");
+        return;
+    }
+
+    value_.SetWeak(this, FinalizeCallback, v8::WeakCallbackType::kParameter);
     if (callback_) {
         callback_(engine_, data_, hint_);
     }
@@ -70,6 +85,11 @@ NativeValue* V8NativeReference::Get()
 {
     v8::Local<v8::Value> value = value_.Get(engine_->GetIsolate());
     return V8NativeEngine::V8ValueToNativeValue(engine_, value);
+}
+
+void* V8NativeReference::GetData()
+{
+    return data_;
 }
 
 V8NativeReference::operator NativeValue*()

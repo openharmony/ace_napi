@@ -14,6 +14,7 @@
  */
 
 #include "native_engine.h"
+#include "utils/log.h"
 
 #include <sys/epoll.h>
 #include <uv.h>
@@ -46,14 +47,12 @@ const char* g_errorMessages[] = {
 };
 } // namespace
 
-NativeEngine::NativeEngine(void* jsEngine) : jsEngine_(jsEngine)
-{
-    Init();
-}
+NativeEngine::NativeEngine(void* jsEngine) : jsEngine_(jsEngine) {}
 
 void NativeEngine::Init()
 {
     moduleManager_ = NativeModuleManager::GetInstance();
+    referenceManager_ = new NativeReferenceManager();
     scopeManager_ = new NativeScopeManager();
     loop_ = uv_loop_new();
     if (loop_ == nullptr) {
@@ -66,16 +65,34 @@ void NativeEngine::Init()
 
 NativeEngine::~NativeEngine()
 {
+    if (cleanEnv_ != nullptr) {
+        cleanEnv_();
+    }
+}
+
+void NativeEngine::Deinit()
+{
+    uv_sem_destroy(&uvSem_);
     uv_close((uv_handle_t*)&uvAsync_, nullptr);
     uv_loop_close(loop_);
+    if (referenceManager_ != nullptr) {
+        delete referenceManager_;
+        referenceManager_ = nullptr;
+    }
     if (scopeManager_ != nullptr) {
         delete scopeManager_;
+        scopeManager_ = nullptr;
     }
 }
 
 NativeScopeManager* NativeEngine::GetScopeManager()
 {
     return scopeManager_;
+}
+
+NativeReferenceManager* NativeEngine::GetReferenceManager()
+{
+    return referenceManager_;
 }
 
 NativeModuleManager* NativeEngine::GetModuleManager()
@@ -192,6 +209,7 @@ void NativeEngine::CancelCheckUVLoop()
     checkUVLoop_ = false;
 
     uv_async_send(&uvAsync_);
+    uv_sem_post(&uvSem_);
     uv_thread_join(&uvThread_);
 }
 
@@ -211,13 +229,17 @@ void NativeEngine::UVThreadRunner(void* nativeEngine)
         struct epoll_event ev;
         int32_t result = epoll_wait(fd, &ev, 1, timeout);
         if (!engine->checkUVLoop_) {
-            HILOG_INFO("break thread");
+            HILOG_INFO("break thread after epoll wait");
             break;
         }
         if (result != -1 && errno != EINTR) {
             engine->PostLoopTask();
         } else {
-            HILOG_ERROR("epoll wait fail");
+            HILOG_ERROR("epoll wait fail: result: %{public}d, errno: %{public}d", result, errno);
+        }
+        if (!engine->checkUVLoop_) {
+            HILOG_INFO("break thread after post loop task");
+            break;
         }
     }
 }

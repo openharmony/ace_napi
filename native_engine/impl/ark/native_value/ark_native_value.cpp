@@ -54,7 +54,6 @@ NativeValueType ArkNativeValue::TypeOf()
     Global<JSValueRef> value = value_;
     NativeValueType result;
 
-    // TODO: optimize it
     if (value->IsNumber()) {
         result = NATIVE_NUMBER;
     } else if (value->IsString()) {
