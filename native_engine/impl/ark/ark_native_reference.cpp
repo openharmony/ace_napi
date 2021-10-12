@@ -34,8 +34,8 @@ ArkNativeReference::ArkNativeReference(ArkNativeEngine* engine, NativeValue* val
 ArkNativeReference::~ArkNativeReference()
 {
     if (refCount_ != 0) {
-        refCount_ = 0;
         // Addr of Global stored in ArkNativeReference should be released.
+        refCount_ = 0;
         value_.FreeGlobalHandleAddr();
     }
 }

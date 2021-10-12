@@ -21,10 +21,10 @@ ArkNativeTypedArray::ArkNativeTypedArray(ArkNativeEngine* engine, Local<JSValueR
 }
 
 ArkNativeTypedArray::ArkNativeTypedArray(ArkNativeEngine* engine,
-                                       NativeTypedArrayType type,
-                                       NativeValue* value,
-                                       size_t length,
-                                       size_t offset)
+                                         NativeTypedArrayType type,
+                                         NativeValue* value,
+                                         size_t length,
+                                         size_t offset)
     : ArkNativeTypedArray(engine, JSValueRef::Undefined(engine->GetEcmaVm()))
 {
     auto vm = engine_->GetEcmaVm();

@@ -130,15 +130,20 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
 
     global->Set(context_.Get(isolate_), requireNapiName, requireNapi).FromJust();
     global->Set(context_.Get(isolate_), requireInternalName, requireInternal).FromJust();
+    // need to call init of base class.
+    Init();
 }
 
-V8NativeEngine::~V8NativeEngine() {}
+V8NativeEngine::~V8NativeEngine()
+{
+    // need to call deinit before base class.
+    Deinit();
+}
 
 v8::Local<v8::Object> V8NativeEngine::GetModuleFromName(
     const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
     const std::string& instanceName, void** instance)
 {
-    HILOG_INFO("GetModuleFromName");
     v8::Isolate* isolate = this->GetContext()->GetIsolate();
     v8::HandleScope handleScope(isolate);
 
@@ -173,6 +178,40 @@ v8::Local<v8::Object> V8NativeEngine::GetModuleFromName(
             HILOG_ERROR("GetModuleFromName napi_unwrap status != napi_ok");
         }
 
+        exports = *exportObject;
+    }
+    return exports;
+}
+
+v8::Local<v8::Object> V8NativeEngine::LoadModuleByName(
+    const std::string& moduleName, bool isAppModule, const std::string& param,
+    const std::string& instanceName, void* instance)
+{
+    v8::Isolate* isolate = this->GetContext()->GetIsolate();
+    v8::HandleScope handleScope(isolate);
+
+    v8::Local<v8::Object> exports;
+    NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
+    NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
+    if (module != nullptr) {
+        NativeValue* exportObject = new V8NativeObject(this);
+        V8NativeObject* exportObj = reinterpret_cast<V8NativeObject*>(exportObject);
+
+        NativePropertyDescriptor paramProperty, instanceProperty;
+
+        NativeValue* paramValue = new V8NativeString(this, param.c_str(), param.size());
+        paramProperty.utf8name = "param";
+        paramProperty.value = paramValue;
+
+        auto instanceValue = new V8NativeObject(this);
+        instanceValue->SetNativePointer(instance, nullptr, nullptr);
+        instanceProperty.utf8name = instanceName.c_str();
+        instanceProperty.value = instanceValue;
+
+        exportObj->DefineProperty(paramProperty);
+        exportObj->DefineProperty(instanceProperty);
+
+        module->registerCallback(this, exportObject);
         exports = *exportObject;
     }
     return exports;
@@ -632,6 +671,13 @@ void* V8NativeEngine::CreateRuntime()
 
     V8NativeEngine* v8Engine = new V8NativeEngine(platform_, isolate, persistContext, jsEngine_);
     v8Engine->MarkAutoDispose();
+    auto cleanEnv = [isolate]() {
+        if (isolate != nullptr) {
+            HILOG_INFO("worker:: cleanEnv is called");
+            isolate->Dispose();
+        }
+    };
+    v8Engine->SetCleanEnv(cleanEnv);
     return reinterpret_cast<void*>(v8Engine);
 }
 
