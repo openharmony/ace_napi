@@ -37,16 +37,20 @@ ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine,
     LocalScope scope(vm);
 
     NativeFunctionInfo* funcInfo = NativeFunctionInfo::CreateNewInstance();
+    if (funcInfo == nullptr) {
+        HILOG_ERROR("funcInfo is nullptr");
+        return;
+    }
     funcInfo->engine = engine;
     funcInfo->callback = cb;
     funcInfo->data = value;
 
     Local<FunctionRef> fn = FunctionRef::New(vm, NativeFunctionCallBack,
                                              [](void* data, void* hint) {
-                                                 auto info = reinterpret_cast<NativeFunctionInfo*>(data);
-                                                 if (info != nullptr) {
-                                                     delete info;
-                                                 }
+                                                auto info = reinterpret_cast<NativeFunctionInfo*>(data);
+                                                if (info != nullptr) {
+                                                    delete info;
+                                                }
                                              },
                                              reinterpret_cast<void*>(funcInfo));
     Local<StringRef> fnName = StringRef::NewFromUtf8(vm, name);
@@ -68,6 +72,10 @@ ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine,
     LocalScope scope(vm);
 
     NativeFunctionInfo* funcInfo = NativeFunctionInfo::CreateNewInstance();
+    if (funcInfo == nullptr) {
+        HILOG_ERROR("funcInfo is nullptr");
+        return;
+    }
     funcInfo->engine = engine;
     funcInfo->callback = cb;
     funcInfo->data = value;
@@ -144,7 +152,12 @@ Local<JSValueRef> ArkNativeFunction::NativeFunctionCallBack(EcmaVM* vm,
     Global<JSValueRef> ret(vm, JSValueRef::Undefined(vm));
     if (result == nullptr) {
         if (engine->IsExceptionPending()) {
-            [[maybe_unused]] NativeValue *error = engine->GetAndClearLastException();
+            NativeValue* error = engine->GetAndClearLastException();
+            if (error != nullptr) {
+                ret = *error;
+            }
+        } else {
+            ret = Global<JSValueRef>(vm, JSValueRef::Undefined(vm));
         }
     } else {
         ret = *result;
@@ -205,7 +218,12 @@ Local<JSValueRef> ArkNativeFunction::NativeClassFunctionCallBack(EcmaVM* vm,
     Global<JSValueRef> ret(vm, JSValueRef::Undefined(vm));
     if (result == nullptr) {
         if (engine->IsExceptionPending()) {
-            [[maybe_unused]] NativeValue *error = engine->GetAndClearLastException();
+            NativeValue* error = engine->GetAndClearLastException();
+            if (error != nullptr) {
+                ret = *error;
+            }
+        } else {
+            ret = Global<JSValueRef>(vm, JSValueRef::Undefined(vm));
         }
     } else {
         ret = *result;

@@ -61,10 +61,14 @@ struct AsyncCallbackInfo {
  */
 static napi_value TestPromise(napi_env env, napi_callback_info)
 {
-    auto asyncCallbackInfo = new AsyncCallbackInfo();
+    napi_deferred deferred = nullptr;
     napi_value promise = nullptr;
+    NAPI_CALL(env, napi_create_promise(env, &deferred, &promise));
 
-    NAPI_CALL(env, napi_create_promise(env, &asyncCallbackInfo->deferred, &promise));
+    auto asyncCallbackInfo = new AsyncCallbackInfo {
+        .asyncWork = nullptr,
+        .deferred = deferred,
+    };
 
     napi_value resourceName = nullptr;
     napi_create_string_latin1(env, "TestPromise", NAPI_AUTO_LENGTH, &resourceName);
@@ -94,7 +98,10 @@ static napi_value TestPromiseOrAsyncCallback(napi_env env, napi_callback_info in
     void* data = nullptr;
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, &thisArg, &data));
 
-    auto asyncCallbackInfo = new AsyncCallbackInfo();
+    auto asyncCallbackInfo = new AsyncCallbackInfo {
+        .asyncWork = nullptr,
+        .deferred = nullptr,
+    };
 
     if (argc != 0) {
         napi_value resourceName = nullptr;

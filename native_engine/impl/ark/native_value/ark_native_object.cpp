@@ -15,12 +15,12 @@
 
 #include "ark_native_object.h"
 
-#include "native_engine/native_property.h"
 #include "ark_headers.h"
 #include "ark_native_array.h"
 #include "ark_native_external.h"
 #include "ark_native_function.h"
 #include "ark_native_reference.h"
+#include "native_engine/native_property.h"
 
 #include "utils/log.h"
 

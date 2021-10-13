@@ -37,9 +37,19 @@ void* V8NativeObject::GetInterface(int interfaceId)
 void V8NativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* hint)
 {
     v8::Local<v8::Object> value = value_;
-    v8::Local<v8::External> val = v8::External::New(engine_->GetIsolate(), pointer);
     v8::Local<v8::String> key = v8::String::NewFromUtf8(engine_->GetIsolate(), "_napiwrapper").ToLocalChecked();
-    value->Set(engine_->GetContext(), key, val).FromJust();
+    bool has = value->Has(engine_->GetContext(), key).FromJust();
+    auto context = engine_->GetContext();
+    if (has && pointer == nullptr) {
+        v8::Local<v8::External> val = value->Get(context, key).ToLocalChecked().As<v8::External>();
+        value->Delete(context, key).FromJust();
+        auto ref = reinterpret_cast<V8NativeReference*>(val->Value());
+        delete ref;
+    } else {
+        void* ref = new V8NativeReference(engine_, this, 0, true, cb, pointer, hint);
+        v8::Local<v8::External> val = v8::External::New(engine_->GetIsolate(), ref);
+        value->Set(context, key, val).FromJust();
+    }
 }
 
 void* V8NativeObject::GetNativePointer()
@@ -50,7 +60,8 @@ void* V8NativeObject::GetNativePointer()
     void* result = nullptr;
     if (val->IsExternal()) {
         v8::Local<v8::External> ext = val.As<v8::External>();
-        result = ext->Value();
+        auto ref = reinterpret_cast<V8NativeReference*>(ext->Value());
+        result = ref->GetData();
     }
     return result;
 }

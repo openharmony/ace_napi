@@ -36,6 +36,7 @@ public:
     virtual uint32_t Ref() override;
     virtual uint32_t Unref() override;
     virtual NativeValue* Get() override;
+    virtual void* GetData() override;
     virtual operator NativeValue*() override;
 
 private:

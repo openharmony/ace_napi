@@ -100,6 +100,7 @@ public:
 
     virtual NativeValue* RunScript(NativeValue* script) override;
     virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
+
     void SetPackagePath(const std::string& packagePath);
 
     virtual bool Throw(NativeValue* error) override;

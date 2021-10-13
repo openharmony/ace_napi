@@ -16,6 +16,7 @@
 #include "test.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "securec.h"
 #include "utils/log.h"
 
 #define ASSERT_CHECK_CALL(call)   \
@@ -825,7 +826,11 @@ HWTEST_F(NativeEngineTest, CreateRuntimeTest, testing::ext::TestSize.Level0)
 
     napi_env newEnv = nullptr;
     napi_create_runtime(env, &newEnv);
+#ifdef USE_V8_ENGINE
     ASSERT_NE(newEnv, nullptr);
+#elif USE_QUICKJS_ENGINE
+    ASSERT_EQ(newEnv, nullptr);
+#endif
 }
 
 /**
@@ -839,6 +844,7 @@ HWTEST_F(NativeEngineTest, SerializeDeSerializeTest, testing::ext::TestSize.Leve
 
     napi_value undefined = nullptr;
     napi_get_undefined(env, &undefined);
+#ifdef USE_V8_ENGINE
     napi_value num = nullptr;
     uint32_t value = 1000;
     napi_create_uint32(env, value, &num);
@@ -854,6 +860,7 @@ HWTEST_F(NativeEngineTest, SerializeDeSerializeTest, testing::ext::TestSize.Leve
     ASSERT_EQ(resultData, 1000);
 
     napi_delete_serialization_data(env, data);
+#endif
 }
 
 /**
@@ -914,8 +921,7 @@ HWTEST_F(NativeEngineTest, LoadModuleTest, testing::ext::TestSize.Level0)
     std::string sourceText = "var a = 1; let b = 2;"
                              "export function getA() {return a};"
                              "export function getB() {return b};"
-                             "export default {'val': 4};"
-                             "export var value = 4;";
+                             "export default {'val': 4};";
     auto sourceString = engine_->CreateString(sourceText.c_str(), sourceText.length());
 
     std::string file = "file.js";
@@ -933,4 +939,73 @@ HWTEST_F(NativeEngineTest, LoadModuleTest, testing::ext::TestSize.Level0)
     bool result = false;
     napi_strict_equals(env, lvalue, rvalue, &result);
     ASSERT_TRUE(result);
+}
+
+/**
+ * @tc.name: EncodeToUtf8Test
+ * @tc.desc: Test EncodeToUtf8 Func.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeEngineTest, EncodeToUtf8Test, testing::ext::TestSize.Level0)
+{
+    std::string str = "encode";
+    auto testStr = engine_->CreateString(str.c_str(), str.length());
+    char* buffer = new char[str.length()];
+    size_t bufferSize = str.length();
+    int32_t written = 0;
+    int32_t nchars = 0;
+    ASSERT_EQ(memset_s(buffer, str.length(), 0, str.length()), EOK);
+    engine_->EncodeToUtf8(testStr, buffer, &written, bufferSize, &nchars);
+    ASSERT_EQ(written, 6);
+    ASSERT_EQ(nchars, 6);
+    delete[] buffer;
+
+    str = "encode\xc2\xab\xe2\x98\x80";
+    testStr = engine_->CreateString(str.c_str(), str.length());
+    buffer = new char[str.length()];
+    bufferSize = str.length();
+    ASSERT_EQ(memset_s(buffer, str.length(), 0, str.length()), EOK);
+    engine_->EncodeToUtf8(testStr, buffer, &written, bufferSize, &nchars);
+    ASSERT_EQ(written, 11);
+    ASSERT_EQ(nchars, 8);
+    delete[] buffer;
+
+    buffer = new char[str.length()];
+    bufferSize = str.length();
+    ASSERT_EQ(memset_s(buffer, str.length(), 0, str.length()), EOK);
+    bufferSize--;
+    engine_->EncodeToUtf8(testStr, buffer, &written, bufferSize, &nchars);
+    ASSERT_EQ(written, 8);
+    ASSERT_EQ(nchars, 7);
+    delete[] buffer;
+
+    buffer = new char[str.length()];
+    bufferSize = str.length();
+    ASSERT_EQ(memset_s(buffer, str.length(), 0, str.length()), EOK);
+    bufferSize -= 4;
+    engine_->EncodeToUtf8(testStr, buffer, &written, bufferSize, &nchars);
+    ASSERT_EQ(written, 6);
+    ASSERT_EQ(nchars, 6);
+    delete[] buffer;
+
+    str = "encode\xc2\xab\xe2\x98\x80t";
+    testStr = engine_->CreateString(str.c_str(), str.length());
+    buffer = new char[str.length()];
+    bufferSize = str.length();
+    ASSERT_EQ(memset_s(buffer, str.length(), 0, str.length()), EOK);
+    bufferSize--;
+    engine_->EncodeToUtf8(testStr, buffer, &written, bufferSize, &nchars);
+    ASSERT_EQ(written, 11);
+    ASSERT_EQ(nchars, 8);
+    delete[] buffer;
+
+    str = "";
+    testStr = engine_->CreateString(str.c_str(), str.length());
+    buffer = new char[str.length() + 1];
+    bufferSize = str.length() + 1;
+    ASSERT_EQ(memset_s(buffer, str.length(), 0, str.length()), EOK);
+    engine_->EncodeToUtf8(testStr, buffer, &written, bufferSize, &nchars);
+    ASSERT_EQ(written, 0);
+    ASSERT_EQ(nchars, 0);
+    delete[] buffer;
 }
