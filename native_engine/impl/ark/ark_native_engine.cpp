@@ -56,7 +56,8 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
     Local<FunctionRef> requireNapi =
         FunctionRef::New(
             vm,
-            [](EcmaVM *ecmaVm, Local<JSValueRef> thisObj, const Local<JSValueRef> argv[],  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+            [](EcmaVM *ecmaVm, Local<JSValueRef> thisObj,
+               const Local<JSValueRef> argv[],  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
                int32_t length, void *data) -> Local<JSValueRef> {
                 panda::EscapeLocalScope scope(ecmaVm);
                 NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
@@ -99,18 +100,24 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
     Local<FunctionRef> requireInternal =
         FunctionRef::New(
             vm,
-            [](EcmaVM *ecmaVm, Local<JSValueRef> thisObj, const Local<JSValueRef> argv[],  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+            [](EcmaVM *ecmaVm, Local<JSValueRef> thisObj,
+               const Local<JSValueRef> argv[],  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
                int32_t length, void *data) -> Local<JSValueRef> {
                 panda::EscapeLocalScope scope(ecmaVm);
                 NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
                 ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(data);
                 Local<StringRef> moduleName(argv[0]);
                 NativeModule* module = moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, false);
-                Global<ObjectRef> exports;
+                Global<ObjectRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
                     NativeValue* exportObject = engine->CreateObject();
-                    module->registerCallback(engine, exportObject);
-                    exports = *exportObject;
+                    if (exportObject != nullptr) {
+                        module->registerCallback(engine, exportObject);
+                        exports = *exportObject;
+                    } else {
+                        HILOG_ERROR("exportObject is nullptr");
+                        return scope.Escape(exports.ToLocal(ecmaVm));
+                    }
                 }
                 return scope.Escape(exports.ToLocal(ecmaVm));
             },
@@ -119,9 +126,15 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
     Local<ObjectRef> global = panda::JSNApi::GetGlobalObject(vm);
     global->Set(vm, requireName, requireNapi);
     global->Set(vm, requireInternalName, requireInternal);
+    // need to call init of base class.
+    Init();
 }
 
-ArkNativeEngine::~ArkNativeEngine() {}
+ArkNativeEngine::~ArkNativeEngine()
+{
+    // need to call deinit before base class.
+    Deinit();
+}
 
 void ArkNativeEngine::Loop(LoopMode mode, bool needSync)
 {
@@ -217,9 +230,9 @@ NativeValue* ArkNativeEngine::CreateArrayBufferExternal(void* value, size_t leng
 }
 
 NativeValue* ArkNativeEngine::CreateTypedArray(NativeTypedArrayType type,
-                                              NativeValue* value,
-                                              size_t length,
-                                              size_t offset)
+                                               NativeValue* value,
+                                               size_t length,
+                                               size_t offset)
 {
     LocalScope scope(vm_);
     Global<ArrayBufferRef> globalBuffer = *value;
@@ -293,9 +306,9 @@ NativeValue* ArkNativeEngine::CreateError(NativeValue* code, NativeValue* messag
 }
 
 NativeValue* ArkNativeEngine::CallFunction(NativeValue* thisVar,
-                                          NativeValue* function,
-                                          NativeValue* const* argv,
-                                          size_t argc)
+                                           NativeValue* function,
+                                           NativeValue* const* argv,
+                                           size_t argc)
 {
     if (function == nullptr) {
         return nullptr;
@@ -332,10 +345,10 @@ NativeValue* ArkNativeEngine::RunScript(NativeValue* script)
 }
 
 NativeValue* ArkNativeEngine::DefineClass(const char* name,
-                                         NativeCallback callback,
-                                         void* data,
-                                         const NativePropertyDescriptor* properties,
-                                         size_t length)
+                                          NativeCallback callback,
+                                          void* data,
+                                          const NativePropertyDescriptor* properties,
+                                          size_t length)
 {
     LocalScope scope(vm_);
     auto classConstructor = new ArkNativeFunction(this, name, callback, data);
@@ -429,7 +442,6 @@ void* ArkNativeEngine::CreateRuntime()
     option.SetGcType(panda::RuntimeOption::GC_TYPE::GEN_GC);
     const int64_t poolSize = 0x1000000;
     option.SetGcPoolSize(poolSize);
-    //option.SetPandaStdFile("pandastdlib/arkstdlib.abc");
     option.SetLogLevel(panda::RuntimeOption::LOG_LEVEL::ERROR);
     option.SetDebuggerLibraryPath("");
     EcmaVM* vm = panda::JSNApi::CreateJSVM(option);
@@ -487,7 +499,6 @@ void ArkNativeEngine::DeleteSerializationData(NativeValue* value) const
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
-    //panda::JSNApi::EnableUserUncaughtErrorHandler(vm_);
     panda::JSExecutionScope executionScope(vm_);
     bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), entryPoint);
 

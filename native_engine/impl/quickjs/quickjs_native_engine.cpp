@@ -95,12 +95,15 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
                 return result;
             }
 
-            const char* path = nullptr;
+            bool isAppModule = false;
             if (argc == 2) {
-                path = JS_ToCString(that->GetContext(), argv[1]);
+                int ret = JS_ToBool(that->GetContext(), argv[1]);
+                if (ret != -1) {
+                    isAppModule = ret;
+                }
             }
             NativeModuleManager* moduleManager = that->GetModuleManager();
-            NativeModule* module = moduleManager->LoadNativeModule(moduleName, nullptr, false);
+            NativeModule* module = moduleManager->LoadNativeModule(moduleName, nullptr, isAppModule);
 
             if (module != nullptr) {
                 if (module->jsCode != nullptr) {
@@ -130,15 +133,21 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
     JS_SetPropertyStr(context_, jsGlobal, "requireInternal", jsRequireInternal);
     JS_SetPropertyStr(context_, jsGlobal, "requireNapi", jsRequire);
     JS_FreeValue(context_, jsGlobal);
+    // need to call init of base class.
+    Init();
 }
 
-QuickJSNativeEngine::~QuickJSNativeEngine() {}
+QuickJSNativeEngine::~QuickJSNativeEngine()
+{
+    // need to call deinit before base class.
+    Deinit();
+}
 
 JSValue QuickJSNativeEngine::GetModuleFromName(
     const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
     const std::string& instanceName, void** instance)
 {
-    JSValue exports = JS_NULL;
+    JSValue exports = JS_UNDEFINED;
     NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
     NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
     if (module != nullptr) {
@@ -400,8 +409,8 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
     if (JS_IsError(context_, result) || JS_IsException(result)) {
         return nullptr;
     }
-
     js_std_loop(context_);
+
     return JSValueToNativeValue(this, result);
 }
 
@@ -420,6 +429,7 @@ NativeValue* QuickJSNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
     if (JS_IsError(context_, result) || JS_IsException(result)) {
         return nullptr;
     }
+    js_std_loop(context_);
     return JSValueToNativeValue(this, result);
 }
 
@@ -742,6 +752,9 @@ ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker() const
     msg = JS_GetProperty(context_, exception, JS_ATOM_MESSAGE);
     ASSERT(JS_IsString(msg));
     const char* exceptionStr  = reinterpret_cast<char *>(JS_GetStringFromObject(msg));
+    if (exceptionStr == nullptr) {
+        return nullptr;
+    }
     const char* error = "Error: ";
     int len = strlen(exceptionStr) + strlen(error) + 1;
     if (len <= 0) {

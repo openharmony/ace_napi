@@ -18,13 +18,14 @@
 
 #include <string>
 #include <vector>
+
+#include "module_manager/native_module_manager.h"
 #include "native_engine/native_async_work.h"
 #include "native_engine/native_deferred.h"
 #include "native_engine/native_reference.h"
 #include "native_engine/native_value.h"
 #include "native_property.h"
-
-#include "module_manager/native_module_manager.h"
+#include "reference_manager/native_reference_manager.h"
 #include "scope_manager/native_scope_manager.h"
 
 typedef struct uv_loop_s uv_loop_t;
@@ -54,6 +55,7 @@ enum LoopMode {
 };
 
 using PostTask = std::function<void(bool needSync)>;
+using CleanEnv = std::function<void()>;
 
 class NativeEngine {
 public:
@@ -62,6 +64,7 @@ public:
 
     virtual NativeScopeManager* GetScopeManager();
     virtual NativeModuleManager* GetModuleManager();
+    virtual NativeReferenceManager* GetReferenceManager();
     virtual uv_loop_t* GetUVLoop() const;
 
     virtual void Loop(LoopMode mode, bool needSync = false);
@@ -157,9 +160,18 @@ public:
         return isMainThread_;
     }
 
+    void SetCleanEnv(CleanEnv cleanEnv)
+    {
+        cleanEnv_ = cleanEnv;
+    }
+
 protected:
+    void Init();
+    void Deinit();
+
     NativeModuleManager* moduleManager_ = nullptr;
     NativeScopeManager* scopeManager_ = nullptr;
+    NativeReferenceManager* referenceManager_ = nullptr;
 
     NativeErrorExtendedInfo lastError_;
     NativeValue* lastException_ = nullptr;
@@ -172,11 +184,11 @@ private:
     bool isMainThread_ { true };
     static void UVThreadRunner(void* nativeEngine);
 
-    void Init();
     void PostLoopTask();
 
     bool checkUVLoop_ = false;
     PostTask postTask_ = nullptr;
+    CleanEnv cleanEnv_ = nullptr;
     uv_thread_t uvThread_;
     uv_sem_t uvSem_;
     uv_async_t uvAsync_;

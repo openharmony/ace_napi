@@ -81,8 +81,8 @@ public:
     ~WorkerIsolateScope()
     {
         if (isolate_ != nullptr) {
+            v8::Isolate::Scope iscope(isolate_);
             isolate_->LowMemoryNotification();
-            isolate_->Dispose();
         }
     }
 private:
@@ -187,7 +187,9 @@ public:
     v8::Local<v8::Object> GetModuleFromName(
         const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
         const std::string& instanceName, void** instance);
-
+    v8::Local<v8::Object> LoadModuleByName(
+        const std::string& moduleName, bool isAppModule, const std::string& param,
+        const std::string& instanceName, void* instance);
 private:
     v8::Platform* platform_;
     v8::Isolate* isolate_;

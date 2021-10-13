@@ -24,6 +24,10 @@ public:
     virtual uint32_t Ref() = 0;
     virtual uint32_t Unref() = 0;
     virtual NativeValue* Get() = 0;
+    virtual void* GetData()
+    {
+        return nullptr;
+    }
     virtual operator NativeValue*() = 0;
 };
 

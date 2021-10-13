@@ -15,6 +15,7 @@
 
 #include "ark_native_external.h"
 #include "ark_native_reference.h"
+#include "utils/log.h"
 
 using panda::NativePointerRef;
 
@@ -25,6 +26,10 @@ ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, void* value, Nativ
     LocalScope scope(vm);
 
     NativeObjectInfo* info = NativeObjectInfo::CreateNewInstance();
+    if (info == nullptr) {
+        HILOG_ERROR("info is nullptr");
+        return;
+    }
     info->engine = engine;
     info->nativeObject = nullptr;
     info->callback = callback;
@@ -34,7 +39,8 @@ ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, void* value, Nativ
     value_ = Global<NativePointerRef>(vm, object);
 }
 
-ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, Local<JSValueRef> value) : ArkNativeValue(engine, value) {}
+ArkNativeExternal::ArkNativeExternal(ArkNativeEngine* engine, Local<JSValueRef> value)
+    : ArkNativeValue(engine, value) {}
 
 ArkNativeExternal::~ArkNativeExternal()
 {
