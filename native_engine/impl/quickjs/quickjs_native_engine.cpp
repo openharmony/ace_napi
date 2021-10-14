@@ -179,6 +179,13 @@ JSValue QuickJSNativeEngine::GetModuleFromName(
         }
 
         exports = *exportObject;
+
+        delete idValue;
+        idValue = nullptr;
+        delete paramValue;
+        paramValue = nullptr;
+        delete exportObject;
+        exportObject = nullptr;
     }
     return exports;
 }
@@ -753,6 +760,8 @@ ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker() const
     ASSERT(JS_IsString(msg));
     const char* exceptionStr  = reinterpret_cast<char *>(JS_GetStringFromObject(msg));
     if (exceptionStr == nullptr) {
+        delete exceptionInfo;
+        exceptionInfo = nullptr;
         return nullptr;
     }
     const char* error = "Error: ";
