@@ -255,10 +255,12 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
         char symbol[NAPI_PATH_MAX] = { 0 };
         if (!isArk) {
             if (sprintf_s(symbol, sizeof(symbol), "NAPI_%s_GetJSCode", moduleName) == -1) {
+                dlclose(lib);
                 return nullptr;
             }
         } else {
             if (sprintf_s(symbol, sizeof(symbol), "NAPI_%s_GetABCCode", moduleName) == -1) {
+                dlclose(lib);
                 return nullptr;
             }
         }
