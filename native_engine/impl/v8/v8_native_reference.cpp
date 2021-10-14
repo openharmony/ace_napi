@@ -48,7 +48,7 @@ V8NativeReference::V8NativeReference(V8NativeEngine* engine,
 
 V8NativeReference::~V8NativeReference()
 {
-    if (deleteSelf_) {
+    if (deleteSelf_ && engine_->GetReferenceManager()) {
         engine_->GetReferenceManager()->ReleaseHandler(this);
     }
     if (value_.IsEmpty()) {
