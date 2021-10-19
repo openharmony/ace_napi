@@ -34,6 +34,7 @@
 #include "securec.h"
 #include "utils/log.h"
 
+using panda::BooleanRef;
 using panda::ObjectRef;
 using panda::StringRef;
 using panda::FunctionRef;
@@ -63,8 +64,14 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
                 ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(data);
                 Local<StringRef> moduleName(argv[0]);
+                bool isAppModule = false;
+                int32_t lengthMax = 2;
+                if (length == lengthMax) {
+                    Local<BooleanRef> ret(argv[1]);
+                    isAppModule = ret->Value();
+                }
                 NativeModule* module =
-                    moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, false, false, true);
+                    moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, isAppModule, false, true);
                 Global<ObjectRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
                     if (module->jsCode != nullptr) {
@@ -342,6 +349,14 @@ NativeValue* ArkNativeEngine::RunScript(NativeValue* script)
 {
     // not support yet
     return nullptr;
+}
+
+void ArkNativeEngine::SetPackagePath(const std::string& packagePath)
+{
+    auto moduleManager = NativeModuleManager::GetInstance();
+    if (moduleManager) {
+        moduleManager->SetAppLibPath(packagePath.c_str());
+    }
 }
 
 NativeValue* ArkNativeEngine::DefineClass(const char* name,
