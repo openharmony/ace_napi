@@ -97,6 +97,7 @@ void NativeModuleManager::SetAppLibPath(const char* appLibPath)
     errno_t err = EOK;
     err = memset_s(tmp, NAPI_PATH_MAX, 0, NAPI_PATH_MAX);
     if (err != EOK) {
+        delete[] tmp;
         return;
     }
     err = strcpy_s(tmp, NAPI_PATH_MAX, appLibPath);
@@ -110,7 +111,6 @@ void NativeModuleManager::SetAppLibPath(const char* appLibPath)
 NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName,
     const char* path, bool isAppModule, bool internal, bool isArk)
 {
-    HILOG_ERROR("Kee LoadNativeModule");
     if (moduleName == nullptr) {
         HILOG_ERROR("moduleName value is null");
         return nullptr;
