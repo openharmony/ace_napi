@@ -139,7 +139,7 @@ if (defined(ohos_lite)) {
     testonly = true
     deps = [
       ":test_ark_unittest",
-      ":test_quickjs_unittest",
+      # ":test_quickjs_unittest",
     ]
   }
 }
