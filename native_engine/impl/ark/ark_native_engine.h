@@ -118,6 +118,8 @@ public:
     NativeValue* RunScript(NativeValue* script) override;
     // Run buffer script
     NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
+    // Set lib path
+    void SetPackagePath(const std::string& packagePath);
     // Define native class
     NativeValue* DefineClass(const char* name,
                                      NativeCallback callback,
