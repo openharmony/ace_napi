@@ -179,13 +179,6 @@ v8::Local<v8::Object> V8NativeEngine::GetModuleFromName(
         }
 
         exports = *exportObject;
-
-        delete idValue;
-        idValue = nullptr;
-        delete paramValue;
-        paramValue = nullptr;
-        delete exportObject;
-        exportObject = nullptr;
     }
     return exports;
 }
