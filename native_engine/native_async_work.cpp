@@ -28,7 +28,7 @@ NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
     work_.data = this;
 }
 
-NativeAsyncWork::~NativeAsyncWork() {}
+NativeAsyncWork::~NativeAsyncWork() = default;
 
 bool NativeAsyncWork::Queue()
 {

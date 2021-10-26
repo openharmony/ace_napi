@@ -72,9 +72,6 @@ NativeEngine::~NativeEngine()
 
 void NativeEngine::Deinit()
 {
-    uv_sem_destroy(&uvSem_);
-    uv_close((uv_handle_t*)&uvAsync_, nullptr);
-    uv_loop_close(loop_);
     if (referenceManager_ != nullptr) {
         delete referenceManager_;
         referenceManager_ = nullptr;
@@ -82,6 +79,14 @@ void NativeEngine::Deinit()
     if (scopeManager_ != nullptr) {
         delete scopeManager_;
         scopeManager_ = nullptr;
+    }
+
+    uv_sem_destroy(&uvSem_);
+    uv_close((uv_handle_t*)&uvAsync_, nullptr);
+    uv_run(loop_, UV_RUN_ONCE);
+    int err = uv_loop_close(loop_);
+    if (err != 0) {
+        HILOG_ERROR("uv loop close failed. fd or resource may leak.");
     }
 }
 
