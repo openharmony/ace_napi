@@ -58,6 +58,8 @@ if (defined(ohos_lite)) {
 
   if (is_standard_system) {
     module_output_path = "ace_engine_standard/napi"
+  } else {
+    module_output_path = "ace_engine_full/napi"
   }
 
   ohos_unittest("test_quickjs_unittest") {
