@@ -94,7 +94,7 @@ public:
     // V8NativeEngine constructor
     V8NativeEngine(v8::Platform *platform, v8::Isolate* isolate, v8::Persistent<v8::Context>& context, void* jsEngine);
     // V8NativeEngine destructor
-    virtual ~V8NativeEngine();
+    ~V8NativeEngine() override;
 
     virtual void Loop(LoopMode mode, bool needSync = false) override;
 
