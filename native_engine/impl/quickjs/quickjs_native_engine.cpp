@@ -211,6 +211,7 @@ NativeValue* QuickJSNativeEngine::CreateSymbol(NativeValue* value)
 
     JS_FreeValue(context_, symbolCotr);
     JS_FreeValue(context_, global);
+    js_std_loop(context_);
 
     return new QuickJSNativeValue(this, symbol);
 }
@@ -332,6 +333,7 @@ NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
     }
 
     result = JS_Call(context_, *function, (thisVar != nullptr) ? (JSValue)*thisVar : JS_UNDEFINED, argc, args);
+    js_std_loop(context_);
     JS_DupValue(context_, result);
 
     if (args != nullptr) {
@@ -353,6 +355,7 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
     const char* cScript = JS_ToCString(context_, *script);
     result = JS_Eval(context_, cScript, strlen(cScript), "<input>", JS_EVAL_TYPE_GLOBAL);
     JS_FreeCString(context_, cScript);
+    js_std_loop(context_);
     if (JS_IsError(context_, result) || JS_IsException(result)) {
         return nullptr;
     }
@@ -398,6 +401,7 @@ NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string
     JS_FreeValue(context_, ns);
     JS_FreeValue(context_, evalRes);
     JS_FreeCString(context_, moduleSource);
+    js_std_loop(context_);
     return JSValueToNativeValue(this, result);
 }
 
