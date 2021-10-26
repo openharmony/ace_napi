@@ -35,6 +35,7 @@ void QuickJSNativeDeferred::Resolve(NativeValue* data)
 
     JSValue jsResult = JS_Call(engine_->GetContext(), resolve_, JS_UNDEFINED, 1, &value);
     JS_FreeValue(engine_->GetContext(), jsResult);
+    js_std_loop(engine_->GetContext());
 }
 
 void QuickJSNativeDeferred::Reject(NativeValue* reason)
@@ -46,4 +47,5 @@ void QuickJSNativeDeferred::Reject(NativeValue* reason)
 
     JSValue jsResult = JS_Call(engine_->GetContext(), reject_, JS_UNDEFINED, 1, &value);
     JS_FreeValue(engine_->GetContext(), jsResult);
+    js_std_loop(engine_->GetContext());
 }
