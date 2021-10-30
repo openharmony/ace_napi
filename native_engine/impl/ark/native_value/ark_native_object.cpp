@@ -61,7 +61,6 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
 
     Local<ObjectRef> object = ObjectRef::New(vm);
     object->SetNativePointerFieldCount(1);
-    /*
     object->SetNativePointerField(0, pointer,
         [](void* data, void* info) {
             auto externalInfo = reinterpret_cast<NativeObjectInfo*>(info);
@@ -72,7 +71,6 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
             delete externalInfo;
         },
         objInfo);
-    */
     Local<StringRef> key = StringRef::NewFromUtf8(vm, "_napiwrapper");
     value->Set(vm, key, object);
 }
