@@ -148,6 +148,9 @@ public:
     NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 
     bool ExecuteJsBin(const std::string& fileName);
+    panda::Global<panda::ObjectRef> LoadModuleByName(
+        const std::string& moduleName, bool isAppModule, const std::string& param,
+        const std::string& instanceName, void* instance);
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;

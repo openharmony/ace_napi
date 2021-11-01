@@ -143,6 +143,37 @@ ArkNativeEngine::~ArkNativeEngine()
     Deinit();
 }
 
+panda::Global<panda::ObjectRef> ArkNativeEngine::LoadModuleByName(
+    const std::string& moduleName, bool isAppModule, const std::string& param,
+    const std::string& instanceName, void* instance)
+{
+    Global<ObjectRef> exports(vm_, JSValueRef::Undefined(vm_));
+    NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
+    NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
+    if (module != nullptr) {
+        NativeValue* exportObject = new ArkNativeObject(this);
+        ArkNativeObject* exportObj = reinterpret_cast<ArkNativeObject*>(exportObject);
+
+        NativePropertyDescriptor paramProperty, instanceProperty;
+
+        NativeValue* paramValue = new ArkNativeString(this, param.c_str(), param.size());
+        paramProperty.utf8name = "param";
+        paramProperty.value = paramValue;
+
+        auto instanceValue = new ArkNativeObject(this);
+        instanceValue->SetNativePointer(instance, nullptr, nullptr);
+        instanceProperty.utf8name = instanceName.c_str();
+        instanceProperty.value = instanceValue;
+
+        exportObj->DefineProperty(paramProperty);
+        exportObj->DefineProperty(instanceProperty);
+
+        module->registerCallback(this, exportObject);
+        exports = *exportObject;
+    }
+    return exports;
+}
+
 void ArkNativeEngine::Loop(LoopMode mode, bool needSync)
 {
     LocalScope scope(vm_);

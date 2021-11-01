@@ -67,7 +67,9 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
             auto engine = externalInfo->engine;
             auto callback = externalInfo->callback;
             auto hint = externalInfo->hint;
-            callback(engine, data, hint);
+            if (callback != nullptr) {
+                callback(engine, data, hint);
+            }
             delete externalInfo;
         },
         objInfo);
