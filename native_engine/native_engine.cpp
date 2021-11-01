@@ -150,6 +150,33 @@ NativeAsyncWork* NativeEngine::CreateAsyncWork(NativeAsyncExecuteCallback execut
     return new NativeAsyncWork(this, execute, complete, data);
 }
 
+void NativeEngine::InitAsyncWork(NativeAsyncExecuteCallback execute,
+                                 NativeAsyncCompleteCallback complete,
+                                 void* data)
+{
+    asyncWorker_ = std::make_unique<NativeAsyncWork>(this, execute, complete, data);
+    asyncWorker_->Init();
+}
+
+bool NativeEngine::SendAsyncWork(void* data)
+{
+    if (!asyncWorker_) {
+        HILOG_ERROR("asyncWorker_ is nullptr");
+        return false;
+    }
+    asyncWorker_->Send(data);
+    return true;
+}
+
+void NativeEngine::CloseAsyncWork()
+{
+    if (!asyncWorker_) {
+        HILOG_ERROR("asyncWorker_ is nullptr");
+        return;
+    }
+    asyncWorker_->Close();
+}
+
 NativeErrorExtendedInfo* NativeEngine::GetLastError()
 {
     return &lastError_;
@@ -237,7 +264,7 @@ void NativeEngine::UVThreadRunner(void* nativeEngine)
             HILOG_INFO("break thread after epoll wait");
             break;
         }
-        if (result != -1 && errno != EINTR) {
+        if (result >= 0) {
             engine->PostLoopTask();
         } else {
             HILOG_ERROR("epoll wait fail: result: %{public}d, errno: %{public}d", result, errno);
@@ -267,4 +294,58 @@ void NativeEngine::TriggerPostTask()
 void* NativeEngine::GetJsEngine()
 {
     return jsEngine_;
+}
+
+// register init worker func
+void NativeEngine::SetInitWorkerFunc(InitWorkerFunc func)
+{
+    initWorkerFunc_ = func;
+}
+void NativeEngine::SetGetAssetFunc(GetAssetFunc func)
+{
+    getAssetFunc_ = func;
+}
+void NativeEngine::SetOffWorkerFunc(OffWorkerFunc func)
+{
+    offWorkerFunc_ = func;
+}
+void NativeEngine::SetWorkerAsyncWorkFunc(NativeAsyncExecuteCallback executeCallback,
+                                          NativeAsyncCompleteCallback completeCallback)
+{
+    nativeAsyncExecuteCallback_ = executeCallback;
+    nativeAsyncCompleteCallback_ = completeCallback;
+}
+// call init worker func
+bool NativeEngine::CallInitWorkerFunc(NativeEngine* engine)
+{
+    if (initWorkerFunc_ != nullptr) {
+        initWorkerFunc_(engine);
+        return true;
+    }
+    return false;
+}
+bool NativeEngine::CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content)
+{
+    if (getAssetFunc_ != nullptr) {
+        getAssetFunc_(uri, content);
+        return true;
+    }
+    return false;
+}
+bool NativeEngine::CallOffWorkerFunc(NativeEngine* engine)
+{
+    if (offWorkerFunc_ != nullptr) {
+        offWorkerFunc_(engine);
+        return true;
+    }
+    return false;
+}
+
+bool NativeEngine::CallWorkerAsyncWorkFunc(NativeEngine* engine)
+{
+    if (nativeAsyncExecuteCallback_ != nullptr && nativeAsyncCompleteCallback_ != nullptr) {
+        engine->InitAsyncWork(nativeAsyncExecuteCallback_, nativeAsyncCompleteCallback_, nullptr);
+        return true;
+    }
+    return false;
 }

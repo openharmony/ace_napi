@@ -47,6 +47,7 @@ public:
     virtual bool Cancel();
     virtual bool Init();
     virtual void Send(void* data);
+    virtual void Close();
     virtual bool PopData(NativeAsyncWorkDataPointer* data);
 
     template<typename Inner, typename Outer>

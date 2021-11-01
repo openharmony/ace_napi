@@ -56,6 +56,9 @@ enum LoopMode {
 
 using PostTask = std::function<void(bool needSync)>;
 using CleanEnv = std::function<void()>;
+using InitWorkerFunc = std::function<void(NativeEngine* engine)>;
+using GetAssetFunc = std::function<void(const std::string& uri, std::vector<uint8_t>& content)>;
+using OffWorkerFunc = std::function<void(NativeEngine* engine)>;
 
 class NativeEngine {
 public:
@@ -126,6 +129,9 @@ public:
     virtual NativeAsyncWork* CreateAsyncWork(NativeAsyncExecuteCallback execute,
                                              NativeAsyncCompleteCallback complete,
                                              void* data);
+    virtual void InitAsyncWork(NativeAsyncExecuteCallback execute, NativeAsyncCompleteCallback complete, void* data);
+    virtual bool SendAsyncWork(void* data);
+    virtual void CloseAsyncWork();
 
     virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) = 0;
 
@@ -165,6 +171,18 @@ public:
         cleanEnv_ = cleanEnv;
     }
 
+    // register init worker func
+    virtual void SetInitWorkerFunc(InitWorkerFunc func);
+    virtual void SetGetAssetFunc(GetAssetFunc func);
+    virtual void SetOffWorkerFunc(OffWorkerFunc func);
+    virtual void SetWorkerAsyncWorkFunc(NativeAsyncExecuteCallback executeCallback,
+                                NativeAsyncCompleteCallback completeCallback);
+    // call init worker func
+    virtual bool CallInitWorkerFunc(NativeEngine* engine);
+    virtual bool CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content);
+    virtual bool CallOffWorkerFunc(NativeEngine* engine);
+    virtual bool CallWorkerAsyncWorkFunc(NativeEngine* engine);
+
 protected:
     void Init();
     void Deinit();
@@ -192,6 +210,13 @@ private:
     uv_thread_t uvThread_;
     uv_sem_t uvSem_;
     uv_async_t uvAsync_;
+    std::unique_ptr<NativeAsyncWork> asyncWorker_ {};
+    // register for worker
+    InitWorkerFunc initWorkerFunc_ {nullptr};
+    GetAssetFunc getAssetFunc_ {nullptr};
+    OffWorkerFunc offWorkerFunc_ {nullptr};
+    NativeAsyncExecuteCallback nativeAsyncExecuteCallback_ {nullptr};
+    NativeAsyncCompleteCallback nativeAsyncCompleteCallback_ {nullptr};
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H */
