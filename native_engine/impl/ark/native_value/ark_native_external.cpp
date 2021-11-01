@@ -66,6 +66,8 @@ void ArkNativeExternal::ArkExternalDeleterCallback(void* data, void* info)
     auto engine = externalInfo->engine;
     auto callback = externalInfo->callback;
     auto hint = externalInfo->hint;
-    callback(engine, data, hint);
+    if (callback != nullptr) {
+        callback(engine, data, hint);
+    }
     delete externalInfo;
 }
