@@ -84,10 +84,7 @@ void NativeEngine::Deinit()
     uv_sem_destroy(&uvSem_);
     uv_close((uv_handle_t*)&uvAsync_, nullptr);
     uv_run(loop_, UV_RUN_ONCE);
-    int err = uv_loop_close(loop_);
-    if (err != 0) {
-        HILOG_ERROR("uv loop close failed. fd or resource may leak.");
-    }
+    uv_loop_delete(loop_);
 }
 
 NativeScopeManager* NativeEngine::GetScopeManager()
