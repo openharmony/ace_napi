@@ -57,6 +57,8 @@ void* V8NativeFunction::GetInterface(int interfaceId)
 
 void V8NativeFunction::NativeFunctionCallback(const v8::FunctionCallbackInfo<v8::Value>& info)
 {
+    v8::Isolate::Scope isolateScope(info.GetIsolate());
+    v8::HandleScope handleScope(info.GetIsolate());
     v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
     v8::Local<v8::Array> cbdata = info.Data().As<v8::Array>();
 
@@ -79,6 +81,19 @@ void V8NativeFunction::NativeFunctionCallback(const v8::FunctionCallbackInfo<v8:
     funcinfo->engine = engine;
     funcinfo->callback = cb;
     funcinfo->data = data;
+
+    NativeScopeManager* scopeManager = engine->GetScopeManager();
+    if (scopeManager == nullptr) {
+        HILOG_ERROR("Get scope manager failed");
+        delete funcinfo;
+        return;
+    }
+    NativeScope* scope = scopeManager->Open();
+    if (scope == nullptr) {
+        HILOG_ERROR("Open scope failed");
+        delete funcinfo;
+        return;
+    }
 
     NativeCallbackInfo cbinfo = { 0 };
     cbinfo.thisVar = V8NativeEngine::V8ValueToNativeValue(engine, info.This());
@@ -118,4 +133,5 @@ void V8NativeFunction::NativeFunctionCallback(const v8::FunctionCallbackInfo<v8:
     }
 
     info.GetReturnValue().Set<v8::Value>(v8Result);
+    scopeManager->Close(scope);
 }
