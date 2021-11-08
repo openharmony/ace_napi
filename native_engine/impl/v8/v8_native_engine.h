@@ -163,6 +163,13 @@ public:
                                      void* data,
                                      const NativePropertyDescriptor* properties,
                                      size_t length) override;
+
+    virtual NativeAsyncWork* CreateAsyncWork(NativeValue* asyncResource,
+                                             NativeValue* asyncResourceName,
+                                             NativeAsyncExecuteCallback execute,
+                                             NativeAsyncCompleteCallback complete,
+                                             void* data) override;
+
     // Create instance by defined class
     virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
 
@@ -191,6 +198,9 @@ public:
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
 private:
+    static void ExecuteWrap(NativeEngine* engine, void* data);
+    static void CompleteWrap(NativeEngine* engine, int status, void* data);
+
     v8::Platform* platform_;
     v8::Isolate* isolate_;
     WorkerIsolateScope workerIsolateScope_;

@@ -53,6 +53,9 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
         v8::Function::New(
             context_.Get(isolate_),
             [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+                v8::Isolate::Scope isolateScope(info.GetIsolate());
+                v8::HandleScope handleScope(info.GetIsolate());
+
                 V8NativeEngine* engine = (V8NativeEngine*)info.Data().As<v8::External>()->Value();
                 if (engine == nullptr) {
                     return;
@@ -102,6 +105,9 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
         v8::Function::New(
             context_.Get(isolate_),
             [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+                v8::Isolate::Scope isolateScope(info.GetIsolate());
+                v8::HandleScope handleScope(info.GetIsolate());
+
                 V8NativeEngine* engine = (V8NativeEngine*)info.Data().As<v8::External>()->Value();
                 if (engine == nullptr) {
                     return;
@@ -362,6 +368,44 @@ NativeValue* V8NativeEngine::CreateTypedArray(NativeTypedArrayType type,
             return nullptr;
     }
     return new V8NativeTypedArray(this, typedArray);
+}
+
+struct CompleteWrapData {
+    NativeAsyncExecuteCallback execute_ = nullptr;
+    NativeAsyncCompleteCallback complete_ = nullptr;
+    void* data_ = nullptr;
+    v8::Isolate* isolate_ = nullptr;
+};
+
+void V8NativeEngine::ExecuteWrap(NativeEngine* engine, void* data)
+{
+    CompleteWrapData* wrapData = (CompleteWrapData*)data;
+    wrapData->execute_(engine, wrapData->data_);
+}
+
+void V8NativeEngine::CompleteWrap(NativeEngine* engine, int status, void* data)
+{
+    CompleteWrapData* wrapData = (CompleteWrapData*)data;
+    v8::Isolate::Scope isolateScope(wrapData->isolate_);
+    v8::HandleScope handleScope(wrapData->isolate_);
+    wrapData->complete_(engine, status, wrapData->data_);
+    delete wrapData;
+}
+
+NativeAsyncWork* V8NativeEngine::CreateAsyncWork(NativeValue* asyncResource, NativeValue* asyncResourceName,
+    NativeAsyncExecuteCallback execute, NativeAsyncCompleteCallback complete, void* data)
+{
+    CompleteWrapData* wrapData = new CompleteWrapData();
+    if (wrapData == nullptr) {
+        HILOG_ERROR("create wrap data failed");
+        return nullptr;
+    }
+    wrapData->execute_ = execute;
+    wrapData->complete_ = complete;
+    wrapData->data_ = data;
+    wrapData->isolate_ = GetIsolate();
+
+    return NativeEngine::CreateAsyncWork(asyncResource, asyncResourceName, ExecuteWrap, CompleteWrap, (void*)wrapData);
 }
 
 NativeValue* V8NativeEngine::CreateDataView(NativeValue* value, size_t length, size_t offset)
