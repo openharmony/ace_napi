@@ -31,6 +31,7 @@
 #include "native_property.h"
 #include "reference_manager/native_reference_manager.h"
 #include "scope_manager/native_scope_manager.h"
+#include "utils/macros.h"
 
 typedef struct uv_loop_s uv_loop_t;
 
@@ -92,7 +93,7 @@ using InitWorkerFunc = std::function<void(NativeEngine* engine)>;
 using GetAssetFunc = std::function<void(const std::string& uri, std::vector<uint8_t>& content)>;
 using OffWorkerFunc = std::function<void(NativeEngine* engine)>;
 
-class NativeEngine {
+class NAPI_EXPORT NativeEngine {
 public:
     NativeEngine(void* jsEngine);
     virtual ~NativeEngine();
@@ -107,8 +108,10 @@ public:
     virtual void Loop(LoopMode mode, bool needSync = false);
     virtual void SetPostTask(PostTask postTask);
     virtual void TriggerPostTask();
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
     virtual void CheckUVLoop();
     virtual void CancelCheckUVLoop();
+#endif
     virtual void* GetJsEngine();
 
     virtual NativeValue* GetGlobal() = 0;
@@ -271,14 +274,17 @@ protected:
 
 private:
     bool isMainThread_ { true };
-    static void UVThreadRunner(void* nativeEngine);
 
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+    static void UVThreadRunner(void* nativeEngine);
     void PostLoopTask();
 
     bool checkUVLoop_ = false;
+    uv_thread_t uvThread_;
+#endif
+
     PostTask postTask_ = nullptr;
     CleanEnv cleanEnv_ = nullptr;
-    uv_thread_t uvThread_;
     uv_sem_t uvSem_;
     uv_async_t uvAsync_;
     std::unordered_set<CleanupHookCallback, CleanupHookCallback::Hash, CleanupHookCallback::Equal> cleanup_hooks_;
