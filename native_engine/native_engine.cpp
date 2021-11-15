@@ -16,7 +16,9 @@
 #include "native_engine.h"
 #include "utils/log.h"
 
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
 #include <sys/epoll.h>
+#endif
 #include <uv.h>
 
 #include "utils/log.h"
@@ -248,6 +250,7 @@ void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
     *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
 }
 
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
 void NativeEngine::CheckUVLoop()
 {
     checkUVLoop_ = true;
@@ -293,6 +296,7 @@ void NativeEngine::UVThreadRunner(void* nativeEngine)
         }
     }
 }
+#endif
 
 void NativeEngine::SetPostTask(PostTask postTask)
 {
