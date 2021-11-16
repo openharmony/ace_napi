@@ -105,6 +105,9 @@ void NativeModuleManager::SetAppLibPath(const char* appLibPath)
         delete[] tmp;
         return;
     }
+    if (appLibPath_ != nullptr) {
+        delete[] appLibPath_;
+    }
     appLibPath_ = tmp;
 }
 
