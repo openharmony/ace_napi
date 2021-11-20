@@ -18,6 +18,7 @@
 
 extern "C" {
 #include "cutils.h"
+#include "libbf.h"
 #include "quickjs-libc.h"
 }
 
@@ -32,14 +33,24 @@ JSValue JS_NewExternal(JSContext* context, void* value, JSFinalizer finalizer, v
 void* JS_ExternalToNativeObject(JSContext* context, JSValue value);
 bool JS_IsExternal(JSContext* context, JSValue value);
 
+void JS_AddFinalizer(JSContext* context, JSValue value, void* pointer, JSFinalizer finalizer, void* hint);
+void JS_FreeFinalizer(JSValue value);
 void JS_SetNativePointer(JSContext* context, JSValue value, void* pointer, JSFinalizer finalizer, void* hint);
 void* JS_GetNativePointer(JSContext* context, JSValue value);
 
 bool JS_IsPromise(JSContext* context, JSValue value);
 bool JS_IsArrayBuffer(JSContext* context, JSValue value);
+bool JS_IsBuffer(JSContext* context, JSValue value);
 bool JS_IsDate(JSContext* context, JSValue value);
 bool JS_IsDataView(JSContext* context, JSValue value);
 bool JS_IsTypedArray(JSContext* context, JSValue value);
 bool JS_StrictEquals(JSContext* context, JSValue v1, JSValue v2);
 
+JSValue JS_Seal(JSContext* context, JSValue value);
+JSValue JS_Freeze(JSContext* context, JSValue value);
+JSValue JS_StrictDate(JSContext* context, double time);
+JSValue JS_CreateBigIntWords(JSContext* context, int signBit, size_t wordCount, const uint64_t* words);
+bool JS_GetBigIntWords(JSContext* context, JSValue value, int* signBit, size_t* wordCount, uint64_t* words);
+bool JS_ToInt64WithBigInt(JSContext* context, JSValueConst value, int64_t* pres, bool* lossless);
+bool JS_ToUInt64WithBigInt(JSContext* context, JSValueConst value, uint64_t* pres, bool* lossless);
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_QUICKJS_HEADERS_H */

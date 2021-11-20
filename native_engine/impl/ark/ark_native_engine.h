@@ -82,8 +82,14 @@ public:
     NativeValue* CreateNumber(int64_t value) override;
     // Create native number value by double
     NativeValue* CreateNumber(double value) override;
+    // Create native bigint value by int64_t
+    NativeValue* CreateBigInt(int64_t value) override;
+    // Create native bigint value by uint64_t
+    NativeValue* CreateBigInt(uint64_t value) override;
     // Create native string value by const char pointer
     NativeValue* CreateString(const char* value, size_t length) override;
+    // Create native string value by const char16_t pointer
+    NativeValue* CreateString16(const char16_t* value, size_t length) override;
     // Create native symbol value
     NativeValue* CreateSymbol(NativeValue* value) override;
     // Create native value of external pointer
@@ -98,6 +104,9 @@ public:
     NativeValue* CreateArrayBuffer(void** value, size_t length) override;
     // Create native array buffer value of external
     NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
+    NativeValue* CreateBuffer(void** value, size_t length) override;
+    NativeValue* CreateBufferCopy(void** value, size_t length, const void* data) override;
+    NativeValue* CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
     // Create native typed array value
     NativeValue* CreateTypedArray(NativeTypedArrayType type,
                                   NativeValue* value,
@@ -130,7 +139,8 @@ public:
     NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
 
     // Create native reference
-    NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) override;
+    NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) override;
     // Throw exception
     bool Throw(NativeValue* error) override;
     // Throw exception
@@ -148,6 +158,10 @@ public:
     NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 
     bool ExecuteJsBin(const std::string& fileName);
+    virtual bool TriggerFatalException(NativeValue* error) override;
+    NativeValue* CreateDate(double value) override;
+    NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
+    bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;

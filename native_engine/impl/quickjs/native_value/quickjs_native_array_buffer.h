@@ -29,6 +29,9 @@ public:
 
     virtual void* GetBuffer() override;
     virtual size_t GetLength() override;
+
+    virtual bool IsDetachedArrayBuffer() override;
+    virtual bool DetachArrayBuffer() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_ARRAY_BUFFER_H */
