@@ -23,13 +23,22 @@ public:
     QuickJSNativeString(QuickJSNativeEngine* engine, JSValue value);
     QuickJSNativeString(QuickJSNativeEngine* engine, JSAtom value);
     QuickJSNativeString(QuickJSNativeEngine* engine, const char* value, size_t length);
+    QuickJSNativeString(QuickJSNativeEngine* engine, const char16_t* value, size_t length);
     virtual ~QuickJSNativeString();
 
     virtual void* GetInterface(int interfaceId) override;
 
     virtual void GetCString(char* buffer, size_t size, size_t* length) override;
+    virtual void GetCString16(char16_t* buffer, size_t size, size_t* length) override;
     virtual size_t GetLength() override;
     virtual size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) override;
+
+private:
+    char16_t* Utf8ToUtf16(const char* utf8Str, size_t u8len, char16_t* u16str, size_t u16len);
+    static inline size_t Utf8CodePointLen(uint8_t ch);
+    uint32_t Utf8ToUtf32CodePoint(const char* src, size_t length);
+    static inline void Utf8ShiftAndMask(uint32_t* codePoint, const uint8_t byte);
+    int Utf8ToUtf16Length(const char* str8, size_t str8Len);
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_STRING_H */

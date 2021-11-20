@@ -21,8 +21,11 @@
 #include "native_engine/native_property.h"
 #include "native_value/quickjs_native_array.h"
 #include "native_value/quickjs_native_array_buffer.h"
+#include "native_value/quickjs_native_big_int.h"
 #include "native_value/quickjs_native_boolean.h"
+#include "native_value/quickjs_native_buffer.h"
 #include "native_value/quickjs_native_data_view.h"
+#include "native_value/quickjs_native_date.h"
 #include "native_value/quickjs_native_external.h"
 #include "native_value/quickjs_native_function.h"
 #include "native_value/quickjs_native_number.h"
@@ -31,13 +34,9 @@
 #include "native_value/quickjs_native_typed_array.h"
 #include "quickjs_native_deferred.h"
 #include "quickjs_native_reference.h"
-
 #include "securec.h"
-
 #include "utils/assert.h"
-
 #include "utils/log.h"
-
 static const int JS_WRITE_OBJ = (1 << 2) | (1 << 3);
 static const int JS_ATOM_MESSAGE = 51;
 
@@ -167,8 +166,8 @@ JSValue QuickJSNativeEngine::GetModuleFromName(
 
         napi_value nExport = reinterpret_cast<napi_value>(exportObject);
         napi_value exportInstance = nullptr;
-        napi_status status = napi_get_named_property(
-            reinterpret_cast<napi_env>(this), nExport, instanceName.c_str(), &exportInstance);
+        napi_status status =
+            napi_get_named_property(reinterpret_cast<napi_env>(this), nExport, instanceName.c_str(), &exportInstance);
         if (status != napi_ok) {
             HILOG_ERROR("GetModuleFromName napi_get_named_property status != napi_ok");
         }
@@ -244,7 +243,22 @@ NativeValue* QuickJSNativeEngine::CreateNumber(double value)
     return new QuickJSNativeNumber(this, value);
 }
 
+NativeValue* QuickJSNativeEngine::CreateBigInt(int64_t value)
+{
+    return new QuickJSNativeBigInt(this, value);
+}
+
+NativeValue* QuickJSNativeEngine::CreateBigInt(uint64_t value)
+{
+    return new QuickJSNativeBigInt(this, value, true);
+}
+
 NativeValue* QuickJSNativeEngine::CreateString(const char* value, size_t length)
+{
+    return new QuickJSNativeString(this, value, length);
+}
+
+NativeValue* QuickJSNativeEngine::CreateString16(const char16_t* value, size_t length)
 {
     return new QuickJSNativeString(this, value, length);
 }
@@ -349,9 +363,10 @@ NativeValue* QuickJSNativeEngine::CreateInstance(NativeValue* constructor, Nativ
     return QuickJSNativeEngine::JSValueToNativeValue(this, result);
 }
 
-NativeReference* QuickJSNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount)
+NativeReference* QuickJSNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount, 
+    NativeFinalize callback, void* data, void* hint)
 {
-    return new QuickJSNativeReference(this, value, initialRefcount);
+    return new QuickJSNativeReference(this, value, initialRefcount, callback, data, hint);
 }
 
 NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
@@ -725,7 +740,7 @@ NativeValue* QuickJSNativeEngine::Serialize(NativeEngine* context, NativeValue* 
         return nullptr;
     }
     size_t dataLen;
-    uint8_t *data = JS_WriteObject(context_, &dataLen, *value, JS_WRITE_OBJ);
+    uint8_t* data = JS_WriteObject(context_, &dataLen, *value, JS_WRITE_OBJ);
     DetachTransferList(*transfer);
     return reinterpret_cast<NativeValue*>(new SerializeData(dataLen, data));
 }
@@ -751,7 +766,7 @@ ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker() const
     ExceptionInfo* exceptionInfo = new ExceptionInfo();
     msg = JS_GetProperty(context_, exception, JS_ATOM_MESSAGE);
     ASSERT(JS_IsString(msg));
-    const char* exceptionStr  = reinterpret_cast<char *>(JS_GetStringFromObject(msg));
+    const char* exceptionStr = reinterpret_cast<char*>(JS_GetStringFromObject(msg));
     if (exceptionStr == nullptr) {
         delete exceptionInfo;
         exceptionInfo = nullptr;
@@ -783,4 +798,44 @@ NativeValue* QuickJSNativeEngine::ValueToNativeValue(JSValueWrapper& value)
 {
     JSValue quickValue = value;
     return JSValueToNativeValue(this, quickValue);
+}
+
+NativeValue* QuickJSNativeEngine::CreateBuffer(void** value, size_t length)
+{
+    return new QuickJSNativeBuffer(this, (uint8_t**)value, length);
+}
+
+NativeValue* QuickJSNativeEngine::CreateBufferCopy(void** value, size_t length, const void* data)
+{
+    return new QuickJSNativeBuffer(this, (uint8_t**)value, length, data);
+}
+
+NativeValue* QuickJSNativeEngine::CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint)
+{
+    return new QuickJSNativeBuffer(this, (uint8_t*)value, length, cb, hint);
+}
+
+NativeValue* QuickJSNativeEngine::CreateDate(double time)
+{
+    JSValue value = JS_StrictDate(context_, time);
+
+    return new QuickJSNativeDate(this, value);
+}
+
+NativeValue* QuickJSNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)
+{
+    JSValue value = JS_CreateBigIntWords(context_, sign_bit, word_count, words);
+
+    return new QuickJSNativeBigInt(this, value);
+}
+
+bool QuickJSNativeEngine::TriggerFatalException(NativeValue* error)
+{
+    return false;
+}
+
+bool QuickJSNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue)
+{
+    HILOG_INFO("L2: napi_adjust_external_memory not supported!");
+    return true;
 }

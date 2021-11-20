@@ -17,17 +17,11 @@
 #define FOUNDATION_ACE_NAPI_INTERFACES_KITS_NAPI_NATIVE_API_H
 
 #include <vector>
+#include <iostream>
+#include "js_native_api.h"
 #include "native_common.h"
 
-#include "js_native_api.h"
-
-DEPRECATED napi_status napi_create_string_utf16(napi_env env, const char16_t* str, size_t length, napi_value* result);
-DEPRECATED napi_status napi_get_value_string_utf16(napi_env env,
-                                                   napi_value value,
-                                                   char16_t* buf,
-                                                   size_t bufsize,
-                                                   size_t* result);
-DEPRECATED napi_status napi_adjust_external_memory(napi_env env, int64_t change_in_bytes, int64_t* adjusted_value);
+napi_status napi_adjust_external_memory(napi_env env, int64_t change_in_bytes, int64_t* adjusted_value);
 napi_status napi_is_callable(napi_env env, napi_value value, bool* result);
 napi_status napi_create_runtime(napi_env env, napi_env* result_env);
 napi_status napi_serialize(napi_env env, napi_value object, napi_value transfer_list, napi_value* result);
