@@ -129,6 +129,91 @@ bool QuickJSNativeValue::IsCallable()
     return JS_IsFunction(engine_->GetContext(), value_);
 }
 
+bool QuickJSNativeValue::IsMapIterator()
+{
+    return JS_IsMapIterator(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsSetIterator()
+{
+    return JS_IsSetIterator(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsGeneratorObject()
+{
+    return JS_IsGeneratorObject(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsModuleNamespaceObject()
+{
+    return JS_IsModuleNamespaceObject(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsProxy()
+{
+    return JS_IsProxy(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsRegExp()
+{
+    return JS_IsRegExp(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsNumberObject()
+{
+    return JS_IsNumberObject(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsMap()
+{
+    return JS_IsMap(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsSet()
+{
+    return JS_IsSet(engine_->GetContext(), value_);
+}
+
+bool QuickJSNativeValue::IsArgumentsObject()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsAsyncFunction()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsBooleanObject()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsGeneratorFunction()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsStringObject()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsSymbolObject()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsWeakMap()
+{
+    return false;
+}
+
+bool QuickJSNativeValue::IsWeakSet()
+{
+    return false;
+}
+
 NativeValue* QuickJSNativeValue::ToBoolean()
 {
     bool cValue = JS_ToBool(engine_->GetContext(), value_);
