@@ -17,12 +17,15 @@
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H
 
 #include <string>
+#include <unordered_set>
 #include <vector>
-
+#include <functional>
+#include "callback_scope_manager/native_callback_scope_manager.h"
 #include "module_manager/native_module_manager.h"
 #include "native_engine/native_async_work.h"
 #include "native_engine/native_deferred.h"
 #include "native_engine/native_reference.h"
+#include "native_engine/native_safe_async_work.h"
 #include "native_engine/native_value.h"
 #include "native_property.h"
 #include "reference_manager/native_reference_manager.h"
@@ -54,18 +57,48 @@ enum LoopMode {
     LOOP_DEFAULT, LOOP_ONCE, LOOP_NOWAIT
 };
 
+class CleanupHookCallback {
+public:
+    using Callback = void (*)(void*);
+
+    CleanupHookCallback(Callback fn, void* arg, uint64_t insertion_order_counter)
+        : fn_(fn), arg_(arg), insertion_order_counter_(insertion_order_counter)
+    {}
+
+    struct Hash {
+        inline size_t operator()(const CleanupHookCallback& cb) const
+        {
+            return std::hash<void*>()(cb.arg_);
+        }
+    };
+    struct Equal {
+        inline bool operator()(const CleanupHookCallback& a, const CleanupHookCallback& b) const
+        {
+            return a.fn_ == b.fn_ && a.arg_ == b.arg_;
+        };
+    };
+
+private:
+    friend class NativeEngine;
+    Callback fn_;
+    void* arg_;
+    uint64_t insertion_order_counter_;
+};
+
 using PostTask = std::function<void(bool needSync)>;
 using CleanEnv = std::function<void()>;
 
 class NativeEngine {
 public:
-    NativeEngine(void *jsEngine);
+    NativeEngine(void* jsEngine);
     virtual ~NativeEngine();
 
     virtual NativeScopeManager* GetScopeManager();
     virtual NativeModuleManager* GetModuleManager();
     virtual NativeReferenceManager* GetReferenceManager();
+    virtual NativeCallbackScopeManager* GetCallbackScopeManager();
     virtual uv_loop_t* GetUVLoop() const;
+    virtual pthread_t GetTid() const;
 
     virtual void Loop(LoopMode mode, bool needSync = false);
     virtual void SetPostTask(PostTask postTask);
@@ -83,7 +116,10 @@ public:
     virtual NativeValue* CreateNumber(uint32_t value) = 0;
     virtual NativeValue* CreateNumber(int64_t value) = 0;
     virtual NativeValue* CreateNumber(double value) = 0;
+    virtual NativeValue* CreateBigInt(int64_t value) = 0;
+    virtual NativeValue* CreateBigInt(uint64_t value) = 0;
     virtual NativeValue* CreateString(const char* value, size_t length) = 0;
+    virtual NativeValue* CreateString16(const char16_t* value, size_t length) = 0;
 
     virtual NativeValue* CreateSymbol(NativeValue* value) = 0;
     virtual NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) = 0;
@@ -91,7 +127,9 @@ public:
     virtual NativeValue* CreateObject() = 0;
     virtual NativeValue* CreateFunction(const char* name, size_t length, NativeCallback cb, void* value) = 0;
     virtual NativeValue* CreateArray(size_t length) = 0;
-
+    virtual NativeValue* CreateBuffer(void** value, size_t length) = 0;
+    virtual NativeValue* CreateBufferCopy(void** value, size_t length, const void* data) = 0;
+    virtual NativeValue* CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) = 0;
     virtual NativeValue* CreateArrayBuffer(void** value, size_t length) = 0;
     virtual NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) = 0;
 
@@ -126,8 +164,12 @@ public:
     virtual NativeAsyncWork* CreateAsyncWork(NativeAsyncExecuteCallback execute,
                                              NativeAsyncCompleteCallback complete,
                                              void* data);
+    virtual NativeSafeAsyncWork* CreateSafeAsyncWork(NativeValue* func, NativeValue* asyncResource,
+        NativeValue* asyncResourceName, size_t maxQueueSize, size_t threadCount, void* finalizeData,
+        NativeFinalize finalizeCallback, void* context, NativeThreadSafeFunctionCallJs callJsCallback);
 
-    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) = 0;
+    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) = 0;
 
     virtual bool Throw(NativeValue* error) = 0;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) = 0;
@@ -149,6 +191,8 @@ public:
     virtual NativeEngine& operator=(NativeEngine&) = delete;
 
     virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) = 0;
+    virtual bool TriggerFatalException(NativeValue* error) = 0;
+    virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) = 0;
 
     void MarkSubThread()
     {
@@ -165,6 +209,26 @@ public:
         cleanEnv_ = cleanEnv;
     }
 
+    virtual NativeValue* CreateDate(double value) = 0;
+    virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) = 0;
+    using CleanupCallback = CleanupHookCallback::Callback;
+    virtual void AddCleanupHook(CleanupCallback fun, void* arg);
+    virtual void RemoveCleanupHook(CleanupCallback fun, void* arg);
+
+    void CleanupHandles();
+    void IncreaseWaitingRequestCounter();
+    void DecreaseWaitingRequestCounter();
+    virtual void RunCleanup();
+
+    bool IsStopping() const
+    {
+        return isStopping_.load();
+    }
+    
+    void SetStopping(bool value)
+    {
+        isStopping_.store(value);
+    }
 protected:
     void Init();
     void Deinit();
@@ -172,6 +236,7 @@ protected:
     NativeModuleManager* moduleManager_ = nullptr;
     NativeScopeManager* scopeManager_ = nullptr;
     NativeReferenceManager* referenceManager_ = nullptr;
+    NativeCallbackScopeManager* callbackScopeManager_ = nullptr;
 
     NativeErrorExtendedInfo lastError_;
     NativeValue* lastException_ = nullptr;
@@ -192,6 +257,11 @@ private:
     uv_thread_t uvThread_;
     uv_sem_t uvSem_;
     uv_async_t uvAsync_;
+    std::unordered_set<CleanupHookCallback, CleanupHookCallback::Hash, CleanupHookCallback::Equal> cleanup_hooks_;
+    uint64_t cleanup_hook_counter_ = 0;
+    int request_waiting_ = 0;
+    std::atomic_bool isStopping_ { false };
+    pthread_t tid_ = 0;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H */

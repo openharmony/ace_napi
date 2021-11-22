@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "quickjs_native_array_buffer.h"
 #include "native_engine/native_engine.h"
+#include "quickjs_native_array_buffer.h"
 
 struct QuickJsArrayCallback {
     static QuickJsArrayCallback* CreateNewInstance() { return new QuickJsArrayCallback(); }
@@ -83,4 +83,22 @@ size_t QuickJSNativeArrayBuffer::GetLength()
     size_t bufferSize = 0;
     buffer = JS_GetArrayBuffer(engine_->GetContext(), &bufferSize, value_);
     return bufferSize;
+}
+
+bool QuickJSNativeArrayBuffer::IsDetachedArrayBuffer()
+{
+    void* buffer = nullptr;
+    size_t bufferSize = 0;
+    buffer = JS_GetArrayBuffer(engine_->GetContext(), &bufferSize, value_);
+    return (buffer == nullptr);
+}
+
+bool QuickJSNativeArrayBuffer::DetachArrayBuffer()
+{
+    if (!IsDetachedArrayBuffer()) {
+        JS_DetachArrayBuffer(engine_->GetContext(), value_);
+        return true;
+    } else {
+        return false;
+    }
 }

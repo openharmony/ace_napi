@@ -268,3 +268,25 @@ bool ArkNativeObject::DeletePrivateProperty(const char* name)
 {
     return false;
 }
+
+NativeValue* ArkNativeObject::GetAllPropertyNames(
+    napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion)
+{
+    return nullptr;
+}
+
+bool ArkNativeObject::AssociateTypeTag(NapiTypeTag* typeTag)
+{
+    return true;
+}
+
+bool ArkNativeObject::CheckTypeTag(NapiTypeTag* typeTag)
+{
+    return true;
+}
+
+void ArkNativeObject::AddFinalizer(void* pointer, NativeFinalize cb, void* hint) {}
+
+void ArkNativeObject::Freeze() {}
+
+void ArkNativeObject::Seal() {}

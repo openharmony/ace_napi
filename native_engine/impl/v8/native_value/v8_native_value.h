@@ -36,6 +36,10 @@ public:
     virtual bool IsDataView() override;
     virtual bool IsPromise() override;
     virtual bool IsCallable() override;
+    bool IsBuffer() override
+    {
+        return false;
+    }
 
     virtual NativeValue* ToBoolean() override;
     virtual NativeValue* ToNumber() override;

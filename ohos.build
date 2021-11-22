@@ -27,6 +27,7 @@
       ],
       "test_list": [
         "//foundation/ace/napi:napi_packages_test",
+        "//foundation/ace/napi/sample/native_module_systemtest/:systemtest",
         "//foundation/ace/napi/test/unittest:unittest"
       ]
     }

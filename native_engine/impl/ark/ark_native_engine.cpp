@@ -193,9 +193,24 @@ NativeValue* ArkNativeEngine::CreateNumber(double value)
     return new ArkNativeNumber(this, value);
 }
 
+NativeValue* ArkNativeEngine::CreateBigInt(int64_t value)
+{
+    return nullptr;
+}
+
+NativeValue* ArkNativeEngine::CreateBigInt(uint64_t value)
+{
+    return nullptr;
+}
+
 NativeValue* ArkNativeEngine::CreateString(const char* value, size_t length)
 {
     return new ArkNativeString(this, value, length);
+}
+
+NativeValue* ArkNativeEngine::CreateString16(const char16_t* value, size_t length)
+{
+    return nullptr;
 }
 
 NativeValue* ArkNativeEngine::CreateSymbol(NativeValue* value)
@@ -408,7 +423,8 @@ NativeValue* ArkNativeEngine::CreateInstance(NativeValue* constructor, NativeVal
     return ArkValueToNativeValue(this, instance);
 }
 
-NativeReference* ArkNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount)
+NativeReference* ArkNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount,
+    NativeFinalize callback, void* data, void* hint)
 {
     return new ArkNativeReference(this, value, initialRefcount);
 }
@@ -605,4 +621,39 @@ bool ArkNativeEngine::ExecuteJsBin(const std::string& fileName)
     Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
     bool ret = JSNApi::Execute(vm_, file, entryPoint);
     return ret;
+}
+
+NativeValue* ArkNativeEngine::CreateBuffer(void** value, size_t length)
+{
+    return nullptr;
+}
+
+NativeValue* ArkNativeEngine::CreateBufferCopy(void** value, size_t length, const void* data)
+{
+    return nullptr;
+}
+
+NativeValue* ArkNativeEngine::CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint)
+{
+    return nullptr;
+}
+
+NativeValue* ArkNativeEngine::CreateDate(double value)
+{
+    return nullptr;
+}
+
+NativeValue* ArkNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)
+{
+    return nullptr;
+}
+
+bool ArkNativeEngine::TriggerFatalException(NativeValue* error)
+{
+    return true;
+}
+
+bool ArkNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue)
+{
+    return true;
 }

@@ -16,8 +16,10 @@
 #ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_VALUE_H
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_VALUE_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+
+#include "../../../third_party/node/src/js_native_api.h"
 
 class NativeValue;
 class NativeEngine;
@@ -30,6 +32,8 @@ typedef void (*NativeFinalize)(NativeEngine* engine, void* data, void* hint);
 
 typedef void (*NativeAsyncExecuteCallback)(NativeEngine* engine, void* data);
 typedef void (*NativeAsyncCompleteCallback)(NativeEngine* engine, int status, void* data);
+using NativeThreadSafeFunctionCallJs =
+    void (*)(NativeEngine* env, NativeValue* js_callback, void* context, void* data);
 
 struct NativeObjectInfo {
     static NativeObjectInfo* CreateNewInstance() { return new NativeObjectInfo(); }
@@ -69,10 +73,20 @@ enum NativeValueType {
     NATIVE_BIGINT,
 };
 
+enum NativeThreadSafeFunctionCallMode {
+    NATIVE_TSFUNC_NONBLOCKING,
+    NATIVE_TSFUNC_BLOCKING,
+};
+
+enum NativeThreadSafeFunctionReleaseMode {
+    NATIVE_TSFUNC_RELEASE,
+    NATIVE_TSFUNC_ABORT,
+};
+
 struct JSValueWrapper {
     JSValueWrapper()
     {
-        u.ptr = 0;
+        u.ptr = nullptr;
         tag = 0;
     }
     template<typename T>
@@ -95,6 +109,11 @@ struct JSValueWrapper {
         void* ptr;
     } u;
     int64_t tag;
+};
+
+struct NapiTypeTag {
+    uint64_t lower;
+    uint64_t upper;
 };
 
 class NativeValue {
@@ -125,6 +144,7 @@ public:
     virtual bool IsDataView() = 0;
     virtual bool IsPromise() = 0;
     virtual bool IsCallable() = 0;
+    virtual bool IsBuffer() = 0;
 
     virtual NativeValue* ToBoolean() = 0;
     virtual NativeValue* ToNumber() = 0;
@@ -161,6 +181,7 @@ public:
     virtual void GetCString(char* buffer, size_t size, size_t* length) = 0;
     virtual size_t GetLength() = 0;
     virtual size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) = 0;
+    virtual void GetCString16(char16_t* buffer, size_t size, size_t* length) = 0;
 };
 
 class NativeObject {
@@ -169,6 +190,8 @@ public:
 
     virtual void SetNativePointer(void* pointer, NativeFinalize cb, void* hint) = 0;
     virtual void* GetNativePointer() = 0;
+
+    virtual void AddFinalizer(void* pointer, NativeFinalize cb, void* hint) = 0;
 
     virtual NativeValue* GetPropertyNames() = 0;
 
@@ -190,6 +213,14 @@ public:
     virtual NativeValue* GetPrivateProperty(const char* name) = 0;
     virtual bool HasPrivateProperty(const char* name) = 0;
     virtual bool DeletePrivateProperty(const char* name) = 0;
+
+    virtual NativeValue* GetAllPropertyNames(
+        napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion) = 0;
+
+    virtual bool AssociateTypeTag(NapiTypeTag* typeTag) = 0;
+    virtual bool CheckTypeTag(NapiTypeTag* typeTag) = 0;
+    virtual void Freeze() = 0;
+    virtual void Seal() = 0;
 };
 
 class NativeArray {
@@ -210,6 +241,8 @@ public:
 
     virtual void* GetBuffer() = 0;
     virtual size_t GetLength() = 0;
+    virtual bool IsDetachedArrayBuffer() = 0;
+    virtual bool DetachArrayBuffer() = 0;
 };
 
 enum NativeTypedArrayType {
@@ -258,6 +291,9 @@ public:
 
     virtual operator int64_t() = 0;
     virtual operator uint64_t() = 0;
+    virtual void Uint64Value(uint64_t* cValue, bool* lossless = nullptr) = 0;
+    virtual void Int64Value(int64_t* cValue, bool* lossless = nullptr) = 0;
+    virtual bool GetWordsArray(int* signBit, size_t* wordCount, uint64_t* words) = 0;
 };
 
 class NativeDate {
@@ -272,6 +308,14 @@ public:
     static const int INTERFACE_ID = 11;
 
     virtual operator void*() = 0;
+};
+
+class NativeBuffer {
+public:
+    static const int INTERFACE_ID = 12;
+
+    virtual void* GetBuffer() = 0;
+    virtual size_t GetLength() = 0;
 };
 
 enum NativeErrorType {

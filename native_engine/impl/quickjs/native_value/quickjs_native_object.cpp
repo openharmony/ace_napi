@@ -14,12 +14,11 @@
  */
 
 #include "quickjs_native_object.h"
-
 #include "native_engine/native_engine.h"
 #include "native_engine/native_property.h"
-
 #include "quickjs_headers.h"
 #include "quickjs_native_array.h"
+#include "quickjs_native_big_int.h"
 #include "quickjs_native_engine.h"
 #include "quickjs_native_function.h"
 #include "quickjs_native_string.h"
@@ -69,6 +68,34 @@ void* QuickJSNativeObject::GetNativePointer()
     return info ? info->nativeObject : nullptr;
 }
 
+void QuickJSNativeObject::AddFinalizer(void* pointer, NativeFinalize cb, void* hint)
+{
+    NativeObjectInfo* info = (NativeObjectInfo*)JS_GetNativePointer(engine_->GetContext(), value_);
+    if (info == nullptr) {
+        info = new NativeObjectInfo();
+        if (info != nullptr) {
+            info->callback = cb;
+            info->engine = engine_;
+            info->nativeObject = pointer;
+            info->hint = hint;
+        }
+    }
+    if (info == nullptr) {
+        return;
+    }
+
+    JS_AddFinalizer(
+        engine_->GetContext(), value_, info,
+        [](JSContext* context, void* data, void* hint) {
+            auto info = reinterpret_cast<NativeObjectInfo*>(data);
+            if (info) {
+                info->callback(info->engine, info->nativeObject, info->hint);
+                delete info;
+            }
+        },
+        hint);
+}
+
 void* QuickJSNativeObject::GetInterface(int interfaceId)
 {
     return (NativeObject::INTERFACE_ID == interfaceId) ? (NativeObject*)this : nullptr;
@@ -109,7 +136,7 @@ bool QuickJSNativeObject::DefineProperty(NativePropertyDescriptor propertyDescri
 
     if (propertyDescriptor.value) {
         result = JS_DefinePropertyValue(engine_->GetContext(), value_, jKey,
-                                        JS_DupValue(engine_->GetContext(), *propertyDescriptor.value), JS_PROP_C_W_E);
+            JS_DupValue(engine_->GetContext(), *propertyDescriptor.value), JS_PROP_C_W_E);
     } else if (propertyDescriptor.method) {
         NativeValue* function = new QuickJSNativeFunction(engine_, propertyDescriptor.utf8name,
                                                           propertyDescriptor.method, propertyDescriptor.data);
@@ -238,4 +265,109 @@ bool QuickJSNativeObject::DeletePrivateProperty(const char* name)
     result = JS_DeleteProperty(engine_->GetContext(), value_, key, JS_PROP_C_W_E | JS_PROP_THROW);
     JS_FreeAtom(engine_->GetContext(), key);
     return result;
+}
+
+NativeValue* QuickJSNativeObject::GetAllPropertyNames(
+    napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion)
+{
+    auto getPower = 0;
+    if (keyFilter == napi_key_all_properties) {
+        getPower = getPower | JS_PROP_GETSET | JS_PROP_WRITABLE | JS_PROP_ENUMERABLE | JS_PROP_CONFIGURABLE;
+    } else {
+        if (keyFilter & napi_key_writable) {
+            getPower = getPower | JS_PROP_WRITABLE | JS_PROP_GETSET;
+        }
+
+        if (keyFilter & napi_key_enumerable) {
+            getPower = getPower | JS_PROP_ENUMERABLE;
+        }
+
+        if (keyFilter & napi_key_configurable) {
+            getPower = getPower | JS_PROP_CONFIGURABLE;
+        }
+    }
+
+    JSPropertyEnum* tab = nullptr;
+    uint32_t len = 0;
+
+    JS_GetOwnPropertyNames(engine_->GetContext(), &tab, &len, value_, getPower);
+
+    QuickJSNativeArray* propertyNames = new QuickJSNativeArray(engine_, len);
+    if (propertyNames == nullptr) {
+        HILOG_ERROR("create property names failed");
+        return nullptr;
+    }
+
+    for (uint32_t i = 0; i < len; i++) {
+        QuickJSNativeString* name = new QuickJSNativeString(engine_, tab[i].atom);
+        propertyNames->SetElement(i, name);
+    }
+
+    return propertyNames;
+}
+
+bool QuickJSNativeObject::AssociateTypeTag(NapiTypeTag* typeTag)
+{
+    const char name_lower[] = "ACENAPI_LOWER";
+    const char name_upper[] = "ACENAPI_UPPER";
+    bool result = false;
+    bool hasPribate = false;
+    hasPribate = HasPrivateProperty(name_lower);
+    if (!hasPribate) {
+        JSValue valueLower = JS_NewInt64(engine_->GetContext(), (uint64_t)(typeTag->lower));
+        JSValue valueUpper = JS_NewInt64(engine_->GetContext(), (uint64_t)(typeTag->upper));
+
+        JSAtom keyLower = JS_NewAtom(engine_->GetContext(), name_lower);
+        result = JS_SetPropertyInternal(engine_->GetContext(), value_, keyLower,
+            JS_DupValue(engine_->GetContext(), valueLower), JS_PROP_C_W_E | JS_PROP_THROW);
+        JS_FreeAtom(engine_->GetContext(), keyLower);
+
+        JSAtom keyUpper = JS_NewAtom(engine_->GetContext(), name_upper);
+        result = result && JS_SetPropertyInternal(engine_->GetContext(), value_, keyUpper,
+            JS_DupValue(engine_->GetContext(), valueUpper), JS_PROP_C_W_E | JS_PROP_THROW);
+        JS_FreeAtom(engine_->GetContext(), keyUpper);
+
+        JS_FreeValue(engine_->GetContext(), valueLower);
+        JS_FreeValue(engine_->GetContext(), valueUpper);
+    }
+    return result;
+}
+
+bool QuickJSNativeObject::CheckTypeTag(NapiTypeTag* typeTag)
+{
+    const char name_lower[] = "ACENAPI_LOWER";
+    const char name_upper[] = "ACENAPI_UPPER";
+    bool result = false;
+    result = HasPrivateProperty(name_lower);
+    if (result) {
+        JSValue valueLower = JS_UNDEFINED;
+        JSAtom key = JS_NewAtom(engine_->GetContext(), name_lower);
+        valueLower = JS_GetPropertyInternal(engine_->GetContext(), value_, key, value_, false);
+        JS_FreeAtom(engine_->GetContext(), key);
+
+        JSValue valueUpper = JS_UNDEFINED;
+        key = JS_NewAtom(engine_->GetContext(), name_upper);
+        valueUpper = JS_GetPropertyInternal(engine_->GetContext(), value_, key, value_, false);
+        JS_FreeAtom(engine_->GetContext(), key);
+
+        int64_t bigintLower = 0;
+        int64_t bigintUpper = 0;
+        JS_ToInt64(engine_->GetContext(), &bigintLower, valueLower);
+        JS_ToInt64(engine_->GetContext(), &bigintUpper, valueUpper);
+
+        if (((uint64_t)bigintLower != typeTag->lower) || ((uint64_t)bigintUpper != typeTag->upper)) {
+            result = false;
+        }
+    }
+    return result;
+}
+
+void QuickJSNativeObject::Freeze()
+{
+    JS_Freeze(engine_->GetContext(), value_);
+}
+
+void QuickJSNativeObject::Seal()
+{
+    JS_Seal(engine_->GetContext(), value_);
 }

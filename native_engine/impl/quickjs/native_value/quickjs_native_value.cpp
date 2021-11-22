@@ -94,6 +94,11 @@ bool QuickJSNativeValue::IsArrayBuffer()
     return JS_IsArrayBuffer(engine_->GetContext(), value_);
 }
 
+bool QuickJSNativeValue::IsBuffer()
+{
+    return JS_IsBuffer(engine_->GetContext(), value_);
+}
+
 bool QuickJSNativeValue::IsDate()
 {
     return JS_IsDate(engine_->GetContext(), value_);

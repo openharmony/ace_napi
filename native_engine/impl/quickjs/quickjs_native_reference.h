@@ -22,7 +22,8 @@
 
 class QuickJSNativeReference : public NativeReference {
 public:
-    QuickJSNativeReference(QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount);
+    QuickJSNativeReference(QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr);
     virtual ~QuickJSNativeReference();
 
     virtual uint32_t Ref() override;
@@ -34,6 +35,11 @@ private:
     QuickJSNativeEngine* engine_;
     JSValue value_;
     uint32_t refCount_;
+    NativeFinalize callback_ = nullptr;
+    void* data_ = nullptr;
+    void* hint_ = nullptr; 
+
+    void FinalizeCallback(void);
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_QUICKJS_NATIVE_REFERENCE_H */

@@ -12,9 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef NAPI_EXPERIMENTAL
+#define NAPI_EXPERIMENTAL
+#endif
 
 #include "native_api_internal.h"
-
 #include "native_engine/native_property.h"
 #include "native_engine/native_value.h"
 #include "securec.h"
@@ -187,6 +189,20 @@ NAPI_EXTERN napi_status napi_create_string_utf8(napi_env env, const char* str, s
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     auto resultValue = engine->CreateString(str, (length == NAPI_AUTO_LENGTH) ? strlen(str) : length);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_string_utf16(napi_env env, const char16_t* str, size_t length, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, str);
+    CHECK_ARG(env, result);
+    RETURN_STATUS_IF_FALSE(env, (length == NAPI_AUTO_LENGTH) || length <= INT_MAX, napi_invalid_arg);
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    int char16Length = static_cast<int>(std::char_traits<char16_t>::length(str));
+    auto resultValue = engine->CreateString16(str, (length == NAPI_AUTO_LENGTH) ? char16Length : length);
 
     *result = reinterpret_cast<napi_value>(resultValue);
     return napi_clear_last_error(env);
@@ -378,8 +394,8 @@ NAPI_EXTERN napi_status napi_get_value_bool(napi_env env, napi_value value, bool
 }
 
 // Copies LATIN-1 encoded bytes from a string into a buffer.
-NAPI_EXTERN napi_status
-napi_get_value_string_latin1(napi_env env, napi_value value, char* buf, size_t bufsize, size_t* result)
+NAPI_EXTERN napi_status napi_get_value_string_latin1(
+    napi_env env, napi_value value, char* buf, size_t bufsize, size_t* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -396,8 +412,8 @@ napi_get_value_string_latin1(napi_env env, napi_value value, char* buf, size_t b
 }
 
 // Copies UTF-8 encoded bytes from a string into a buffer.
-NAPI_EXTERN napi_status
-napi_get_value_string_utf8(napi_env env, napi_value value, char* buf, size_t bufsize, size_t* result)
+NAPI_EXTERN napi_status napi_get_value_string_utf8(
+    napi_env env, napi_value value, char* buf, size_t bufsize, size_t* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -410,6 +426,23 @@ napi_get_value_string_utf8(napi_env env, napi_value value, char* buf, size_t buf
     auto nativeString = reinterpret_cast<NativeString*>(nativeValue->GetInterface(NativeString::INTERFACE_ID));
 
     nativeString->GetCString(buf, bufsize, result);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_value_string_utf16(
+    napi_env env, napi_value value, char16_t* buf, size_t bufsize, size_t* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_STRING, napi_string_expected);
+
+    auto nativeString = reinterpret_cast<NativeString*>(nativeValue->GetInterface(NativeString::INTERFACE_ID));
+
+    nativeString->GetCString16(buf, bufsize, result);
     return napi_clear_last_error(env);
 }
 
@@ -836,8 +869,8 @@ NAPI_EXTERN napi_status napi_call_function(napi_env env,
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status
-napi_new_instance(napi_env env, napi_value constructor, size_t argc, const napi_value* argv, napi_value* result)
+NAPI_EXTERN napi_status napi_new_instance(
+    napi_env env, napi_value constructor, size_t argc, const napi_value* argv, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, constructor);
@@ -1018,8 +1051,8 @@ NAPI_EXTERN napi_status napi_remove_wrap(napi_env env, napi_value js_object, voi
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status
-napi_create_external(napi_env env, void* data, napi_finalize finalize_cb, void* finalize_hint, napi_value* result)
+NAPI_EXTERN napi_status napi_create_external(
+    napi_env env, void* data, napi_finalize finalize_cb, void* finalize_hint, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, data);
@@ -1395,6 +1428,135 @@ NAPI_EXTERN napi_status napi_is_typedarray(napi_env env, napi_value value, bool*
     return napi_clear_last_error(env);
 }
 
+EXTERN_C_START
+NAPI_EXTERN napi_status napi_is_buffer(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+    *result = nativeValue->IsBuffer();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_buffer(napi_env env, size_t size, void** data, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, data);
+    CHECK_ARG(env, result);
+
+    RETURN_STATUS_IF_FALSE(env, size > 0, napi_invalid_arg);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+
+    auto resultValue = engine->CreateBuffer(data, size);
+
+    CHECK_ARG(env, resultValue);
+    CHECK_ARG(env, *data);
+
+    auto nativeBuffer = reinterpret_cast<NativeBuffer*>(resultValue->GetInterface(NativeBuffer::INTERFACE_ID));
+    void* ptr = nativeBuffer->GetBuffer();
+    CHECK_ARG(env, ptr);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_buffer_copy(
+    napi_env env, size_t length, const void* data, void** result_data, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, data);
+    CHECK_ARG(env, result_data);
+    CHECK_ARG(env, result);
+    RETURN_STATUS_IF_FALSE(env, length > 0, napi_invalid_arg);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->CreateBufferCopy(result_data, length, data);
+    if (resultValue == nullptr) {
+        HILOG_INFO("engine create buffer_copy failed!");
+    }
+    CHECK_ARG(env, resultValue);
+
+    auto nativeBuffer = reinterpret_cast<NativeBuffer*>(resultValue->GetInterface(NativeBuffer::INTERFACE_ID));
+    void* ptr = nativeBuffer->GetBuffer();
+    CHECK_ARG(env, ptr);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_external_buffer(
+    napi_env env, size_t length, void* data, napi_finalize finalize_cb, void* finalize_hint, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, finalize_cb);
+    CHECK_ARG(env, result);
+    CHECK_ARG(env, data);
+    RETURN_STATUS_IF_FALSE(env, length > 0, napi_invalid_arg);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto callback = reinterpret_cast<NativeFinalize>(finalize_cb);
+    auto resultValue = engine->CreateBufferExternal(data, length, callback, finalize_hint);
+    CHECK_ARG(env, resultValue);
+
+    auto nativeBuffer = reinterpret_cast<NativeBuffer*>(resultValue->GetInterface(NativeBuffer::INTERFACE_ID));
+    void* ptr = nativeBuffer->GetBuffer();
+    CHECK_ARG(env, ptr);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_buffer_info(napi_env env, napi_value value, void** data, size_t* length)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->IsBuffer(), napi_status::napi_arraybuffer_expected);
+
+    auto nativeBuffer = reinterpret_cast<NativeBuffer*>(nativeValue->GetInterface(NativeBuffer::INTERFACE_ID));
+    if (data != nullptr) {
+        *data = nativeBuffer->GetBuffer();
+    }
+    if (length != nullptr) {
+        *length = nativeBuffer->GetLength();
+    }
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_object_freeze(napi_env env, napi_value object)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, object);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(object);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
+
+    nativeObject->Freeze();
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_object_seal(napi_env env, napi_value object)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, object);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(object);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
+
+    nativeObject->Seal();
+
+    return napi_clear_last_error(env);
+}
+
+EXTERN_C_END
+
 NAPI_EXTERN napi_status napi_create_typedarray(napi_env env,
                                                napi_typedarray_type type,
                                                size_t length,
@@ -1448,8 +1610,8 @@ NAPI_EXTERN napi_status napi_get_typedarray_info(napi_env env,
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status
-napi_create_dataview(napi_env env, size_t length, napi_value arraybuffer, size_t byte_offset, napi_value* result)
+NAPI_EXTERN napi_status napi_create_dataview(
+    napi_env env, size_t length, napi_value arraybuffer, size_t byte_offset, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, arraybuffer);
@@ -1602,6 +1764,9 @@ NAPI_EXTERN napi_status napi_adjust_external_memory(napi_env env, int64_t change
     CHECK_ENV(env);
     CHECK_ARG(env, adjusted_value);
 
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    engine->AdjustExternalMemory(change_in_bytes, adjusted_value);
+
     return napi_clear_last_error(env);
 }
 
@@ -1710,5 +1875,255 @@ napi_status napi_get_jsEngine(napi_env env, void** pEngine)
     auto engine = reinterpret_cast<NativeEngine*>(env);
     *pEngine = engine->GetJsEngine();
     return napi_clear_last_error(env);
+}
 
+NAPI_EXTERN napi_status napi_create_bigint_int64(napi_env env, int64_t value, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->CreateBigInt(value);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_bigint_uint64(napi_env env, uint64_t value, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->CreateBigInt(value);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_value_bigint_int64(napi_env env, napi_value value, int64_t* result, bool* lossless)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+    CHECK_ARG(env, lossless);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_BIGINT, napi_bigint_expected);
+
+    auto nativeBigint = reinterpret_cast<NativeBigint*>(nativeValue->GetInterface(NativeBigint::INTERFACE_ID));
+    nativeBigint->Int64Value(result, lossless);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_value_bigint_uint64(napi_env env, napi_value value, uint64_t* result, bool* lossless)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+    CHECK_ARG(env, lossless);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_BIGINT, napi_bigint_expected);
+    auto nativeBigint = reinterpret_cast<NativeBigint*>(nativeValue->GetInterface(NativeBigint::INTERFACE_ID));
+    nativeBigint->Uint64Value(result, lossless);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_date(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsDate();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_detached_arraybuffer(napi_env env, napi_value arraybuffer, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, arraybuffer);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(arraybuffer);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    auto ArrayBuffer_result = nativeValue->IsArrayBuffer();
+    if (ArrayBuffer_result) {
+        auto nativeArrayBuffer =
+            reinterpret_cast<NativeArrayBuffer*>(nativeValue->GetInterface(NativeArrayBuffer::INTERFACE_ID));
+        *result = nativeArrayBuffer->IsDetachedArrayBuffer();
+    } else {
+        return napi_set_last_error(env, napi_invalid_arg);
+    }
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_all_property_names(napi_env env, napi_value object, napi_key_collection_mode key_mode,
+    napi_key_filter key_filter, napi_key_conversion key_conversion, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, object);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(object);
+
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+
+    auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
+
+    auto resultValue = nativeObject->GetAllPropertyNames(key_mode, key_filter, key_conversion);
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_detach_arraybuffer(napi_env env, napi_value arraybuffer)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, arraybuffer);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(arraybuffer);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+
+    auto ArrayBuffer_result = nativeValue->IsArrayBuffer();
+    if (ArrayBuffer_result) {
+        auto nativeArrayBuffer =
+            reinterpret_cast<NativeArrayBuffer*>(nativeValue->GetInterface(NativeArrayBuffer::INTERFACE_ID));
+
+        auto ret = nativeArrayBuffer->DetachArrayBuffer();
+        if (!ret) {
+            return napi_set_last_error(env, napi_detachable_arraybuffer_expected);
+        }
+    } else {
+        return napi_set_last_error(env, napi_invalid_arg);
+    }
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_type_tag_object(napi_env env, napi_value js_object, const napi_type_tag* type_tag)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, js_object);
+    CHECK_ARG(env, type_tag);
+    bool result = true;
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(js_object);
+
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+
+    auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
+
+    result = nativeObject->AssociateTypeTag((NapiTypeTag*)type_tag);
+
+    if (!result) {
+        return napi_set_last_error(env, napi_invalid_arg);
+    }
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_check_object_type_tag(
+    napi_env env, napi_value js_object, const napi_type_tag* type_tag, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, js_object);
+    CHECK_ARG(env, type_tag);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(js_object);
+
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+
+    auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
+    *result = nativeObject->CheckTypeTag((NapiTypeTag*)type_tag);
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_date(napi_env env, double time, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->CreateDate(time);
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_date_value(napi_env env, napi_value value, double* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+    auto nativeDate = reinterpret_cast<NativeDate*>(nativeValue->GetInterface(NativeDate::INTERFACE_ID));
+
+    auto IsDate_result = nativeValue->IsDate();
+    if (IsDate_result) {
+        *result = nativeDate->GetTime();
+    } else {
+        return napi_set_last_error(env, napi_date_expected);
+    }
+
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_add_finalizer(napi_env env, napi_value js_object, void* native_object,
+    napi_finalize finalize_cb, void* finalize_hint, napi_ref* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, js_object);
+    CHECK_ARG(env, finalize_cb);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(js_object);
+    auto callback = reinterpret_cast<NativeFinalize>(finalize_cb);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
+    nativeObject->AddFinalizer(native_object, callback, finalize_hint);
+    if (result != nullptr) {
+        auto engine = reinterpret_cast<NativeEngine*>(env);
+        auto reference = engine->CreateReference(nativeValue, 1, callback, native_object, finalize_hint);
+        *result = reinterpret_cast<napi_ref>(reference);
+    }
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_create_bigint_words(
+    napi_env env, int sign_bit, size_t word_count, const uint64_t* words, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, words);
+    CHECK_ARG(env, result);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->CreateBigWords(sign_bit, word_count, words);
+
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_get_value_bigint_words(
+    napi_env env, napi_value value, int* sign_bit, size_t* word_count, uint64_t* words)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, word_count);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_BIGINT, napi_object_expected);
+
+    auto nativeBigint = reinterpret_cast<NativeBigint*>(nativeValue->GetInterface(NativeBigint::INTERFACE_ID));
+
+    auto resultValue = nativeBigint->GetWordsArray(sign_bit, word_count, words);
+
+    if (resultValue == false) {
+        return napi_set_last_error(env, napi_invalid_arg);
+    }
+
+    return napi_clear_last_error(env);
 }
