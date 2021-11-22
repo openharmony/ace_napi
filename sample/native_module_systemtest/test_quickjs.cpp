@@ -15,10 +15,8 @@
 
 #include "test.h"
 
-#include "utils/log.h"
-#include "ark_native_engine.h"
+#include "quickjs_native_engine.h"
 
-using panda::RuntimeOption;
 static NativeEngine* g_nativeEngine = nullptr;
 
 NativeEngineTest::NativeEngineTest()
@@ -28,35 +26,43 @@ NativeEngineTest::NativeEngineTest()
 
 NativeEngineTest::~NativeEngineTest() {}
 
+static void LoopNewThread(void* data)
+{
+    g_nativeEngine->Loop(LOOP_DEFAULT);
+}
+
 int main(int argc, char** argv)
 {
     testing::GTEST_FLAG(output) = "xml:./";
     testing::InitGoogleTest(&argc, argv);
 
-    // Setup
-    RuntimeOption option;
-    option.SetGcType(RuntimeOption::GC_TYPE::GEN_GC);
-    // const int64_t poolSize = 0x10000000;  // 256M
-    const int64_t poolSize = 0x1000000;  // 16M
-    option.SetGcPoolSize(poolSize);
-    //option.SetPandaStdFile("pandastdlib/arkstdlib.abc");
-    option.SetLogLevel(RuntimeOption::LOG_LEVEL::ERROR);
-    option.SetDebuggerLibraryPath("");
-    EcmaVM* vm = panda::JSNApi::CreateJSVM(option);
-    if (vm == nullptr) {
+    JSRuntime* rt = JS_NewRuntime();
+    if (rt == nullptr) {
         return 0;
     }
 
-    g_nativeEngine = new ArkNativeEngine(vm, nullptr);
+    JSContext* ctx = JS_NewContext(rt);
+    if (ctx == nullptr) {
+        return 0;
+    }
 
-    int ret = testing::UnitTest::GetInstance()->Run();
+    js_std_add_helpers(ctx, 0, nullptr);
 
-    g_nativeEngine->Loop(LOOP_NOWAIT);
+    g_nativeEngine = new QuickJSNativeEngine(rt, ctx, 0); // default instance id 0
+
+    uv_thread_t tid;
+    uv_thread_create(&tid, LoopNewThread, nullptr);
+
+    int ret = RUN_ALL_TESTS();
+
+    uv_thread_join(&tid);
 
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
-    panda::JSNApi::DestoryJSVM(vm);
-    vm = nullptr;
+
+    js_std_free_handlers(rt);
+    JS_FreeContext(ctx);
+    JS_FreeRuntime(rt);
 
     return ret;
 }

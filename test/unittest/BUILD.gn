@@ -55,42 +55,101 @@ if (defined(ohos_lite)) {
   }
 } else {
   import("//build/test.gni")
+  import("//foundation/ace/napi/test/unittest/ut.gni")
 
   if (is_standard_system) {
     module_output_path = "ace_engine_standard/napi"
-  } else {
-    module_output_path = "ace_engine_full/napi"
   }
 
   ohos_unittest("test_quickjs_unittest") {
     module_out_path = module_output_path
 
-    include_dirs = [
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/interfaces/kits",
-      "//foundation/ace/napi/native_engine",
-      "//foundation/ace/napi/native_engine/impl/quickjs",
-      "//third_party/googletest/include",
-      "//third_party/node/src",
-      "//utils/native/base/include",
-    ]
+    include_dirs = quickjs_include
 
     cflags = [ "-g3" ]
 
     sources = [
+      "engine/test_quickjs.cpp",
       "test_napi.cpp",
-      "test_quickjs.cpp",
     ]
 
-    deps = [
-      "//foundation/ace/napi/:ace_napi",
-      "//foundation/ace/napi/:ace_napi_quickjs",
-      "//third_party/googletest:gtest",
-      "//third_party/googletest:gtest_main",
-      "//third_party/libuv:uv_static",
-      "//third_party/quickjs:qjs",
-      "//utils/native/base:utils",
+    deps = quickjs_deps
+
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+
+  ohos_unittest("test_quickjs_unittest_ext") {
+    module_out_path = module_output_path
+
+    include_dirs = quickjs_include
+
+    cflags = [ "-g3" ]
+
+    sources = [
+      "./engine/test_quickjs.cpp",
+      "test_napi_ext.cpp",
     ]
+
+    deps = quickjs_deps
+
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+
+  ohos_unittest("test_quickjs_unittest_threadsafe") {
+    module_out_path = module_output_path
+
+    include_dirs = quickjs_include
+
+    cflags = [ "-g3" ]
+
+    sources = [
+      "engine/test_quickjs.cpp",
+      "test_napi_threadsafe.cpp",
+    ]
+
+    deps = quickjs_deps
+
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+
+  ohos_unittest("test_quickjs_unittest_instance_data") {
+    module_out_path = module_output_path
+
+    include_dirs = quickjs_include
+
+    cflags = [ "-g3" ]
+
+    sources = [
+      "engine/test_quickjs.cpp",
+      "test_instance_data.cpp",
+    ]
+
+    deps = quickjs_deps
+
+    if (is_standard_system) {
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+    }
+  }
+
+  ohos_unittest("test_quickjs_unittest_general") {
+    module_out_path = module_output_path
+
+    include_dirs = quickjs_include
+
+    cflags = [ "-g3" ]
+
+    sources = [
+      "./engine/test_quickjs.cpp",
+      "test_general.cpp",
+    ]
+
+    deps = quickjs_deps
 
     if (is_standard_system) {
       external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -102,33 +161,16 @@ if (defined(ohos_lite)) {
 
     configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
 
-    include_dirs = [
-      "//ark/js_runtime",
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/interfaces/kits",
-      "//foundation/ace/napi/native_engine",
-      "//foundation/ace/napi/native_engine/impl/ark",
-      "//third_party/googletest/include",
-      "//third_party/node/src",
-      "//utils/native/base/include",
-    ]
+    include_dirs = ark_include
 
     cflags = [ "-g3" ]
 
     sources = [
-      "test_ark.cpp",
+      "./engine/test_ark.cpp",
       "test_napi.cpp",
     ]
 
-    deps = [
-      "//ark/js_runtime:libark_jsruntime",
-      "//foundation/ace/napi/:ace_napi",
-      "//foundation/ace/napi/:ace_napi_ark",
-      "//third_party/googletest:gtest",
-      "//third_party/googletest:gtest_main",
-      "//third_party/libuv:uv_static",
-      "//utils/native/base:utils",
-    ]
+    deps = ark_deps
 
     if (is_standard_system) {
       external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -141,7 +183,9 @@ if (defined(ohos_lite)) {
     testonly = true
     deps = [
       ":test_ark_unittest",
-      # ":test_quickjs_unittest",
+      ":test_quickjs_unittest",
+      ":test_quickjs_unittest_ext",
+      ":test_quickjs_unittest_threadsafe",
     ]
   }
 }

@@ -48,11 +48,13 @@ if (defined(ohos_lite)) {
     ]
 
     sources = [
+      "callback_scope_manager/native_callback_scope_manager.cpp",
       "module_manager/native_module_manager.cpp",
       "native_engine/native_api.cpp",
       "native_engine/native_async_work.cpp",
       "native_engine/native_engine.cpp",
       "native_engine/native_node_api.cpp",
+      "native_engine/native_safe_async_work.cpp",
       "scope_manager/native_scope_manager.cpp",
     ]
 
@@ -138,11 +140,13 @@ if (defined(ohos_lite)) {
     ]
 
     sources = [
+      "callback_scope_manager/native_callback_scope_manager.cpp",
       "module_manager/native_module_manager.cpp",
       "native_engine/native_api.cpp",
       "native_engine/native_async_work.cpp",
       "native_engine/native_engine.cpp",
       "native_engine/native_node_api.cpp",
+      "native_engine/native_safe_async_work.cpp",
       "reference_manager/native_reference_manager.cpp",
       "scope_manager/native_scope_manager.cpp",
     ]
@@ -232,11 +236,13 @@ if (defined(ohos_lite)) {
       "//utils/native/base/include",
     ]
     sources = [
+      "callback_scope_manager/native_callback_scope_manager.cpp",
       "module_manager/native_module_manager.cpp",
       "native_engine/native_api.cpp",
       "native_engine/native_async_work.cpp",
       "native_engine/native_engine.cpp",
       "native_engine/native_node_api.cpp",
+      "native_engine/native_safe_async_work.cpp",
       "scope_manager/native_scope_manager.cpp",
     ]
 

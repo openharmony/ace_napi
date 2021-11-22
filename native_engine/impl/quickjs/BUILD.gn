@@ -17,6 +17,7 @@ import("//foundation/ace/ace_engine/ace_config.gni")
 config("ace_napi_quickjs_config") {
   include_dirs = [
     "//foundation/ace/napi",
+    "//foundation/ace/napi/native_engine",
     "//third_party/libuv/include",
     "//third_party/quickjs",
     "//utils/native/base/include",
@@ -33,8 +34,11 @@ template("ace_napi_impl") {
     sources = [
       "native_value/quickjs_native_array.cpp",
       "native_value/quickjs_native_array_buffer.cpp",
+      "native_value/quickjs_native_big_int.cpp",
       "native_value/quickjs_native_boolean.cpp",
+      "native_value/quickjs_native_buffer.cpp",
       "native_value/quickjs_native_data_view.cpp",
+      "native_value/quickjs_native_date.cpp",
       "native_value/quickjs_native_external.cpp",
       "native_value/quickjs_native_function.cpp",
       "native_value/quickjs_native_number.cpp",

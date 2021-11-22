@@ -19,19 +19,6 @@
 #include "securec.h"
 #include "utils/log.h"
 
-#define ASSERT_CHECK_CALL(call)   \
-    {                             \
-        ASSERT_EQ(call, napi_ok); \
-    }
-
-#define ASSERT_CHECK_VALUE_TYPE(env, value, type)               \
-    {                                                           \
-        napi_valuetype valueType = napi_undefined;              \
-        ASSERT_TRUE(value != nullptr);                          \
-        ASSERT_CHECK_CALL(napi_typeof(env, value, &valueType)); \
-        ASSERT_EQ(valueType, type);                             \
-    }
-
 /**
  * @tc.name: UndefinedTest
  * @tc.desc: Test undefined type.
