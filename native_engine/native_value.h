@@ -161,7 +161,7 @@ public:
     virtual bool IsSymbolObject() = 0;
     virtual bool IsWeakMap() = 0;
     virtual bool IsWeakSet() = 0;
-	virtual bool IsSet() = 0;
+    virtual bool IsSet() = 0;
 
     virtual NativeValue* ToBoolean() = 0;
     virtual NativeValue* ToNumber() = 0;
