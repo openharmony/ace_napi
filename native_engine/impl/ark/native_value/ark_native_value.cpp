@@ -190,7 +190,7 @@ bool ArkNativeValue::IsModuleNamespaceObject()
 
 bool ArkNativeValue::IsNumberObject()
 {
-   Global<JSValueRef> value = value_;
+    Global<JSValueRef> value = value_;
     return value->IsJSPrimitiveNumber();
 }
 
@@ -226,7 +226,7 @@ bool ArkNativeValue::IsStringObject()
 
 bool ArkNativeValue::IsSymbolObject()
 {
-     Global<JSValueRef> value = value_;
+    Global<JSValueRef> value = value_;
     return value->IsJSPrimitiveSymbol();
 }
 
