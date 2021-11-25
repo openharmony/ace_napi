@@ -290,6 +290,8 @@ if (defined(ohos_lite)) {
       testonly = true
 
       deps = [
+        "sample/native_module_calc:calc",
+        "sample/native_module_calc:number",
         "sample/native_module_demo:demo",
         "sample/native_module_netserver:netserver",
         "sample/native_module_storage:storage",
