@@ -1830,18 +1830,6 @@ NAPI_EXTERN napi_status napi_is_generator_function(napi_env env, napi_value valu
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_is_date(napi_env env, napi_value value, bool* result)
-{
-    CHECK_ENV(env);
-    CHECK_ARG(env, value);
-    CHECK_ARG(env, result);
-
-    auto nativeValue = reinterpret_cast<NativeValue*>(value);
-
-    *result = nativeValue->IsDate();
-    return napi_clear_last_error(env);
-}
-
 NAPI_EXTERN napi_status napi_is_map_iterator(napi_env env, napi_value value, bool* result)
 {
     CHECK_ENV(env);

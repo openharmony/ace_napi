@@ -194,12 +194,12 @@ bool JS_IsGeneratorObject(JSContext* context, JSValue value)
     return false;
 }
 
-bool JS_IsModuleNamespaceObject(JSContext* context, JSValue value) 
+bool JS_IsModuleNamespaceObject(JSContext* context, JSValue value)
 {
     return false;
 }
 
-bool JS_IsProxy(JSContext* context, JSValue value) 
+bool JS_IsProxy(JSContext* context, JSValue value)
 {
     return false;
 }
