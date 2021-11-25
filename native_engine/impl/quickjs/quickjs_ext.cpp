@@ -179,139 +179,55 @@ bool JS_IsPromise(JSContext* context, JSValue value)
     return result;
 }
 
-
-
 bool JS_IsMapIterator(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Object", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsSetIterator(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Object", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsGeneratorObject(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Object", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsModuleNamespaceObject(JSContext* context, JSValue value) 
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Object", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsProxy(JSContext* context, JSValue value) 
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Proxy", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsRegExp(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("RegExp", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsNumberObject(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Number", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsMap(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Map", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsSet(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("Set", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
 
 bool JS_IsKeyObject(JSContext* context, JSValue value)
 {
-    bool result = false;
-    /*JSValue constructor = JS_GetPropertyStr(context, value, "constructor");
-    JSValue name = JS_GetPropertyStr(context, constructor, "name");
-    const char* cName = JS_ToCString(context, name);
-    result = !strcmp("KeyObject", cName ? cName : "");
-    JS_FreeCString(context, cName);
-    JS_FreeValue(context, name);
-    JS_FreeValue(context, constructor);*/
-    return result;
+    return false;
 }
-
-
 
 bool JS_IsArrayBuffer(JSContext* context, JSValue value)
 {
