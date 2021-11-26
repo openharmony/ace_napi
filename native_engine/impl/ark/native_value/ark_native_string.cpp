@@ -55,6 +55,8 @@ void ArkNativeString::GetCString(char* buffer, size_t size, size_t* length)
     }
 }
 
+void ArkNativeString::GetCString16(char16_t* buffer, size_t size, size_t* length) {}
+
 size_t ArkNativeString::GetLength()
 {
     auto vm = engine_->GetEcmaVm();

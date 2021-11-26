@@ -21,7 +21,7 @@
 
 class SerializeData {
 public:
-    SerializeData(size_t size, uint8_t *data) : dataSize_(size), value_(data) {}
+    SerializeData(size_t size, uint8_t* data) : dataSize_(size), value_(data) {}
     ~SerializeData() = default;
 
     uint8_t* GetData() const
@@ -63,8 +63,10 @@ public:
     virtual NativeValue* CreateNumber(uint32_t value) override;
     virtual NativeValue* CreateNumber(int64_t value) override;
     virtual NativeValue* CreateNumber(double value) override;
+    virtual NativeValue* CreateBigInt(int64_t value) override;
+    virtual NativeValue* CreateBigInt(uint64_t value) override;
     virtual NativeValue* CreateString(const char* value, size_t length) override;
-
+    virtual NativeValue* CreateString16(const char16_t* value, size_t length) override;
     virtual NativeValue* CreateSymbol(NativeValue* value) override;
     virtual NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) override;
 
@@ -74,7 +76,9 @@ public:
 
     virtual NativeValue* CreateArrayBuffer(void** value, size_t length) override;
     virtual NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
-
+    virtual NativeValue* CreateBuffer(void** value, size_t length) override;
+    virtual NativeValue* CreateBufferCopy(void** value, size_t length, const void* data) override;
+    virtual NativeValue* CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
     virtual NativeValue* CreateTypedArray(NativeTypedArrayType type,
                                           NativeValue* value,
                                           size_t length,
@@ -85,18 +89,13 @@ public:
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* Message) override;
     virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
 
-    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) override;
+    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) override;
+    virtual NativeValue* CallFunction(
+        NativeValue* thisVar, NativeValue* function, NativeValue* const* argv, size_t argc) override;
 
-    virtual NativeValue* CallFunction(NativeValue* thisVar,
-                                      NativeValue* function,
-                                      NativeValue* const* argv,
-                                      size_t argc) override;
-
-    virtual NativeValue* DefineClass(const char* name,
-                                     NativeCallback callback,
-                                     void* data,
-                                     const NativePropertyDescriptor* properties,
-                                     size_t length) override;
+    virtual NativeValue* DefineClass(const char* name, NativeCallback callback, void* data,
+        const NativePropertyDescriptor* properties, size_t length) override;
 
     virtual NativeValue* RunScript(NativeValue* script) override;
     virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
@@ -123,6 +122,11 @@ public:
     JSValue LoadModuleByName(
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
+    virtual NativeValue* CreateDate(double time) override;
+    virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
+    virtual bool TriggerFatalException(NativeValue* error) override;
+    virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
+
 private:
     JSRuntime* runtime_;
     JSContext* context_;

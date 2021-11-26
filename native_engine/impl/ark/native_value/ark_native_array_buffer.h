@@ -29,6 +29,9 @@ public:
 
     void* GetBuffer() override;
     size_t GetLength() override;
+
+    bool IsDetachedArrayBuffer() override;
+    bool DetachArrayBuffer() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_NATIVE_VALUE_ARK_NATIVE_ARRAY_BUFFER_H */

@@ -18,7 +18,6 @@
 
 #include "native_engine/native_value.h"
 #include "quickjs_headers.h"
-
 #include "quickjs_native_engine.h"
 
 class QuickJSNativeValue : public NativeValue {
@@ -33,6 +32,7 @@ public:
 
     virtual bool IsArray() override;
     virtual bool IsArrayBuffer() override;
+    virtual bool IsBuffer() override;
     virtual bool IsDate() override;
     virtual bool IsError() override;
     virtual bool IsTypedArray() override;

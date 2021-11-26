@@ -15,7 +15,7 @@
 
 #include "test.h"
 
-#include "jerryscript_native_engine.h"
+#include "quickjs_native_engine.h"
 
 static NativeEngine* g_nativeEngine = nullptr;
 
@@ -24,20 +24,41 @@ NativeEngineTest::NativeEngineTest()
     engine_ = g_nativeEngine;
 }
 
-NativeEngineTest::~NativeEngineTest() {}
+NativeEngineTest::~NativeEngineTest()
+{
+    printf("NativeEngineTest::~NativeEngineTest \n");
+    engine_->RunCleanup();
+}
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     testing::GTEST_FLAG(output) = "xml:./";
     testing::InitGoogleTest(&argc, argv);
 
-    jerry_init(jerry_init_flag_t::JERRY_INIT_EMPTY);
-    g_nativeEngine = new JerryScriptNativeEngine(0); // default instance id 0
+    JSRuntime* rt = JS_NewRuntime();
+    if (rt == nullptr) {
+        return 0;
+    }
+
+    JSContext* ctx = JS_NewContext(rt);
+    if (ctx == nullptr) {
+        return 0;
+    }
+
+    js_std_add_helpers(ctx, 0, nullptr);
+
+    g_nativeEngine = new QuickJSNativeEngine(rt, ctx, 0);  // default instance id 0
+
     int ret = RUN_ALL_TESTS();
-    g_nativeEngine->Loop(LoopMode::LOOP_DEFAULT);
+
+    g_nativeEngine->Loop(LOOP_DEFAULT);
+
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
-    jerry_cleanup();
+
+    js_std_free_handlers(rt);
+    JS_FreeContext(ctx);
+    JS_FreeRuntime(rt);
 
     return ret;
 }

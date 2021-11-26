@@ -18,7 +18,13 @@
 
 #define DEPRECATED __attribute__((__deprecated__))
 
-#define NAPI_VERSION 2
+#ifndef NAPI_VERSION
+#define NAPI_VERSION 7
+#endif
+
+#ifndef NAPI_EXPERIMENTAL
+#define NAPI_EXPERIMENTAL
+#endif
 
 #define NAPI_RETVAL_NOTHING
 
@@ -74,9 +80,9 @@
         (name), nullptr, (func), nullptr, nullptr, nullptr, napi_default, nullptr \
     }
 
-#define DECLARE_NAPI_FUNCTION_WITH_DATA(name, func, data)                         \
-    {                                                                             \
-        (name), nullptr, (func), nullptr, nullptr, nullptr, napi_default, data    \
+#define DECLARE_NAPI_FUNCTION_WITH_DATA(name, func, data)                      \
+    {                                                                          \
+        (name), nullptr, (func), nullptr, nullptr, nullptr, napi_default, data \
     }
 
 #define DECLARE_NAPI_STATIC_FUNCTION(name, func)                                 \
