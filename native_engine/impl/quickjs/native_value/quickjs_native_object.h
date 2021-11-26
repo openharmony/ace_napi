@@ -28,6 +28,7 @@ public:
 
     virtual void SetNativePointer(void* pointer, NativeFinalize cb, void* hint) override;
 
+    virtual void AddFinalizer(void* pointer, NativeFinalize cb, void* hint) override;
     virtual void* GetNativePointer() override;
 
     virtual NativeValue* GetPropertyNames() override;
@@ -50,6 +51,14 @@ public:
     virtual NativeValue* GetPrivateProperty(const char* name) override;
     virtual bool HasPrivateProperty(const char* name) override;
     virtual bool DeletePrivateProperty(const char* name) override;
+
+    virtual NativeValue* GetAllPropertyNames(
+        napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion) override;
+
+    virtual bool AssociateTypeTag(NapiTypeTag* typeTag) override;
+    virtual bool CheckTypeTag(NapiTypeTag* typeTag) override;
+    virtual void Freeze() override;
+    virtual void Seal() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_OBJECT_H */

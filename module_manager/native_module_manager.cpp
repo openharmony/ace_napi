@@ -234,7 +234,7 @@ using NAPIGetJSCode = void (*)(const char** buf, int* bufLen);
 NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule,
                                                           bool isArk)
 {
-    char nativeModulePath[NATIVE_PATH_NUMBER][NAPI_PATH_MAX] = { 0 };
+    char nativeModulePath[NATIVE_PATH_NUMBER][NAPI_PATH_MAX];
     if (!GetNativeModulePath(moduleName, isAppModule, nativeModulePath, NAPI_PATH_MAX)) {
         HILOG_ERROR("get module filed");
         return nullptr;

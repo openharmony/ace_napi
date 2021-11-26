@@ -92,3 +92,13 @@ size_t ArkNativeArrayBuffer::GetLength()
     Global<ArrayBufferRef> v = value_;
     return v->ByteLength(vm);
 }
+
+bool ArkNativeArrayBuffer::IsDetachedArrayBuffer()
+{
+    return true;
+}
+
+bool ArkNativeArrayBuffer::DetachArrayBuffer()
+{
+    return false;
+}

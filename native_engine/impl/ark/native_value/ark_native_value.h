@@ -34,6 +34,7 @@ public:
 
     bool IsArray() override;
     bool IsArrayBuffer() override;
+    bool IsBuffer() override;
     bool IsDate() override;
     bool IsError() override;
     bool IsTypedArray() override;

@@ -19,8 +19,10 @@
 #include "quickjs_native_reference.h"
 
 QuickJSNativeReference::QuickJSNativeReference(
-    QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount)
-    : engine_(engine), value_(*value), refCount_(initialRefcount)
+    QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount, 
+    NativeFinalize callback , void* data, void* hint)
+    : engine_(engine), value_(*value), refCount_(initialRefcount), callback_(callback), data_(data),
+    hint_(hint)
 {
     for (uint32_t i = 0; i < initialRefcount; i++) {
         JS_DupValue(engine_->GetContext(), value_);
@@ -30,8 +32,11 @@ QuickJSNativeReference::QuickJSNativeReference(
 QuickJSNativeReference::~QuickJSNativeReference()
 {
     while (refCount_) {
-        JS_FreeValue(engine_->GetContext(), value_);
         refCount_--;
+        if (refCount_ == 0) {
+            FinalizeCallback();
+        }
+        JS_FreeValue(engine_->GetContext(), value_);
     }
 }
 
@@ -48,6 +53,9 @@ uint32_t QuickJSNativeReference::Unref()
 {
     if (refCount_ > 0) {
         --refCount_;
+        if (refCount_ == 0) {
+            FinalizeCallback();
+        }
         JS_FreeValue(engine_->GetContext(), value_);
     }
     return refCount_;
@@ -61,4 +69,15 @@ NativeValue* QuickJSNativeReference::Get()
 QuickJSNativeReference::operator NativeValue*()
 {
     return Get();
+}
+
+void QuickJSNativeReference::FinalizeCallback(void)
+{
+    if (callback_ != nullptr) {
+        callback_(engine_, data_, hint_);
+        JS_FreeFinalizer(value_);
+    }
+    callback_ = nullptr;
+    data_ = nullptr;
+    hint_ = nullptr;
 }
