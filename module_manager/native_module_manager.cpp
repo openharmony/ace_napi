@@ -267,6 +267,12 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
                 return nullptr;
             }
         }
+
+        // replace '.' with '_'
+        for (char* p = strchr(symbol, '.'); p != nullptr; p = strchr(p + 1, '.')) {
+            *p = '_';
+        }
+
         auto getJSCode = reinterpret_cast<NAPIGetJSCode>(dlsym(lib, symbol));
         if (getJSCode != nullptr) {
             const char* buf = nullptr;
