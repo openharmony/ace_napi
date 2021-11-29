@@ -179,6 +179,56 @@ bool JS_IsPromise(JSContext* context, JSValue value)
     return result;
 }
 
+bool JS_IsMapIterator(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsSetIterator(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsGeneratorObject(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsModuleNamespaceObject(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsProxy(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsRegExp(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsNumberObject(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsMap(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsSet(JSContext* context, JSValue value)
+{
+    return false;
+}
+
+bool JS_IsKeyObject(JSContext* context, JSValue value)
+{
+    return false;
+}
+
 bool JS_IsArrayBuffer(JSContext* context, JSValue value)
 {
     bool result = false;

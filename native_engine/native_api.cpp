@@ -1782,6 +1782,210 @@ NAPI_EXTERN napi_status napi_is_callable(napi_env env, napi_value value, bool* r
     return napi_clear_last_error(env);
 }
 
+NAPI_EXTERN napi_status napi_is_arguments_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsArgumentsObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_async_function(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsAsyncFunction();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_boolean_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsBooleanObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_generator_function(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsGeneratorFunction();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_map_iterator(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsMapIterator();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_set_iterator(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsSetIterator();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_generator_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsGeneratorObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_module_namespace_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsModuleNamespaceObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_proxy(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsProxy();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_reg_exp(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsRegExp();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_number_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsNumberObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_map(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsMap();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_set(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsSet();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_string_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsStringObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_symbol_object(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsSymbolObject();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_weak_map(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsWeakMap();
+    return napi_clear_last_error(env);
+}
+
+NAPI_EXTERN napi_status napi_is_weak_set(napi_env env, napi_value value, bool* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
+
+    auto nativeValue = reinterpret_cast<NativeValue*>(value);
+
+    *result = nativeValue->IsWeakSet();
+    return napi_clear_last_error(env);
+}
+
 NAPI_EXTERN napi_status napi_create_runtime(napi_env env, napi_env* result_env)
 {
     CHECK_ENV(env);

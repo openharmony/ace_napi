@@ -144,7 +144,24 @@ public:
     virtual bool IsDataView() = 0;
     virtual bool IsPromise() = 0;
     virtual bool IsCallable() = 0;
+    virtual bool IsArgumentsObject() = 0;
+    virtual bool IsAsyncFunction() = 0;
+    virtual bool IsBooleanObject() = 0;
+    virtual bool IsGeneratorFunction() = 0;
+    virtual bool IsMapIterator() = 0;
+    virtual bool IsSetIterator() = 0;
+    virtual bool IsGeneratorObject() = 0;
+    virtual bool IsModuleNamespaceObject() = 0;
+    virtual bool IsProxy() = 0;
+    virtual bool IsRegExp() = 0;
+    virtual bool IsNumberObject() = 0;
+    virtual bool IsMap() = 0;
     virtual bool IsBuffer() = 0;
+    virtual bool IsStringObject() = 0;
+    virtual bool IsSymbolObject() = 0;
+    virtual bool IsWeakMap() = 0;
+    virtual bool IsWeakSet() = 0;
+    virtual bool IsSet() = 0;
 
     virtual NativeValue* ToBoolean() = 0;
     virtual NativeValue* ToNumber() = 0;
