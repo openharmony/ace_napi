@@ -275,18 +275,20 @@ if (defined(ohos_lite)) {
     deps = [ ":ace_napi_ndk" ]
   }
 
-  group("napi_packages_test") {
-    testonly = true
+  if (!build_ohos_ndk) {
+    group("napi_packages_test") {
+      testonly = true
 
-    deps = [
-      "sample/native_module_demo:demo",
-      "sample/native_module_netserver:netserver",
-      "sample/native_module_storage:storage",
-      "test/unittest:unittest",
-    ]
+      deps = [
+        "sample/native_module_demo:demo",
+        "sample/native_module_netserver:netserver",
+        "sample/native_module_storage:storage",
+        "test/unittest:unittest",
+      ]
 
-    if (is_standard_system) {
-      deps += [ "sample/native_module_ability:ability" ]
+      if (is_standard_system) {
+        deps += [ "sample/native_module_ability:ability" ]
+      }
     }
   }
 }
