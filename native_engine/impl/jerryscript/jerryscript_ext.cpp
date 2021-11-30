@@ -39,21 +39,16 @@ static jerry_object_native_info_t g_objectNativeInfo = {
 
 bool jerry_add_external()
 {
-    auto callback = [](const jerry_value_t function,
-                       const jerry_value_t thisVal,
-                       const jerry_value_t args[],
-                       const jerry_length_t argc) -> jerry_value_t
-        {
-            return jerry_create_boolean(true);
-        };
+    auto callback = [](const jerry_value_t function, const jerry_value_t thisVal, const jerry_value_t args[],
+                        const jerry_length_t argc) -> jerry_value_t { return jerry_create_boolean(true); };
 
     auto constructor = jerry_create_external_function(callback);
     auto prototype = jerry_create_object();
-    
+
     jerry_value_t propName = jerry_create_string_from_utf8 ((const jerry_char_t*)"prototype");
     jerry_value_t resultVal = jerry_set_property (constructor, propName, prototype);
     jerry_release_value (propName);
-    
+
     if (!jerry_value_to_boolean(resultVal)) {
         HILOG_ERROR("jerry_add_external failed");
         return false;

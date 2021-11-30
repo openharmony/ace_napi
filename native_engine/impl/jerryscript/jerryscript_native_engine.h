@@ -76,7 +76,10 @@ public:
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
     virtual void* CreateRuntime() override { return nullptr; }
-    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override { return nullptr; }
+    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override
+    {
+        return nullptr;
+    }
     virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override { return nullptr; }
     virtual ExceptionInfo* GetExceptionForWorker() const override { return nullptr; }
     virtual void DeleteSerializationData(NativeValue* value) const override {}

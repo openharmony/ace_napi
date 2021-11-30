@@ -15,8 +15,8 @@
 
 #include "test.h"
 
-#include "utils/log.h"
 #include "ark_native_engine.h"
+#include "utils/log.h"
 
 using panda::RuntimeOption;
 static NativeEngine* g_nativeEngine = nullptr;
