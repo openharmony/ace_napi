@@ -15,47 +15,42 @@
 
 #include "test.h"
 
-#include "utils/log.h"
-#include "ark_native_engine.h"
+#include "jerryscript_native_engine.h"
 
-using panda::RuntimeOption;
 static NativeEngine* g_nativeEngine = nullptr;
-
+static constexpr size_t JERRY_SCRIPT_MEM_SIZE = 50 * 1024 * 1024;
 NativeEngineTest::NativeEngineTest()
 {
     engine_ = g_nativeEngine;
 }
 
-NativeEngineTest::~NativeEngineTest()
-{}
+NativeEngineTest::~NativeEngineTest() {}
 
+static void* context_alloc_fn(size_t size, void* cb_data)
+{
+    (void)cb_data;
+    size_t newSize = size > JERRY_SCRIPT_MEM_SIZE ? JERRY_SCRIPT_MEM_SIZE : size;
+    return malloc(newSize);
+}
+static void LoopNewThread(void* data)
+{
+    g_nativeEngine->Loop(LOOP_DEFAULT);
+}
 int main(int argc, char** argv)
 {
     testing::GTEST_FLAG(output) = "xml:./";
     testing::InitGoogleTest(&argc, argv);
-
-    // Setup
-    RuntimeOption option;
-    option.SetGcType(RuntimeOption::GC_TYPE::GEN_GC);
-    const int64_t poolSize = 0x1000000;  // 16M
-    option.SetGcPoolSize(poolSize);
-    option.SetLogLevel(RuntimeOption::LOG_LEVEL::ERROR);
-    option.SetDebuggerLibraryPath("");
-    EcmaVM* vm = panda::JSNApi::CreateJSVM(option);
-    if (vm == nullptr) {
-        return 0;
-    }
-
-    g_nativeEngine = new ArkNativeEngine(vm, nullptr);
-
-    int ret = testing::UnitTest::GetInstance()->Run();
-
-    g_nativeEngine->Loop(LOOP_NOWAIT);
-
+    jerry_context_t* ctx_p = jerry_create_context(1024*1024*50, context_alloc_fn, NULL);
+    jerry_port_default_set_current_context(ctx_p);
+    jerry_init(jerry_init_flag_t::JERRY_INIT_EMPTY);
+    g_nativeEngine = new JerryScriptNativeEngine(0); // default instance id 0
+    uv_thread_t tid;
+    uv_thread_create(&tid, LoopNewThread, nullptr);
+    int ret = RUN_ALL_TESTS();
+    uv_thread_join(&tid);
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
-    panda::JSNApi::DestoryJSVM(vm);
-    vm = nullptr;
-
+    jerry_cleanup();
+    free(ctx_p);
     return ret;
 }

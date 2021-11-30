@@ -53,7 +53,6 @@ static uv_thread_t g_uvThreadTest7;
 static uv_thread_t g_uvThreadSecondary;
 static uv_thread_t g_uvTheads2;
 static uv_thread_t g_uvTheads3;
-static uv_thread_t g_uvTheads4;
 static int32_t g_sendDatas[SEND_DATAS_LENGTH];
 static int32_t  callSuccessCount = 0;
 static int32_t  callSuccessCountJS = 0;
@@ -425,27 +424,12 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0300, testing::ext::TestSize.Level0)
 
 /**
  * @tc.name: ThreadsafeTest
- * @tc.desc: Test threadsafe Func, no js.
+ * @tc.desc: Test napi_release_threadsafe_function, napi_tsfn_abort.
  * @tc.type: FUNC
  */
 HWTEST_F(NativeEngineTest, Threadsafe_Test_0400, testing::ext::TestSize.Level0)
 {
     HILOG_INFO("Threadsafe_Test_0400 start");
-
-    // secondary thread, block on full
-    TsFuncThreadInternal((napi_env)engine_, nullptr, g_uvTheads4, false, true);
-
-    HILOG_INFO("Threadsafe_Test_0400 end");
-}
-
-/**
- * @tc.name: ThreadsafeTest
- * @tc.desc: Test napi_release_threadsafe_function, napi_tsfn_abort.
- * @tc.type: FUNC
- */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0500, testing::ext::TestSize.Level0)
-{
-    HILOG_INFO("Threadsafe_Test_0500 start");
     napi_env env = (napi_env)engine_;
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
@@ -473,7 +457,7 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0500, testing::ext::TestSize.Level0)
         HILOG_ERROR("Failed to create uv thread!");
     }
 
-    HILOG_INFO("Threadsafe_Test_0500 end");
+    HILOG_INFO("Threadsafe_Test_0400 end");
 }
 
 /**
@@ -481,9 +465,9 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0500, testing::ext::TestSize.Level0)
  * @tc.desc: Test initial_thread_count not enough.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0600, testing::ext::TestSize.Level0)
+HWTEST_F(NativeEngineTest, Threadsafe_Test_0500, testing::ext::TestSize.Level0)
 {
-    HILOG_INFO("Threadsafe_Test_0600 start");
+    HILOG_INFO("Threadsafe_Test_0500 start");
     napi_env env = (napi_env)engine_;
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
@@ -517,16 +501,16 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0600, testing::ext::TestSize.Level0)
 
     usleep(200 * 1000);
     EXPECT_EQ(callSuccessCount, SUCCESS_COUNT_JS_FOUR);
-    HILOG_INFO("Threadsafe_Test_0600 end");
+    HILOG_INFO("Threadsafe_Test_0500 end");
 }
 /**
  * @tc.name: ThreadsafeTest
  * @tc.desc: Test initial_thread_count not enough，but acquire.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0700, testing::ext::TestSize.Level0)
+HWTEST_F(NativeEngineTest, Threadsafe_Test_0600, testing::ext::TestSize.Level0)
 {
-    HILOG_INFO("Threadsafe_Test_0700 start");
+    HILOG_INFO("Threadsafe_Test_0600 start");
     napi_env env = (napi_env)engine_;
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
@@ -559,5 +543,5 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0700, testing::ext::TestSize.Level0)
 
     usleep(200 * 1000);
     EXPECT_EQ(callSuccessCount, SUCCESS_COUNT_JS_FOUR);
-    HILOG_INFO("Threadsafe_Test_0700 end");
+    HILOG_INFO("Threadsafe_Test_0600 end");
 }

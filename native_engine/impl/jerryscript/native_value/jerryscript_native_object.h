@@ -16,9 +16,8 @@
 #ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_OBJECT_H
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_OBJECT_H
 
-#include "native_engine/native_property.h"
-
 #include "jerryscript_native_value.h"
+#include "native_engine/native_property.h"
 
 class JerryScriptNativeObject : public JerryScriptNativeValue, public NativeObject {
 public:
@@ -30,6 +29,8 @@ public:
 
     virtual void SetNativePointer(void* pointer, NativeFinalize cb, void* hint) override;
     virtual void* GetNativePointer() override;
+
+    virtual void AddFinalizer(void* pointer, NativeFinalize cb, void* hint) override;
 
     virtual NativeValue* GetPropertyNames() override;
 
@@ -51,6 +52,15 @@ public:
     virtual NativeValue* GetPrivateProperty(const char* name) override;
     virtual bool HasPrivateProperty(const char* name) override;
     virtual bool DeletePrivateProperty(const char* name) override;
+
+    virtual NativeValue* GetAllPropertyNames(
+        napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion) override;
+
+    virtual bool AssociateTypeTag(NapiTypeTag* typeTag) override;
+    virtual bool CheckTypeTag(NapiTypeTag* typeTag) override;
+
+    virtual void Freeze() override;
+    virtual void Seal() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_OBJECT_H */
