@@ -15,20 +15,20 @@
 
 #include "quickjs_native_date.h"
 
-QuickJSNativeDate::QuickJSNativeDate(QuickJSNativeEngine* engine, JSValue value) : QuickJSNativeValue(engine, value) {}
+QuickJSNativeDate::QuickJSNativeDate(QuickJSNativeEngine* engine, JSValue value)
+    : QuickJSNativeObject(engine, value) {}
 
 QuickJSNativeDate::~QuickJSNativeDate() {}
 
 void* QuickJSNativeDate::GetInterface(int interfaceId)
 {
-    return (NativeDate::INTERFACE_ID == interfaceId) ? (NativeDate*)this : nullptr;
+    return (NativeDate::INTERFACE_ID == interfaceId) ? (NativeDate*)this
+        : QuickJSNativeObject::GetInterface(interfaceId);
 }
 
 double QuickJSNativeDate::GetTime()
 {
     double time = 0;
-
     JS_ToFloat64(engine_->GetContext(), &time, value_);
-
     return time;
 }

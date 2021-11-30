@@ -786,14 +786,11 @@ HWTEST_F(NativeEngineTest, add_finalizer_test_0100, testing::ext::TestSize.Level
     napi_value object;
     NAPI_CALL_RETURN_VOID(env, napi_create_object(env, &object));
 
-    napi_value resource_name;
-    NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, "test_gcable", NAPI_AUTO_LENGTH, &resource_name));
-
     static bool testValue = false;
     const char* testStr = "test";
     napi_ref ref = nullptr;
     napi_add_finalizer(
-        env, object, (void*)testStr , [](napi_env env, void* data, void* hint) {
+        env, object, (void*)testStr, [](napi_env env, void* data, void* hint) {
             testValue = true;
         }, nullptr, &ref);
 

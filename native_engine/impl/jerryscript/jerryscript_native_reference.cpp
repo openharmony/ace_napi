@@ -14,13 +14,17 @@
  */
 
 #include "jerryscript_native_engine.h"
-
+#include "./native_value/jerryscript_native_object.h"
 #include "jerryscript_native_reference.h"
 
 JerryScriptNativeReference::JerryScriptNativeReference(JerryScriptNativeEngine* engine,
                                                        NativeValue* value,
-                                                       uint32_t initialRefcount)
-    : engine_(engine), value_(*value), refCount_(initialRefcount)
+                                                       uint32_t initialRefcount,
+                                                       NativeFinalize callback,
+                                                       void* data,
+                                                       void* hint)
+    : engine_(engine), value_(*value), refCount_(initialRefcount),
+    callback_(callback), data_(data), hint_(hint)
 {
     for (uint32_t i = 0; i < refCount_; i++) {
         jerry_acquire_value(value_);
@@ -29,6 +33,7 @@ JerryScriptNativeReference::JerryScriptNativeReference(JerryScriptNativeEngine* 
 
 JerryScriptNativeReference::~JerryScriptNativeReference()
 {
+    FinalizeCallback();
     for (uint32_t i = 0; i < refCount_; i++) {
         jerry_release_value(value_);
     }
@@ -48,8 +53,13 @@ uint32_t JerryScriptNativeReference::Unref()
     if (refCount_ == 0) {
         return 0;
     }
+
+    --refCount_;
+    if (refCount_ == 0) {
+        FinalizeCallback();
+    }
     jerry_release_value(value_);
-    return --refCount_;
+    return refCount_;
 }
 
 NativeValue* JerryScriptNativeReference::Get()
@@ -64,4 +74,19 @@ NativeValue* JerryScriptNativeReference::Get()
 JerryScriptNativeReference::operator NativeValue*()
 {
     return Get();
+}
+
+void JerryScriptNativeReference::FinalizeCallback(void)
+{
+    if (callback_ != nullptr) {
+        JerryScriptNativeObject* nativeObject = new JerryScriptNativeObject(engine_, jerry_value_to_object(value_));
+        if (nativeObject != nullptr) {
+            nativeObject->AddFinalizer(nullptr, nullptr, nullptr);
+            delete nativeObject;
+        }
+        callback_(engine_, data_, hint_);
+    }
+    callback_ = nullptr;
+    data_ = nullptr;
+    hint_ = nullptr;
 }

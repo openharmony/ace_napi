@@ -34,6 +34,7 @@ public:
 
     virtual bool IsArray() override;
     virtual bool IsArrayBuffer() override;
+    virtual bool IsBuffer() override;
     virtual bool IsDate() override;
     virtual bool IsError() override;
     virtual bool IsTypedArray() override;
