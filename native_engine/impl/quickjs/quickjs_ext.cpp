@@ -353,45 +353,47 @@ JSValue JS_CreateBigIntWords(JSContext* context, int signBit, size_t wordCount, 
 bool ParseBigIntWordsInternal(JSContext* context, JSValue value, int* signBit, size_t* wordCount, uint64_t* words)
 {
     int cntValue = 0;
-    JSValue jsValue = JS_GetPropertyStr(context, value, "sign");
-    if (!JS_IsException(jsValue)) {
-        int sigValue = 0;
-        JS_ToInt32(context, &sigValue, jsValue);
-        if (signBit != nullptr) {
-            *signBit = sigValue;
-        }
-        JS_FreeValue(context, jsValue);
+    if (wordCount == nullptr) {
+        return false;
     }
-
-    jsValue = JS_GetPropertyStr(context, value, "count");
+    
+    JSValue jsValue = JS_GetPropertyStr(context, value, "count");
     if (!JS_IsException(jsValue)) {
         JS_ToInt32(context, &cntValue, jsValue);
-        if (words != nullptr) {
-            cntValue = (cntValue > *wordCount) ? *wordCount : cntValue;
-        }
         JS_FreeValue(context, jsValue);
-        *wordCount = cntValue;
     } else {
         return false;
     }
 
-    if (words != nullptr) {
+    if (signBit == nullptr && words == nullptr) {
+        *wordCount = cntValue;
+        return true;
+    } else if (signBit != nullptr && words != nullptr) {
+        cntValue = (cntValue > *wordCount) ? *wordCount : cntValue;
+        jsValue = JS_GetPropertyStr(context, value, "sign");
+        if (!JS_IsException(jsValue)) {
+            int sigValue = 0;
+            JS_ToInt32(context, &sigValue, jsValue);
+            *signBit = sigValue;
+            JS_FreeValue(context, jsValue);
+        }
+        
         jsValue = JS_GetPropertyStr(context, value, "words");
         if (!JS_IsException(jsValue)) {
             JSValue element;
             int64_t cValue = 0;
-            for (uint32_t i = 0; i < cntValue; i++) {
+            for (uint32_t i = 0; i < (uint32_t)cntValue; i++) {
                 element = JS_GetPropertyUint32(context, jsValue, i);
                 JS_ToInt64Ext(context, &cValue, element);
                 JS_FreeValue(context, element);
                 words[i] = (uint64_t)cValue;
             }
             JS_FreeValue(context, jsValue);
-        } else {
-            return false;
+            *wordCount = cntValue;
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 bool JS_GetBigIntWords(JSContext* context, JSValue value, int* signBit, size_t* wordCount, uint64_t* words)

@@ -55,11 +55,11 @@ quickjs_deps += [
 ark_deps = common_deps
 ark_deps += [
   "//ark/js_runtime:libark_jsruntime",
-  "//foundation/ace/napi/:ace_napi_ark",
+  "//foundation/ace/napi:ace_napi_ark",
 ]
 
 jerryscript_deps = common_deps
 jerryscript_deps += [
-  "//foundation/ace/napi/:ace_napi_jerryscript",
+  "//foundation/ace/napi:ace_napi_jerryscript",
   "//third_party/jerryscript:libjerryscript",
 ]

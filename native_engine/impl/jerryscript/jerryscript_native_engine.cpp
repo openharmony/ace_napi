@@ -20,14 +20,18 @@
 #include "jerryscript_native_reference.h"
 #include "native_value/jerryscript_native_array.h"
 #include "native_value/jerryscript_native_array_buffer.h"
+#include "native_value/jerryscript_native_big_int.h"
 #include "native_value/jerryscript_native_boolean.h"
+#include "native_value/jerryscript_native_buffer.h"
 #include "native_value/jerryscript_native_data_view.h"
+#include "native_value/jerryscript_native_date.h"
 #include "native_value/jerryscript_native_external.h"
 #include "native_value/jerryscript_native_function.h"
 #include "native_value/jerryscript_native_number.h"
 #include "native_value/jerryscript_native_object.h"
 #include "native_value/jerryscript_native_string.h"
 #include "native_value/jerryscript_native_typed_array.h"
+#include "native_value/jerryscript_native_external.h"
 #include "utils/log.h"
 
 JerryScriptNativeEngine::JerryScriptNativeEngine(void* jsEngine) : NativeEngine(jsEngine)
@@ -35,45 +39,48 @@ JerryScriptNativeEngine::JerryScriptNativeEngine(void* jsEngine) : NativeEngine(
     HILOG_INFO("JerryScriptNativeEngine::JerryScriptNativeEngine begin");
     jerry_add_external();
     jerry_value_t global = jerry_get_global_object();
-    jerry_value_t require = jerry_create_external_function(
-        [](const jerry_value_t function, const jerry_value_t thisVal, const jerry_value_t args[],
-           const jerry_length_t argc) -> jerry_value_t {
-            JerryScriptNativeEngine* that = nullptr;
-            jerry_get_object_native_pointer(function, (void**)&that, nullptr);
-            jerry_value_t result = jerry_create_undefined();
+    jerry_value_t require = jerry_create_external_function([](const jerry_value_t function, const jerry_value_t thisVal,
+                                                               const jerry_value_t args[],
+                                                               const jerry_length_t argc) -> jerry_value_t {
+        JerryScriptNativeEngine* that = nullptr;
+        jerry_get_object_native_pointer(function, (void**)&that, nullptr);
+        jerry_value_t result = jerry_create_undefined();
 
-            if (!(argc >= 1 && jerry_value_is_string(args[0]))) {
-                return result;
-            }
-
-            jerry_size_t moduleNameSize = jerry_get_utf8_string_size(args[0]);
-
-            if (moduleNameSize == 0) {
-                return result;
-            }
-
-            char *moduleName = new char[moduleNameSize + 1] { 0 };
-            uint32_t moduleNameLength =
-                jerry_string_to_char_buffer(args[0], (jerry_char_t*)moduleName, moduleNameSize + 1);
-            moduleName[moduleNameLength] = '\0';
-            NativeModule* module = that->GetModuleManager()->LoadNativeModule(moduleName, nullptr, false);
-
-            if (module != nullptr) {
-                NativeValue* value = that->CreateObject();
-                module->registerCallback(that, value);
-                result = jerry_acquire_value(*value);
-            }
+        if (!(argc >= 1 && jerry_value_is_string(args[0]))) {
             return result;
-        });
+        }
+
+        jerry_size_t moduleNameSize = jerry_get_utf8_string_size(args[0]);
+
+        if (moduleNameSize == 0) {
+            return result;
+        }
+
+        char* moduleName = new char[moduleNameSize + 1] { 0 };
+        uint32_t moduleNameLength = jerry_string_to_char_buffer(args[0], (jerry_char_t*)moduleName, moduleNameSize + 1);
+        moduleName[moduleNameLength] = '\0';
+        NativeModule* module = that->GetModuleManager()->LoadNativeModule(moduleName, nullptr, false);
+
+        if (module != nullptr) {
+            NativeValue* value = that->CreateObject();
+            module->registerCallback(that, value);
+            result = jerry_acquire_value(*value);
+        }
+        return result;
+    });
     jerry_set_object_native_pointer(require, this, nullptr);
     jerryx_set_property_str(global, "requireNapi", require);
 
     jerry_release_value(require);
     jerry_release_value(global);
     HILOG_INFO("JerryScriptNativeEngine::JerryScriptNativeEngine end");
+    Init();
 }
 
-JerryScriptNativeEngine::~JerryScriptNativeEngine() {}
+JerryScriptNativeEngine::~JerryScriptNativeEngine()
+{
+    Deinit();
+}
 
 void JerryScriptNativeEngine::Loop(LoopMode mode, bool needSync)
 {
@@ -157,18 +164,29 @@ NativeValue* JerryScriptNativeEngine::CreateArrayBuffer(void** value, size_t len
     return new JerryScriptNativeArrayBuffer(this, value, length);
 }
 
-NativeValue* JerryScriptNativeEngine::CreateArrayBufferExternal(void* value,
-                                                                size_t length,
-                                                                NativeFinalize cb,
-                                                                void* hint)
+NativeValue* JerryScriptNativeEngine::CreateArrayBufferExternal(
+    void* value, size_t length, NativeFinalize cb, void* hint)
 {
     return new JerryScriptNativeArrayBuffer(this, (unsigned char*)value, length, cb, hint);
 }
 
-NativeValue* JerryScriptNativeEngine::CreateTypedArray(NativeTypedArrayType type,
-                                                       NativeValue* value,
-                                                       size_t length,
-                                                       size_t offset)
+NativeValue* JerryScriptNativeEngine::CreateBuffer(void** value, size_t length)
+{
+    return new JerryScriptNativeBuffer(this, (uint8_t**)value, length);
+}
+
+NativeValue* JerryScriptNativeEngine::CreateBufferCopy(void** value, size_t length, const void* data)
+{
+    return new JerryScriptNativeBuffer(this, (uint8_t**)value, length, (uint8_t*)data);
+}
+
+NativeValue* JerryScriptNativeEngine::CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint)
+{
+    return new JerryScriptNativeBuffer(this, (uint8_t*)value, length, cb, hint);
+}
+
+NativeValue* JerryScriptNativeEngine::CreateTypedArray(
+    NativeTypedArrayType type, NativeValue* value, size_t length, size_t offset)
 {
     return new JerryScriptNativeTypedArray(this, type, value, length, offset);
 }
@@ -188,7 +206,6 @@ NativeValue* JerryScriptNativeEngine::CreatePromise(NativeDeferred** deferred)
 NativeValue* JerryScriptNativeEngine::CreateError(NativeValue* code, NativeValue* message)
 {
     jerry_value_t jerror = 0;
-    jerry_value_t jcode = 0;
 
     jerror = jerry_create_error_sz(JERRY_ERROR_COMMON, nullptr, 0);
     jerror = jerry_get_value_from_error(jerror, true);
@@ -206,10 +223,8 @@ NativeValue* JerryScriptNativeEngine::CreateError(NativeValue* code, NativeValue
     return new JerryScriptNativeObject(this, jerror);
 }
 
-NativeValue* JerryScriptNativeEngine::CallFunction(NativeValue* thisVar,
-                                                   NativeValue* function,
-                                                   NativeValue* const* argv,
-                                                   size_t argc)
+NativeValue* JerryScriptNativeEngine::CallFunction(
+    NativeValue* thisVar, NativeValue* function, NativeValue* const* argv, size_t argc)
 {
     jerry_value_t* args = nullptr;
     if (argc > 0) {
@@ -226,7 +241,7 @@ NativeValue* JerryScriptNativeEngine::CallFunction(NativeValue* thisVar,
     jerry_value_t result = jerry_call_function(*function, thisVar ? *thisVar : 0, (const jerry_value_t*)args, argc);
     scopeManager_->Close(scope);
     if (args != nullptr) {
-        delete []args;
+        delete[] args;
     }
 
     if (jerry_value_is_error(result)) {
@@ -258,7 +273,7 @@ NativeValue* JerryScriptNativeEngine::RunScript(NativeValue* script)
     if (jerry_value_is_error(result)) {
         result = jerry_get_value_from_error(result, true);
     }
-    delete []strScript;
+    delete[] strScript;
     return JerryValueToNativeValue(this, result);
 }
 
@@ -267,11 +282,8 @@ NativeValue* JerryScriptNativeEngine::RunBufferScript(std::vector<uint8_t>& buff
     return nullptr;
 }
 
-NativeValue* JerryScriptNativeEngine::DefineClass(const char* name,
-                                                  NativeCallback callback,
-                                                  void* data,
-                                                  const NativePropertyDescriptor* properties,
-                                                  size_t length)
+NativeValue* JerryScriptNativeEngine::DefineClass(
+    const char* name, NativeCallback callback, void* data, const NativePropertyDescriptor* properties, size_t length)
 {
     auto classConstructor = new JerryScriptNativeFunction(this, name, callback, data);
     auto classProto = new JerryScriptNativeObject(this);
@@ -293,9 +305,10 @@ NativeValue* JerryScriptNativeEngine::CreateInstance(NativeValue* constructor, N
     return JerryValueToNativeValue(this, jerry_construct_object(*constructor, (const jerry_value_t*)argv, argc));
 }
 
-NativeReference* JerryScriptNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount)
+NativeReference* JerryScriptNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount,
+    NativeFinalize callback, void* data, void* hint)
 {
-    return new JerryScriptNativeReference(this, value, initialRefcount);
+    return new JerryScriptNativeReference(this, value, initialRefcount, callback, data, hint);
 }
 
 bool JerryScriptNativeEngine::Throw(NativeValue* error)
@@ -332,7 +345,34 @@ bool JerryScriptNativeEngine::Throw(NativeErrorType type, const char* code, cons
     return true;
 }
 
-NativeValue* JerryScriptNativeEngine::JerryValueToNativeValue(JerryScriptNativeEngine* engine, jerry_value_t value)
+void* JerryScriptNativeEngine::CreateRuntime()
+{
+    return nullptr;
+}
+
+NativeValue* JerryScriptNativeEngine::Serialize(NativeEngine* context, NativeValue* value,
+    NativeValue* transfer)
+{
+    return nullptr;
+}
+
+NativeValue* JerryScriptNativeEngine::Deserialize(NativeEngine* context, NativeValue* recorder)
+{
+    return nullptr;
+}
+
+ExceptionInfo* JerryScriptNativeEngine::GetExceptionForWorker() const
+{
+    return nullptr;
+}
+
+NativeValue* JerryScriptNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
+{
+    return nullptr;
+}
+
+NativeValue* JerryScriptNativeEngine::JerryValueToNativeValue(JerryScriptNativeEngine* engine,
+                                                               jerry_value_t value)
 {
     NativeValue* result = nullptr;
     switch (jerry_value_get_type(value)) {
@@ -365,6 +405,8 @@ NativeValue* JerryScriptNativeEngine::JerryValueToNativeValue(JerryScriptNativeE
                 result = new JerryScriptNativeTypedArray(engine, value);
             } else if (jerry_value_is_external(value)) {
                 result = new JerryScriptNativeExternal(engine, value);
+            } else if (jerry_is_date(value)) {
+                result = new JerryScriptNativeDate(engine, value);
             } else {
                 result = new JerryScriptNativeObject(engine, value);
             }
@@ -378,6 +420,11 @@ NativeValue* JerryScriptNativeEngine::JerryValueToNativeValue(JerryScriptNativeE
         case JERRY_TYPE_SYMBOL:
             result = new JerryScriptNativeValue(engine, value);
             break;
+        case JERRY_TYPE_BIGINT:
+#if JERRY_API_MINOR_VERSION > 3
+                result = new JerryScriptNativeBigInt(engine, value);
+                break;
+#endif
         default:;
     }
     return result;
@@ -387,4 +434,63 @@ NativeValue* JerryScriptNativeEngine::ValueToNativeValue(JSValueWrapper& value)
 {
     jerry_value_t jerryValue = value;
     return JerryValueToNativeValue(this, jerryValue);
+}
+
+bool JerryScriptNativeEngine::TriggerFatalException(NativeValue* error)
+{
+
+    return false;
+}
+
+bool JerryScriptNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue)
+{
+    HILOG_INFO("L1: napi_adjust_external_memory not supported!");
+    return true;
+}
+
+NativeValue* JerryScriptNativeEngine::CreateDate(double time)
+{
+    jerry_value_t value = jerry_strict_date(time);
+    return JerryValueToNativeValue(this, value);
+}
+
+NativeValue* JerryScriptNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)
+{
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+    constexpr int bigintMod = 2;
+    bool sign = false;
+    if ((sign_bit % bigintMod) == 1) {
+        sign = true;
+    }
+    uint32_t size = (uint32_t)word_count;
+
+    jerry_value_t jerryValue = jerry_create_bigint(words, size, sign);
+
+    return new JerryScriptNativeBigInt(this, jerryValue);
+#else
+    return nullptr;
+#endif
+}
+
+NativeValue* JerryScriptNativeEngine::CreateBigInt(int64_t value)
+{
+    return new JerryScriptNativeBigInt(this, value);
+}
+
+NativeValue* JerryScriptNativeEngine::CreateBigInt(uint64_t value)
+{
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+    return new JerryScriptNativeBigInt(this, value, true);
+#else
+    return nullptr;
+#endif
+}
+
+NativeValue* JerryScriptNativeEngine::CreateString16(const char16_t* value, size_t length)
+{
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+    return new JerryScriptNativeString(this, value, length);
+#else
+    return nullptr;
+#endif
 }

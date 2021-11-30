@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-#include "jerryscript_headers.h"
-
 #include "jerryscript-ext/handler.h"
-
+#include "jerryscript_headers.h"
+#include "native_engine/native_value.h"
 #include "utils/log.h"
 
 struct jerry_external_context {
@@ -26,16 +25,14 @@ struct jerry_external_context {
 };
 
 namespace {
-static jerry_object_native_info_t g_objectNativeInfo = {
-    .free_cb = [](void *nativePointer) {
-        auto externalCtx = (jerry_external_context*)nativePointer;
-        if (externalCtx != nullptr) {
-            externalCtx->callback(externalCtx->value, externalCtx->hint);
-            delete externalCtx;
-        }
+static jerry_object_native_info_t g_objectNativeInfo = { .free_cb = [](void* nativePointer) {
+    auto externalCtx = (jerry_external_context*)nativePointer;
+    if (externalCtx != nullptr) {
+        externalCtx->callback(externalCtx->value, externalCtx->hint);
+        delete externalCtx;
     }
-};
-} // namspace
+} };
+} // namespace
 
 bool jerry_add_external()
 {
@@ -45,9 +42,9 @@ bool jerry_add_external()
     auto constructor = jerry_create_external_function(callback);
     auto prototype = jerry_create_object();
 
-    jerry_value_t propName = jerry_create_string_from_utf8 ((const jerry_char_t*)"prototype");
-    jerry_value_t resultVal = jerry_set_property (constructor, propName, prototype);
-    jerry_release_value (propName);
+    jerry_value_t propName = jerry_create_string_from_utf8((const jerry_char_t*)"prototype");
+    jerry_value_t resultVal = jerry_set_property(constructor, propName, prototype);
+    jerry_release_value(propName);
 
     if (!jerry_value_to_boolean(resultVal)) {
         HILOG_ERROR("jerry_add_external failed");
@@ -107,4 +104,91 @@ void* jerry_value_get_external(const jerry_value_t object)
     } else {
         return nullptr;
     }
+}
+
+void jerry_freeze(jerry_value_t value)
+{
+    const jerry_char_t funcResource[] = "unknown";
+    const jerry_char_t funcArgList[] = "v1 ";
+    const jerry_char_t funcSrc[] = " Object.freeze( v1 ) ";
+
+    jerry_value_t funcVal = jerry_parse_function(funcResource, sizeof(funcResource) - 1, funcArgList,
+        sizeof(funcArgList) - 1, funcSrc, sizeof(funcSrc) - 1, JERRY_PARSE_NO_OPTS);
+
+    jerry_value_t funcArgs[1] = { value };
+
+    jerry_value_t valRet = jerry_call_function(funcVal, funcArgs[0], funcArgs, 1);
+
+    jerry_release_value(valRet);
+    jerry_release_value(funcVal);
+}
+
+void jerry_seal(jerry_value_t value)
+{
+    const jerry_char_t funcResource[] = "unknown";
+    const jerry_char_t funcArgList[] = "v1 ";
+    const jerry_char_t funcSrc[] = " Object.seal( v1 ) ";
+
+    jerry_value_t funcVal = jerry_parse_function(funcResource, sizeof(funcResource) - 1, funcArgList,
+        sizeof(funcArgList) - 1, funcSrc, sizeof(funcSrc) - 1, JERRY_PARSE_NO_OPTS);
+
+    jerry_value_t funcArgs[1] = { value };
+
+    jerry_value_t valRet = jerry_call_function(funcVal, funcArgs[0], funcArgs, 1);
+
+    jerry_release_value(valRet);
+    jerry_release_value(funcVal);
+}
+
+jerry_value_t jerry_strict_date(double time)
+{
+    const jerry_char_t funcResource[] = "unknown";
+    const jerry_char_t funcArgList[] = "v1 ";
+    const jerry_char_t funcSrc[] = " return new Date(v1) ";
+
+    jerry_value_t funcVal = jerry_parse_function(funcResource, sizeof(funcResource) - 1, funcArgList,
+        sizeof(funcArgList) - 1, funcSrc, sizeof(funcSrc) - 1, JERRY_PARSE_NO_OPTS);
+
+    jerry_value_t value = jerry_create_number(time);
+    jerry_value_t funcArgs[1] = { value };
+
+    jerry_value_t valRet = jerry_call_function(funcVal, funcArgs[0], funcArgs, 1);
+    jerry_release_value(funcVal);
+    return valRet;
+}
+
+double jerry_get_date(jerry_value_t value)
+{
+    const jerry_char_t funcResource[] = "unknown";
+    const jerry_char_t funcArgList[] = "v1 ";
+    const jerry_char_t funcSrc[] = " return v1.getTime() ";
+
+    jerry_value_t funcVal = jerry_parse_function(funcResource, sizeof(funcResource) - 1, funcArgList,
+        sizeof(funcArgList) - 1, funcSrc, sizeof(funcSrc) - 1, JERRY_PARSE_NO_OPTS);
+
+    jerry_value_t funcArgs[1] = { value };
+
+    jerry_value_t valRet = jerry_call_function(funcVal, funcArgs[0], funcArgs, 1);
+
+    double retTime = jerry_get_number_value(valRet);
+
+    jerry_release_value(valRet);
+    jerry_release_value(funcVal);
+
+    return retTime;
+}
+
+bool jerry_is_date(jerry_value_t value)
+{
+    jerry_value_t global = jerry_get_global_object();
+    jerry_value_t date = jerryx_get_property_str(global, "Date");
+    jerry_value_t result = jerry_binary_operation(JERRY_BIN_OP_INSTANCEOF, value, date);
+
+    bool retVal = jerry_get_boolean_value(result);
+
+    jerry_release_value(result);
+    jerry_release_value(date);
+    jerry_release_value(global);
+
+    return retVal;
 }

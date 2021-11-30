@@ -157,25 +157,6 @@ if (defined(ohos_lite)) {
         external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
       }
     }
-
-    ohos_unittest("test_quickjs_unittest_general") {
-      module_out_path = module_output_path
-
-      include_dirs = quickjs_include
-
-      cflags = [ "-g3" ]
-
-      sources = [
-        "./engine/test_quickjs.cpp",
-        "test_general.cpp",
-      ]
-
-      deps = quickjs_deps
-
-      if (is_standard_system) {
-        external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-      }
-    }
   }
 
   if (ark_support) {
@@ -206,10 +187,6 @@ if (defined(ohos_lite)) {
   group("unittest") {
     testonly = true
     deps = []
-    if (ark_support) {
-      deps += [ ":test_ark_unittest" ]
-    }
-
     if (qjs_support) {
       deps += [
         ":test_quickjs_unittest",

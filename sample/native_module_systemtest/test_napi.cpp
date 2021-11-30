@@ -17,7 +17,10 @@
 #define NAPI_EXPERIMENTAL
 #endif
 #include <securec.h>
-
+#include <ctime>
+#ifdef FOR_JERRYSCRIPT_TEST
+#include "jerryscript-core.h"
+#endif
 #include "js_native_api_types.h"
 #define private public
 #include "native_api.h"
@@ -29,31 +32,33 @@
 #include "utils/log.h"
 #undef private
 
-typedef struct {
+struct CallJsCbData {
     int32_t id = 0;
-} CallJsCbData_t;
+};
+using CallJsCbData_t = struct CallJsCbData;
 
-typedef struct {
+struct Final_Cb_Data {
     int32_t id = 0;
-} FinalCbData_t;
+};
+using FinalCbData_t = struct Final_Cb_Data;
 
-typedef struct {
+struct ThreadData {
     napi_threadsafe_function tsfn = nullptr;
     napi_threadsafe_function_call_mode isMode = napi_tsfn_nonblocking;
-} ThreadData_t;
+};
+using ThreadData_t = struct ThreadData;
 
-typedef struct {
+struct Final_CbData {
     int32_t id;
-} CallJsCbData;
+};
+using FinalCbData = struct Final_CbData;
 
-typedef struct {
-    int32_t id;
-} FinalCbData;
-
-typedef struct {
+struct Call_JsCbData_str {
     int32_t id;
     char strdata[12];
-} CallJsCbData_str;
+};
+using CallJsCbData_str = struct Call_JsCbData_str;
+
 static constexpr int32_t SEND_DATA = 10;
 static constexpr int32_t CALL_JSCB_DATA = 20;
 static constexpr int32_t FINAL_CB_DATA = 30;
@@ -81,17 +86,31 @@ static bool g_callFinalizeEnd = false;
 static int HOOK_ARG_ONE = 1;
 static int HOOK_ARG_TWO = 2;
 static int HOOK_ARG_THREE = 3;
+static int HOOK_TAG = 0;
+static int HOOK_TAGCP = 0;
 
 static constexpr int32_t CALL_JS_CB_DATA_TEST_ID = 101;
 static constexpr int32_t FINAL_CB_DATA_TEST_ID = 201;
 
-static constexpr int UINT64_VALUE = 100;
-static constexpr int INT64_VALUE = 100;
+#if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
+    // jerryscript 2.3 do nothing
+#else
+    // jerryscript 2.4 or quickjs or V8
+    static constexpr int UINT64_VALUE = 100;
+    static constexpr int INT64_VALUE = 100;
+#endif
+
 static constexpr int INT_ZERO = 0;
 static constexpr int INT_ONE = 1;
 static constexpr int INT_TWO = 2;
-static constexpr int INT_FOUR = 4;
+static constexpr int INT_THREE = 3;
 static constexpr int INT_FIVE = 5;
+#if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
+    // jerryscript 2.3 do nothing
+#else
+    static constexpr int INT_FOUR = 4;
+#endif
+
 
 static constexpr size_t ARRAYBUFFER_SIZE_NULL = 0;
 static constexpr size_t ARRAYBUFFER_SIZE = 1024;
@@ -101,7 +120,7 @@ static constexpr double CREATE_DATE_TIME = 11.11;
 static constexpr double DATE_TIME_VALUE = 0;
 static constexpr double GET_DATE_TIME = 11;
 
-static constexpr size_t BUFFER_MAX_SIZE = 2147483648;
+static constexpr size_t BUFFER_OVERMAX_SIZE = 2147483648;
 static char Text[] = "hello world";
 
 static void GetFinalizeStatus()
@@ -139,11 +158,12 @@ static void NonBlockAndBlockNewChildThreadMuti(void* data)
     GTEST_LOG_(INFO) << "NonBlockAndBlockNewChildThreadMuti called end";
 }
 
-typedef struct {
+struct OneModeCallData {
     napi_threadsafe_function tsfn = nullptr;
     napi_threadsafe_function_call_mode mode = napi_tsfn_nonblocking;
     int callCount = 0;
-} OneModeCallData_t;
+};
+using OneModeCallData_t = struct OneModeCallData;
 
 static void OneModeCall(void* data)
 {
@@ -162,7 +182,8 @@ static void MutiModeCallOne(void* data)
     GTEST_LOG_(INFO) << "MutiModeCallOne called start";
     OneModeCallData_t* callData = static_cast<OneModeCallData_t*>(data);
     callData->mode = napi_tsfn_nonblocking;
-    callData->callCount = 10;
+    int testCount = 10;
+    callData->callCount = testCount;
     OneModeCall(data);
 
     callData->mode = napi_tsfn_blocking;
@@ -178,7 +199,8 @@ static void MutiModeCallTwo(void* data)
     GTEST_LOG_(INFO) << "MutiModeCallTwo called start";
     OneModeCallData_t* callData = static_cast<OneModeCallData_t*>(data);
     callData->mode = napi_tsfn_blocking;
-    callData->callCount = 10;
+    int testCount = 10;
+    callData->callCount = testCount;
     OneModeCall(data);
 
     callData->mode = napi_tsfn_nonblocking;
@@ -194,7 +216,8 @@ static void MutiModeCallThree(void* data)
     GTEST_LOG_(INFO) << "MutiModeCallThree called start";
     OneModeCallData_t* callData = static_cast<OneModeCallData_t*>(data);
     callData->mode = napi_tsfn_nonblocking;
-    callData->callCount = 30;
+    int testCount = 30;
+    callData->callCount = testCount;
     OneModeCall(data);
 
     GTEST_LOG_(INFO) << "MutiModeCallThree called end";
@@ -204,7 +227,8 @@ static void MutiModeCallFour(void* data)
     GTEST_LOG_(INFO) << "MutiModeCallFour called start";
     OneModeCallData_t* callData = static_cast<OneModeCallData_t*>(data);
     callData->mode = napi_tsfn_blocking;
-    callData->callCount = 30;
+    int testCount = 30;
+    callData->callCount = testCount;
     OneModeCall(data);
 
     GTEST_LOG_(INFO) << "MutiModeCallFour called end";
@@ -276,23 +300,19 @@ static void OtherFinalizeThreadCallBack(napi_env env, void* finalizeData, void* 
     g_callFinalizeEnd = true;
 }
 static void BufferFinalizer(napi_env env, void* data, void* hint)
-{
-    free(hint);
-}
+{}
 
-static void BufferFinalizererr(napi_env env, void* data, void* hint) {}
-
-static void AssertCheckCall(napi_status call)
+static void ExpectCheckCall(napi_status call)
 {
-    ASSERT_EQ(call, napi_ok);
+    EXPECT_EQ(call, napi_ok);
 }
 
 static void AssertCheckValueType(napi_env env, napi_value value, napi_valuetype type)
 {
     napi_valuetype valueType = napi_undefined;
-    ASSERT_TRUE(value != nullptr);
-    AssertCheckCall(napi_typeof(env, value, &valueType));
-    ASSERT_EQ(valueType, type);
+    EXPECT_TRUE(value != nullptr);
+    ExpectCheckCall(napi_typeof(env, value, &valueType));
+    EXPECT_EQ(valueType, type);
 }
 
 static void NewChildRef(void* data)
@@ -334,7 +354,7 @@ static void NewChildThreadMutiCallNoneBlocking(void* data)
             iFailTimes++;
         }
     }
-    if (0 < iFailTimes) {
+    if (iFailTimes > 0) {
         g_bFailFlag = true;
     }
     GTEST_LOG_(INFO) << "none block call fail times" << iFailTimes;
@@ -401,7 +421,7 @@ static void Threadfinalcb(napi_env env, void* finalizeData, void* context)
     int32_t* pData = nullptr;
     pData = (int32_t*)finalizeData;
     EXPECT_EQ((*pData), FINAL_CB_DATA);
-
+    g_callFinalizeEnd = true;
     GTEST_LOG_(INFO) << "Threadfinalcb end";
 }
 
@@ -479,7 +499,8 @@ static void TsFuncreleasefiveThread(void* data)
 
     napi_threadsafe_function func = (napi_threadsafe_function)data;
     napi_status releaseresult;
-    for (size_t i = 0; i < 5; i++) {
+    size_t loopCount = 5;
+    for (size_t i = 0; i < loopCount; i++) {
         releaseresult = napi_release_threadsafe_function(func, napi_tsfn_release);
         EXPECT_EQ(releaseresult, napi_status::napi_ok);
     }
@@ -518,17 +539,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0100, testing::ext::Test
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.!@#%中^&*()6666";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[testStrLength + 1];
     size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
 
-    ASSERT_EQ(testStrLength, copied);
-    for (int i = INT_ZERO; i < (int)copied + 1; i++) {
-        ASSERT_EQ(testStr[i], buffer[i]);
+    EXPECT_EQ(testStrLength, copied);
+    for (size_t i = INT_ZERO; i < copied + 1; i++) {
+        EXPECT_EQ(testStr[i], buffer[i]);
     }
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0100 end";
@@ -553,7 +574,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0200, testing::ext::Test
 
     ret = napi_create_string_utf16(env, nullptr, buffer_size, &result);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0200 end";
 }
 
@@ -574,14 +595,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0300, testing::ext::Test
 
     char16_t testStr[] = u"system.test.content.abnormal.dd@#!#@$%999900";
     napi_value result = nullptr;
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
-    char16_t buffer[testStrLength];
-    size_t copied = INT_ZERO;
-
-    AssertCheckCall(napi_create_string_utf16(env, testStr, 0, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength, &copied));
-
-    ASSERT_EQ(copied, INT_ZERO);
+    napi_status status = napi_ok;
+    status = napi_create_string_utf16(env, testStr, 0, &result);
+    EXPECT_NE(status, napi_ok);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0300 end";
 }
 
@@ -604,7 +620,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0400, testing::ext::Test
 
     ret = napi_create_string_utf16(env, testStr, (size_t)INT_MAX + 1, &result);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0400 end";
 }
 
@@ -626,7 +642,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0500, testing::ext::Test
     napi_status ret = napi_ok;
 
     ret = napi_create_string_utf16(env, testStr, testStrLength, nullptr);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0500 end";
 }
 
@@ -647,7 +663,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0600, testing::ext::Test
     napi_value result = nullptr;
 
     ret = napi_create_string_utf16(nullptr, testStr, testStrLength, &result);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0600 end";
 }
 
@@ -668,17 +684,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0700, testing::ext::Test
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.&*！@#￥%";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[testStrLength + 1];
     size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
 
-    ASSERT_EQ(testStrLength, copied);
-    for (int i = INT_ZERO; i < (int)copied + 1; i++) {
-        ASSERT_EQ(testStr[i], buffer[i]);
+    EXPECT_EQ(testStrLength, copied);
+    for (size_t i = INT_ZERO; i < copied + 1; i++) {
+        EXPECT_EQ(testStr[i], buffer[i]);
     }
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0700 end";
@@ -701,17 +717,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0800, testing::ext::Test
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.     ";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[testStrLength + 1];
     size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
 
-    ASSERT_EQ(testStrLength, copied);
-    for (int i = INT_ZERO; i < (int)copied + 1; i++) {
-        ASSERT_EQ(testStr[i], buffer[i]);
+    EXPECT_EQ(testStrLength, copied);
+    for (size_t i = INT_ZERO; i < copied + 1; i++) {
+        EXPECT_EQ(testStr[i], buffer[i]);
     }
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0800 end";
@@ -733,17 +749,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_String_Utf16_0900, testing::ext::Test
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.汉字输入";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[testStrLength + 1];
     size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
 
-    ASSERT_EQ(testStrLength, copied);
-    for (int i = INT_ZERO; i < (int)copied + 1; i++) {
-        ASSERT_EQ(testStr[i], buffer[i]);
+    EXPECT_EQ(testStrLength, copied);
+    for (size_t i = INT_ZERO; i < copied + 1; i++) {
+        EXPECT_EQ(testStr[i], buffer[i]);
     }
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_String_Utf16_0900 end";
@@ -765,17 +781,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0100, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.&&&^^^^.中文9988";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[testStrLength];
     size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, testStrLength + 1, &copied));
 
-    ASSERT_EQ(testStrLength, copied);
-    for (int i = INT_ZERO; i < (int)copied; i++) {
-        ASSERT_EQ(testStr[i], buffer[i]);
+    EXPECT_EQ(testStrLength, copied);
+    for (size_t i = INT_ZERO; i < copied; i++) {
+        EXPECT_EQ(testStr[i], buffer[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0100 end";
 }
@@ -796,16 +812,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0200, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.abnormal";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[testStrLength];
     size_t copied;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, INT_FIVE + 1, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, INT_FIVE + 1, &copied));
 
     for (int i = INT_ZERO; i < INT_FIVE; i++) {
-        ASSERT_EQ(testStr[i], buffer[i]);
+        EXPECT_EQ(testStr[i], buffer[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0200 end";
 }
@@ -826,18 +842,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0300, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.abnormal.!@#$%^&*123";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
     char16_t buffer[] = u"12345";
     size_t buffer_size = INT_ZERO;
-    size_t copied;
+    size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, buffer, buffer_size, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, buffer, buffer_size, &copied));
 
-    ASSERT_EQ(copied, testStrLength);
-    for (int i = INT_ZERO; i < INT_TWO; i++) {
-        ASSERT_NE(buffer[i], testStr[i]);
+    EXPECT_EQ(copied, testStrLength);
+    for (size_t i = INT_ZERO; i < INT_TWO; i++) {
+        EXPECT_NE(buffer[i], testStr[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0300 end";
 }
@@ -863,12 +879,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0400, testing::ext::T
     int64_t testValue = INT64_MAX;
     napi_value result = nullptr;
     napi_status ret = napi_ok;
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     ret = napi_get_value_string_utf16(env, result, buffer, testStrLength, &copied);
 
-    ASSERT_EQ(ret, napi_string_expected);
+    EXPECT_EQ(ret, napi_string_expected);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0400 end";
 }
 
@@ -888,14 +904,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0500, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     char16_t testStr[] = u"system.test.content.copied.$#@666";
-    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
-    size_t copied;
+    size_t testStrLength = static_cast<size_t>(std::char_traits<char16_t>::length(testStr));
+    size_t copied = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
-    AssertCheckCall(napi_get_value_string_utf16(env, result, nullptr, testStrLength, &copied));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_get_value_string_utf16(env, result, nullptr, testStrLength, &copied));
 
-    ASSERT_EQ(testStrLength, copied);
+    EXPECT_EQ(testStrLength, copied);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0500 end";
 }
 
@@ -920,10 +936,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0600, testing::ext::T
     napi_value result = nullptr;
     napi_status ret = napi_ok;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
     ret = napi_get_value_string_utf16(env, result, buffer, testStrLength, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0600 end";
 }
 
@@ -948,14 +964,44 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0700, testing::ext::T
     size_t copied;
     napi_value result = nullptr;
     napi_status ret = napi_ok;
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
 
     ret = napi_get_value_string_utf16(nullptr, result, buffer, testStrLength, &copied);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0700 end";
 }
 
+/*
+ * @tc.number    : ACE_Napi_Get_Value_String_Utf16_0800
+ * @tc.name      : The napi_get_value_string_UTf16 value parameter is invalid
+ * @tc.desc      : 1.The environment engine is created
+ *                 2.Set test variables
+ *                 3.The function of napi_get_value_string_utf16 is called
+ *                 4.Return value of function is napi_invalid_arg
+ */
+HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0800, testing::ext::TestSize.Level2)
+{
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0800 start";
+    napi_env env = (napi_env)engine_;
+
+    char16_t testStr[] = u"system.test.content.result.abnormal";
+    int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
+    char16_t buffer[testStrLength];
+    size_t copied;
+    napi_value result = nullptr;
+    napi_status ret = napi_ok;
+
+    ret = napi_get_value_string_utf16(env, result, buffer, testStrLength, &copied);
+
+    EXPECT_EQ(ret, napi_invalid_arg);
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_String_Utf16_0800 end";
+}
+
+#if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
+    // jerryscript 2.3 do nothing
+#else
+   // jerryscript 2.4 or quickjs or V8
 /*
  * @tc.number    : ACE_Napi_Create_Bigint_Int64_0100
  * @tc.name      : Test the maximum value of napi_create_bigint_int64
@@ -974,14 +1020,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Int64_0100, testing::ext::Test
     int64_t testValue = INT64_MAX;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, INT64_MAX);
+    EXPECT_EQ(resultValue, INT64_MAX);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Int64_0100 end";
 }
 
@@ -1003,15 +1049,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Int64_0200, testing::ext::Test
     int64_t testValue = INT64_MIN;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(true, lossless);
-    ASSERT_EQ(resultValue, INT64_MIN);
+    EXPECT_EQ(true, lossless);
+    EXPECT_EQ(resultValue, INT64_MIN);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Int64_0200 end";
 }
 
@@ -1031,7 +1077,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Int64_0300, testing::ext::Test
 
     ret = napi_create_bigint_int64(nullptr, testValue, &result);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Int64_0300 end";
 }
 
@@ -1053,14 +1099,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Int64_0400, testing::ext::Test
     int64_t testValue = INT64_VALUE;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, testValue);
+    EXPECT_EQ(resultValue, testValue);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Int64_0400 end";
 }
 
@@ -1082,7 +1128,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Int64_0500, testing::ext::Test
 
     ret = napi_create_bigint_int64(env, testValue, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Int64_0500 end";
 }
@@ -1105,14 +1151,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0100, testing::ext::T
     int64_t testValue = INT64_MAX;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, INT64_MAX);
+    EXPECT_EQ(resultValue, INT64_MAX);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0100 end";
 }
 
@@ -1134,14 +1180,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0200, testing::ext::T
     int64_t testValue = INT64_MIN;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, INT64_MIN);
+    EXPECT_EQ(resultValue, INT64_MIN);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0200 end";
 }
 
@@ -1165,13 +1211,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0300, testing::ext::T
     int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
     ret = napi_get_value_bigint_int64(env, result, &resultValue, &lossless);
 
-    ASSERT_EQ(ret, napi_bigint_expected);
+    EXPECT_EQ(ret, napi_bigint_expected);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0300 end";
 }
 
@@ -1193,14 +1239,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0400, testing::ext::T
     napi_value result = nullptr;
     napi_status ret = napi_ok;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
 
     ret = napi_get_value_bigint_int64(nullptr, result, &resultValue, &lossless);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0400 end";
 }
 
@@ -1222,14 +1268,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0500, testing::ext::T
     int64_t testValue = INT64_VALUE;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     int64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_int64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, INT64_VALUE);
+    EXPECT_EQ(resultValue, INT64_VALUE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0500 end";
 }
 
@@ -1252,13 +1298,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0600, testing::ext::T
     napi_value result = nullptr;
     napi_status ret = napi_ok;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     ret = napi_get_value_bigint_int64(env, result, nullptr, &lossless);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0600 end";
 }
 
@@ -1281,13 +1327,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Int64_0700, testing::ext::T
     napi_value result = nullptr;
     napi_status ret = napi_ok;
 
-    AssertCheckCall(napi_create_bigint_int64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_int64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     int64_t resultValue = INT_ZERO;
     ret = napi_get_value_bigint_int64(env, result, &resultValue, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Int64_0700 end";
 }
 
@@ -1309,15 +1355,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Uint64_0100, testing::ext::Tes
     uint64_t testValue = UINT64_MAX;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = false;
     uint64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(true, lossless);
-    ASSERT_EQ(resultValue, testValue);
+    EXPECT_EQ(true, lossless);
+    EXPECT_EQ(resultValue, testValue);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Uint64_0100 end";
 }
 
@@ -1339,14 +1385,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Uint64_0200, testing::ext::Tes
     uint64_t testValue = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     uint64_t resultValue = INT_ONE;
-    AssertCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, testValue);
+    EXPECT_EQ(resultValue, testValue);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Uint64_0200 end";
 }
 
@@ -1365,7 +1411,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Uint64_0300, testing::ext::Tes
     napi_status ret = napi_ok;
 
     ret = napi_create_bigint_uint64(nullptr, testValue, &result);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Uint64_0300 end";
 }
 
@@ -1387,14 +1433,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Uint64_0400, testing::ext::Tes
     uint64_t testValue = UINT64_VALUE;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     uint64_t resultValue = INT_ONE;
-    AssertCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, testValue);
+    EXPECT_EQ(resultValue, testValue);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Uint64_0400 end";
 }
 
@@ -1416,7 +1462,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Uint64_0500, testing::ext::Tes
 
     ret = napi_create_bigint_uint64(env, testValue, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Uint64_0500 end";
 }
 
@@ -1438,14 +1484,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0100, testing::ext::
     uint64_t testValue = UINT64_MAX;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     uint64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, UINT64_MAX);
+    EXPECT_EQ(resultValue, UINT64_MAX);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0100 end";
 }
 
@@ -1467,14 +1513,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0200, testing::ext::
     uint64_t testValue = INT_ZERO;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     uint64_t resultValue = INT_ZERO;
-    AssertCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, testValue);
+    EXPECT_EQ(resultValue, testValue);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0200 end";
 }
 
@@ -1498,13 +1544,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0300, testing::ext::
     int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
 
     bool lossless = true;
     uint64_t resultValue = INT_ZERO;
     ret = napi_get_value_bigint_uint64(env, result, &resultValue, &lossless);
 
-    ASSERT_EQ(ret, napi_bigint_expected);
+    EXPECT_EQ(ret, napi_bigint_expected);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0300 end";
 }
 
@@ -1525,14 +1571,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0400, testing::ext::
     uint64_t testValue = INT_ZERO;
     napi_value result = nullptr;
     napi_status ret = napi_ok;
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     uint64_t resultValue = INT_ZERO;
     ret = napi_get_value_bigint_uint64(nullptr, result, &resultValue, &lossless);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0400 end";
 }
 
@@ -1554,14 +1600,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0500, testing::ext::
     uint64_t testValue = UINT64_VALUE;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     uint64_t resultValue = INT_ONE;
-    AssertCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
+    ExpectCheckCall(napi_get_value_bigint_uint64(env, result, &resultValue, &lossless));
 
-    ASSERT_EQ(resultValue, UINT64_VALUE);
+    EXPECT_EQ(resultValue, (uint64_t)UINT64_VALUE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0500 end";
 }
 
@@ -1584,13 +1630,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0600, testing::ext::
     napi_value result = nullptr;
     napi_status ret = napi_ok;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     bool lossless = true;
     ret = napi_get_value_bigint_uint64(env, result, nullptr, &lossless);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0600 end";
 }
 
@@ -1612,13 +1658,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Uint64_0700, testing::ext::
     uint64_t testValue = UINT64_VALUE;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_uint64(env, testValue, &result));
+    ExpectCheckCall(napi_create_bigint_uint64(env, testValue, &result));
     AssertCheckValueType(env, result, napi_bigint);
 
     uint64_t resultValue = INT_ONE;
     ret = napi_get_value_bigint_uint64(env, result, &resultValue, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Uint64_0700 end";
 }
 
@@ -1642,16 +1688,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0100, testing::ext::Test
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign = INT_ZERO;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, (size_t)INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0100 end";
 }
@@ -1676,16 +1722,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0200, testing::ext::Test
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign = INT_ZERO;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0200 end";
 }
@@ -1710,7 +1756,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0300, testing::ext::Test
 
     ret = napi_create_bigint_words(env, sign_bit, word_count, nullptr, &result);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0300 end";
 }
 
@@ -1732,7 +1778,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0400, testing::ext::Test
 
     ret = napi_create_bigint_words(nullptr, sign_bit, word_count, words, &result);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0400 end";
 }
 
@@ -1749,23 +1795,33 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0400, testing::ext::Test
 HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0500, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0500 start";
+
     napi_env env = (napi_env)engine_;
 
+#ifdef FOR_JERRYSCRIPT_TEST
+    uint64_t words[] = { (uint64_t)5, (uint64_t)10, (uint64_t)25, (uint64_t)25 };
+#else
     uint64_t words[] = { (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0 };
+#endif
     int sign_bit = INT_ZERO;
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_ONE);
+    EXPECT_EQ(sign_bit, sign);
+
+#ifdef FOR_JERRYSCRIPT_TEST
+    EXPECT_EQ(word_count, INT_FOUR);
+#else
+    EXPECT_EQ(word_count, INT_ONE);
+#endif
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0500 end";
 }
@@ -1790,16 +1846,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0600, testing::ext::Test
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_ONE);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_ONE);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0600 end";
 }
@@ -1824,16 +1880,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0700, testing::ext::Test
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0700 end";
 }
@@ -1858,16 +1914,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0800, testing::ext::Test
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign = INT_ZERO;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0800 end";
 }
@@ -1893,7 +1949,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Bigint_Words_0900, testing::ext::Test
 
     ret = napi_create_bigint_words(env, sign_bit, word_count, words, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Bigint_Words_0900 end";
 }
 
@@ -1917,16 +1973,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0100, testing::ext::T
     size_t word_count = INT_FIVE;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FIVE);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FIVE);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0100 end";
 }
@@ -1951,16 +2007,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0200, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0200 end";
 }
@@ -1985,13 +2041,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0300, testing::ext::T
     char16_t testStr[] = u"system.test.content.bigint.abnormal";
     int testStrLength = static_cast<int>(std::char_traits<char16_t>::length(testStr));
 
-    AssertCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
+    ExpectCheckCall(napi_create_string_utf16(env, testStr, testStrLength, &result));
     int sign;
     uint64_t wordsOut[word_count];
 
     ret = napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut);
 
-    ASSERT_EQ(ret, napi_object_expected);
+    EXPECT_EQ(ret, napi_object_expected);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0300 end";
 }
 
@@ -2015,14 +2071,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0400, testing::ext::T
     napi_value result = nullptr;
     napi_status ret = napi_ok;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
 
     ret = napi_get_value_bigint_words(nullptr, result, &sign, &word_count, wordsOut);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0400 end";
 }
 
@@ -2040,22 +2096,31 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0500, testing::ext::T
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0500 start";
     napi_env env = (napi_env)engine_;
-
+#ifdef FOR_JERRYSCRIPT_TEST
+    uint64_t words[] = { (uint64_t)5, (uint64_t)10, (uint64_t)15, (uint64_t)20 };
+#else
     uint64_t words[] = { (uint64_t)0, (uint64_t)0, (uint64_t)0, (uint64_t)0 };
-    int sign_bit = INT_ONE;
+#endif
+
+    int sign_bit = INT_ZERO;
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(INT_ZERO, sign);
-    ASSERT_EQ(word_count, INT_ONE);
+    EXPECT_EQ(INT_ZERO, sign);
+#ifdef FOR_JERRYSCRIPT_TEST
+    EXPECT_EQ(word_count, INT_FOUR);
+#else
+    EXPECT_EQ(word_count, INT_ONE);
+#endif
+
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0500 end";
 }
@@ -2080,18 +2145,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0600, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_ONE);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_ONE);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0500 end";
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0600 end";
 }
 
 /*
@@ -2114,16 +2179,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0700, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0700 end";
 }
@@ -2148,16 +2213,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0800, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign = INT_ONE;
     uint64_t wordsOut[word_count];
-    AssertCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
+    ExpectCheckCall(napi_get_value_bigint_words(env, result, &sign, &word_count, wordsOut));
 
-    ASSERT_EQ(sign_bit, sign);
-    ASSERT_EQ(word_count, INT_FOUR);
+    EXPECT_EQ(sign_bit, sign);
+    EXPECT_EQ(word_count, INT_FOUR);
     for (size_t i = INT_ZERO; i < word_count; i++) {
-        ASSERT_EQ(wordsOut[i], words[i]);
+        EXPECT_EQ(wordsOut[i], words[i]);
     }
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0800 end";
 }
@@ -2182,14 +2247,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_0900, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
     napi_status ret = napi_get_value_bigint_words(env, nullptr, &sign, &word_count, wordsOut);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0500 end";
+    EXPECT_EQ(ret, napi_invalid_arg);
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_0900 end";
 }
 
 /*
@@ -2212,12 +2277,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_1000, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     uint64_t wordsOut[word_count];
     napi_status ret = napi_get_value_bigint_words(env, result, nullptr, &word_count, wordsOut);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_1000 end";
 }
 
@@ -2241,13 +2306,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_1100, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     uint64_t wordsOut[word_count];
     napi_status ret = napi_get_value_bigint_words(env, result, &sign, nullptr, wordsOut);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_1100 end";
 }
 
@@ -2271,15 +2336,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_Bigint_Words_1200, testing::ext::T
     size_t word_count = INT_FOUR;
     napi_value result = nullptr;
 
-    AssertCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
+    ExpectCheckCall(napi_create_bigint_words(env, sign_bit, word_count, words, &result));
 
     int sign;
     napi_status ret = napi_get_value_bigint_words(env, result, &sign, &word_count, nullptr);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Value_Bigint_Words_1200 end";
 }
-
+#endif // (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
 /**
  * @tc.number    : ACE_Napi_Detach_Arraybuffer_0100
  * @tc.name      : The parameter is valid, the parameter is input to the buffer object, and the test is confirmed.
@@ -2297,21 +2362,22 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Detach_Arraybuffer_0100, testing::ext::TestS
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
+    EXPECT_EQ(verification, napi_ok);
     size_t compareSize = ARRAYBUFFER_SIZE_NULL;
     napi_status result = napi_get_arraybuffer_info(env, arrayBuffer, &arrayBufferPtr, &compareSize);
 
-    ASSERT_EQ(compareSize, ARRAYBUFFER_SIZE);
-    ASSERT_EQ(result, napi_ok);
+    EXPECT_EQ(compareSize, ARRAYBUFFER_SIZE);
+    EXPECT_EQ(result, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0100 create arraybuffer complete";
 
     napi_status output = napi_detach_arraybuffer(env, arrayBuffer);
 
     bool out = false;
     napi_is_detached_arraybuffer(env, arrayBuffer, &out);
-    ASSERT_TRUE(out);
-    ASSERT_EQ(output, napi_ok);
+    EXPECT_TRUE(out);
+    EXPECT_EQ(output, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0100 end";
 }
@@ -2333,16 +2399,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Detach_Arraybuffer_0200, testing::ext::TestS
     napi_value Buffer = nullptr;
     void* BufferPtr = nullptr;
     size_t BufferSize = ARRAYBUFFER_SIZE;
-    napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
+    napi_status verification = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
 
-    ASSERT_NE(BufferPtr, nullptr);
-    ASSERT_EQ(BufferSize, ARRAYBUFFER_SIZE);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(BufferPtr, nullptr);
+    EXPECT_EQ(BufferSize, ARRAYBUFFER_SIZE);
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0200 create buffer complete";
 
     napi_status result = napi_detach_arraybuffer(env, Buffer);
 
-    ASSERT_NE(BufferPtr, nullptr);
-    ASSERT_EQ(result, napi_invalid_arg);
+    EXPECT_NE(BufferPtr, nullptr);
+    EXPECT_EQ(result, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0200 end";
 }
@@ -2364,19 +2431,20 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Detach_Arraybuffer_0300, testing::ext::TestS
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
+    EXPECT_EQ(verification, napi_ok);
     size_t compareSize = ARRAYBUFFER_SIZE_NULL;
     napi_status result = napi_get_arraybuffer_info(env, arrayBuffer, &arrayBufferPtr, &compareSize);
 
-    ASSERT_EQ(compareSize, ARRAYBUFFER_SIZE);
-    ASSERT_EQ(result, napi_ok);
+    EXPECT_EQ(compareSize, ARRAYBUFFER_SIZE);
+    EXPECT_EQ(result, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0300 create arraybuffer complete";
 
     napi_status output = napi_detach_arraybuffer(nullptr, arrayBuffer);
 
-    ASSERT_EQ(arrayBufferSize, ARRAYBUFFER_SIZE);
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_EQ(arrayBufferSize, ARRAYBUFFER_SIZE);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0300 end";
 }
@@ -2397,15 +2465,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Detach_Arraybuffer_0400, testing::ext::TestS
 
     double time = CREATE_DATE_TIME;
     napi_value result = nullptr;
-    napi_create_date(env, time, &result);
+    napi_status verification = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0400 create date complete";
 
     napi_status ret = napi_detach_arraybuffer(env, result);
 
-    ASSERT_NE(result, nullptr);
-    ASSERT_NE(ret, napi_ok);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0400 end";
 }
@@ -2423,9 +2492,51 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Detach_Arraybuffer_0500, testing::ext::TestS
 
     napi_env env = (napi_env)engine_;
     napi_status result = napi_detach_arraybuffer(env, nullptr);
-    ASSERT_EQ(result, napi_invalid_arg);
+
+    EXPECT_EQ(result, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0500 end";
+}
+
+/**
+ * @tc.number    : ACE_Napi_Detach_Arraybuffer_0600
+ * @tc.name      : The parameter is invalid, the parameter arraybuffer input is Detached arraybuffer,
+ *                 test to confirm.
+ * @tc.desc      : 1. Set up the env environment.
+ *                 2. detach arraybuffer.
+ *                 3. Verify napi_detach_arraybuffer.
+ */
+HWTEST_F(NativeEngineTest, ACE_Napi_Detach_Arraybuffer_0600, testing::ext::TestSize.Level2)
+{
+    GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0600 start";
+
+    napi_env env = (napi_env)engine_;
+    void* arrayBufferPtr = nullptr;
+    napi_value arrayBuffer = nullptr;
+    size_t arrayBufferSize = ARRAYBUFFER_SIZE;
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+
+    EXPECT_EQ(verification, napi_ok);
+    size_t compareSize = ARRAYBUFFER_SIZE_NULL;
+    napi_status result = napi_get_arraybuffer_info(env, arrayBuffer, &arrayBufferPtr, &compareSize);
+
+    EXPECT_EQ(compareSize, ARRAYBUFFER_SIZE);
+    EXPECT_EQ(result, napi_ok);
+    GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0100 create arraybuffer complete";
+
+    napi_status output = napi_detach_arraybuffer(env, arrayBuffer);
+
+    bool out = false;
+    napi_status verificationCp = napi_is_detached_arraybuffer(env, arrayBuffer, &out);
+
+    EXPECT_EQ(verificationCp, napi_ok);
+    EXPECT_TRUE(out);
+    EXPECT_EQ(output, napi_ok);
+
+    napi_status outcompare = napi_detach_arraybuffer(env, arrayBuffer);
+    EXPECT_EQ(outcompare, napi_detachable_arraybuffer_expected);
+
+    GTEST_LOG_(INFO) << "ACE_Napi_Detach_Arraybuffer_0600 start";
 }
 
 /**
@@ -2445,18 +2556,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0100, testing::ext::
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
-    ASSERT_NE(arrayBufferPtr, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(arrayBufferPtr, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0100 create arraybuffer complete";
 
-    napi_detach_arraybuffer(env, arrayBuffer);
+    napi_status verificationCp = napi_detach_arraybuffer(env, arrayBuffer);
+    EXPECT_EQ(verificationCp, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0100 detached arraybuffer complete";
 
     bool result = false;
-    napi_is_detached_arraybuffer(env, arrayBuffer, &result);
+    napi_status out = napi_is_detached_arraybuffer(env, arrayBuffer, &result);
 
-    ASSERT_TRUE(result);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_TRUE(result);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0100 end";
 }
@@ -2468,17 +2582,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0100, testing::ext::
  *                 2. create arraybuffer.
  *                 3. Verify napi_is_detached_arraybuffer.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0200, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0200, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0200 start";
 
     napi_env env = (napi_env)engine_;
     double time = CREATE_DATE_TIME;
     napi_value date = nullptr;
-    napi_create_date(env, time, &date);
+    napi_status verification = napi_create_date(env, time, &date);
+    
+    EXPECT_EQ(verification, napi_ok);
+
     bool result = false;
     napi_status ret = napi_is_detached_arraybuffer(env, date, &result);
-    ASSERT_EQ(ret, napi_invalid_arg);
+
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0200 end";
 }
@@ -2500,18 +2618,23 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0300, testing::ext::
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
-    ASSERT_NE(arrayBufferPtr, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(arrayBufferPtr, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0300 create arraybuffer complete";
 
-    napi_detach_arraybuffer(env, arrayBuffer);
+    napi_status verificationCp = napi_detach_arraybuffer(env, arrayBuffer);
+
+    EXPECT_EQ(verificationCp, napi_ok);
 
     bool result = true;
     napi_status ret = napi_is_detached_arraybuffer(nullptr, arrayBuffer, &result);
 
-    ASSERT_TRUE(result);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(arrayBufferSize, ARRAYBUFFER_SIZE);
+    EXPECT_NE(arrayBuffer, nullptr);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0300 end";
 }
@@ -2533,15 +2656,20 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0400, testing::ext::
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
+    EXPECT_EQ(verification, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0400 create arraybuffer complete";
 
-    napi_detach_arraybuffer(env, arrayBuffer);
+    napi_status verificationCp = napi_detach_arraybuffer(env, arrayBuffer);
+
+    EXPECT_EQ(verificationCp, napi_ok);
 
     napi_status ret = napi_is_detached_arraybuffer(env, arrayBuffer, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(arrayBufferSize, ARRAYBUFFER_SIZE);
+    EXPECT_NE(arrayBuffer, nullptr);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0400 end";
 }
@@ -2559,10 +2687,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0500, testing::ext::
     napi_env env = (napi_env)engine_;
 
     bool result = true;
-    napi_status ret = napi_is_detached_arraybuffer(env, NULL, &result);
+    napi_status ret = napi_is_detached_arraybuffer(env, nullptr, &result);
 
-    ASSERT_TRUE(result);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Detached_Arraybuffer_0500 end";
 }
@@ -2584,16 +2712,23 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0100, testing::ext::TestSize.Level1)
 
     double time = CREATE_DATE_TIME;
     napi_value result = nullptr;
-    napi_create_date(env, time, &result);
+    napi_status verification = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
+
+    double jsTime = 0;
+    napi_status output = napi_get_date_value(env, result, &jsTime);
+
+    EXPECT_EQ(output, napi_ok);
+    EXPECT_EQ(jsTime, GET_DATE_TIME);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0100 create date complete";
 
     bool ret = false;
     napi_status out = napi_is_date(env, result, &ret);
 
-    ASSERT_TRUE(ret);
-    ASSERT_EQ(out, napi_ok);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0100 end";
 }
@@ -2616,23 +2751,24 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0200, testing::ext::TestSize.Level2)
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
-    ASSERT_NE(arrayBufferPtr, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(arrayBufferPtr, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0200 create arraybuffer complete";
 
     size_t compareSize = ARRAYBUFFER_SIZE_NULL;
     napi_status result = napi_get_arraybuffer_info(env, arrayBuffer, &arrayBufferPtr, &compareSize);
 
-    ASSERT_EQ(compareSize, ARRAYBUFFER_SIZE);
-    ASSERT_EQ(result, napi_ok);
+    EXPECT_EQ(compareSize, ARRAYBUFFER_SIZE);
+    EXPECT_EQ(result, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0200 get arraybuffer info complete";
 
     bool ret = true;
     napi_status out = napi_is_date(env, arrayBuffer, &ret);
 
-    ASSERT_FALSE(ret);
-    ASSERT_EQ(out, napi_ok);
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0200 end";
 }
@@ -2654,18 +2790,23 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0300, testing::ext::TestSize.Level2)
 
     double time = CREATE_DATE_TIME;
     napi_value result = nullptr;
-    napi_create_date(env, time, &result);
+    napi_status verification = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
+
+    double jsTime = 0;
+    napi_status out = napi_get_date_value(env, result, &jsTime);
+
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_EQ(jsTime, GET_DATE_TIME);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0300 create date complete";
-
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0300 get date value complete";
 
     bool ret = false;
     napi_status output = napi_is_date(nullptr, result, &ret);
 
-    ASSERT_FALSE(ret);
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0300 end";
 }
@@ -2687,8 +2828,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0400, testing::ext::TestSize.Level2)
     bool ret = false;
     napi_status out = napi_is_date(env, nullptr, &ret);
 
-    ASSERT_FALSE(ret);
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0400 end";
 }
@@ -2710,18 +2851,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0500, testing::ext::TestSize.Level1)
     napi_value result = nullptr;
     napi_status out = napi_create_date(env, time, &result);
 
-    ASSERT_EQ(out, napi_ok);
+    EXPECT_EQ(out, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0500 create date value complete";
 
-    out = napi_is_date(env, result, nullptr);
-    ASSERT_EQ(out, napi_invalid_arg);
+    napi_status output = napi_is_date(env, result, nullptr);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0500 end";
 }
 
 /**
  * @tc.number    : ACE_Napi_Is_Date_0600
- * @tc.name      : The parameter is valid, input the character string ("1549183351") for
+ * @tc.name      : The parameter is valid, input the character string ("汉字测试") for
  *                 the parameter value, and perform the test to confirm.
  * @tc.desc      : 1. Install the app.
  *                 2. Start the application.
@@ -2735,123 +2876,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0600, testing::ext::TestSize.Level1)
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_string_utf8(env, "1549183351", NAPI_AUTO_LENGTH, &result);
+    napi_status verification = napi_create_string_utf8(env, "汉字测试", NAPI_AUTO_LENGTH, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     bool ret = true;
     napi_status out = napi_is_date(env, result, &ret);
 
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_FALSE(ret);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_FALSE(ret);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0600 end";
-}
-
-/**
- * @tc.number    : ACE_Napi_Is_Date_0700
- * @tc.name      : The parameter is valid, input the character string ("abcd-ef-gh") for
- *                 the parameter value, and perform the test to confirm.
- * @tc.desc      : 1. Install the app.
- *                 2. Start the application.
- *                 3. Call napi_create_string_utf8.
- *                 4. Call napi_is_date.
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0700, testing::ext::TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0700 start";
-
-    napi_env env = (napi_env)engine_;
-
-    napi_value result = nullptr;
-    napi_create_string_utf8(env, "abcd-ef-gh", NAPI_AUTO_LENGTH, &result);
-
-    bool ret = true;
-    napi_status out = napi_is_date(env, result, &ret);
-
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_FALSE(ret);
-
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0700 end";
-}
-
-/**
- * @tc.number    : ACE_Napi_Is_Date_0800
- * @tc.name      : The parameter is valid, input the character string ("!@#$%^&*()-+/,.;'") for
- *                 the parameter value, and perform the test to confirm.
- * @tc.desc      : 1. Install the app.
- *                 2. Start the application.
- *                 3. Call napi_create_string_utf8.
- *                 4. Call napi_is_date.
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0800, testing::ext::TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0800 start";
-
-    napi_env env = (napi_env)engine_;
-
-    napi_value result = nullptr;
-    napi_create_string_utf8(env, "!@#$%^&*()-+/,.;'", NAPI_AUTO_LENGTH, &result);
-
-    bool ret = true;
-    napi_status out = napi_is_date(env, result, &ret);
-
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_FALSE(ret);
-
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0800 end";
-}
-
-/**
- * @tc.number    : ACE_Napi_Is_Date_0900
- * @tc.name      : The parameter is valid, input the character string ("汉字测试") for
- *                 the parameter value, and perform the test to confirm.
- * @tc.desc      : 1. Install the app.
- *                 2. Start the application.
- *                 3. Call napi_create_string_utf8.
- *                 4. Call napi_is_date.
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_0900, testing::ext::TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0900 start";
-
-    napi_env env = (napi_env)engine_;
-
-    napi_value result = nullptr;
-    napi_create_string_utf8(env, "汉字测试", NAPI_AUTO_LENGTH, &result);
-
-    bool ret = true;
-    napi_status out = napi_is_date(env, result, &ret);
-
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_FALSE(ret);
-
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0900 end";
-}
-
-/**
- * @tc.number    : ACE_Napi_Is_Date_1000
- * @tc.name      : The parameter is valid, input the character string ("15491.8") for
- *                 the parameter value, and perform the test to confirm.
- * @tc.desc      : 1. Install the app.
- *                 2. Start the application.
- *                 3. Call napi_create_string_utf8.
- *                 4. Call napi_is_date.
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Is_Date_1000, testing::ext::TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_1000 start";
-
-    napi_env env = (napi_env)engine_;
-
-    napi_value result = nullptr;
-    napi_create_string_utf8(env, "15491.8", NAPI_AUTO_LENGTH, &result);
-
-    bool ret = true;
-    napi_status out = napi_is_date(env, result, &ret);
-
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_FALSE(ret);
-
-    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_1000 end";
 }
 
 /**
@@ -2868,15 +2903,24 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0100, testing::ext::TestSize.Lev
 
     napi_env env = (napi_env)engine_;
 
-    double time = CREATE_DATE_TIME;
-    napi_value result = nullptr;
-    napi_status ret = napi_create_date(env, time, &result);
+    time_t date = time(nullptr);
+    GTEST_LOG_(INFO) << "ACE_Napi_Is_Date_0100 time = " << date;
 
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(ret, napi_ok);
+    napi_value result = nullptr;
+    napi_status ret = napi_create_date(env, date, &result);
+
+    double jsTime = 0;
+    napi_status out = napi_get_date_value(env, result, &jsTime);
+
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(date, jsTime);
+    
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0100 end";
 }
+
 
 /**
  * @tc.number    : ACE_Napi_Create_Date_0200
@@ -2893,8 +2937,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0200, testing::ext::TestSize.Lev
     napi_value result = nullptr;
     napi_status ret = napi_create_date(nullptr, time, &result);
 
-    ASSERT_EQ(result, nullptr);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0200 end";
 }
@@ -2916,8 +2960,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0300, testing::ext::TestSize.Lev
     napi_value result = nullptr;
     napi_status ret = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(ret, napi_ok);
+    double jsTime = 1;
+    napi_status out = napi_get_date_value(env, result, &jsTime);
+
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(time, jsTime);
+    
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0300 end";
 }
@@ -2939,9 +2989,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0400, testing::ext::TestSize.Lev
     napi_value result = nullptr;
     napi_status ret = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(time, 'a');
-    ASSERT_EQ(ret, napi_ok);
+    double jsTime = 0;
+    napi_status out = napi_get_date_value(env, result, &jsTime);
+
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(time, jsTime);
+    
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0400 end";
 }
@@ -2962,14 +3017,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0500, testing::ext::TestSize.Lev
     double time = CREATE_DATE_TIME;
     napi_status ret = napi_create_date(env, time, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0500 end";
 }
 
 /**
  * @tc.number    : ACE_Napi_Create_Date_0600
- * @tc.name      : The parameter is valid, input the character '' value for the parameter time, and test to confirm.
+ * @tc.name      : The parameter is invalid, the parameter time is -1, test to confirm.
  * @tc.desc      : 1. Set up the env environment.
  *                 2. create date.
  *                 3.Verify napi_create_date.
@@ -2980,40 +3035,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0600, testing::ext::TestSize.Lev
 
     napi_env env = (napi_env)engine_;
 
-    char time = ' ';
+    double time = -1;
     napi_value result = nullptr;
     napi_status ret = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(time, ' ');
-    ASSERT_EQ(ret, napi_ok);
+    double jsTime = 0;
+    napi_status out = napi_get_date_value(env, result, &jsTime);
+    GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0600 time = " << jsTime;
+
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(jsTime, -1);
+
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0600 end";
-}
-
-/**
- * @tc.number    : ACE_Napi_Create_Date_0700
- * @tc.name      : The parameter is valid, input the special character'@' value for the parameter time, and test to
- * confirm.
- * @tc.desc      : 1. Set up the env environment.
- *                 2. create date.
- *                 3.Verify napi_create_date.
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0700, testing::ext::TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0700 start";
-
-    napi_env env = (napi_env)engine_;
-
-    char time = '@';
-    napi_value result = nullptr;
-    napi_status ret = napi_create_date(env, time, &result);
-
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(time, '@');
-    ASSERT_EQ(ret, napi_ok);
-
-    GTEST_LOG_(INFO) << "ACE_Napi_Create_Date_0700 end";
 }
 
 /**
@@ -3033,16 +3069,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Date_Value_0100, testing::ext::TestSize.
 
     double time = CREATE_DATE_TIME;
     napi_value result = nullptr;
-    napi_create_date(env, time, &result);
+    napi_status verification = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0100 create date complete";
 
     double ret = DATE_TIME_VALUE;
     napi_status out = napi_get_date_value(env, result, &ret);
 
-    ASSERT_EQ(ret, GET_DATE_TIME);
-    ASSERT_EQ(out, napi_ok);
+    EXPECT_EQ(ret, GET_DATE_TIME);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0100 end";
 }
@@ -3064,17 +3101,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Date_Value_0200, testing::ext::TestSize.
     size_t arrayBufferSize = ARRAYBUFFER_SIZE;
     void* arrayBufferPtr = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
 
-    ASSERT_NE(arrayBufferPtr, nullptr);
-    ASSERT_NE(arrayBuffer, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(arrayBufferPtr, nullptr);
+    EXPECT_NE(arrayBuffer, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0200 create arraybuffer complete";
 
     double ret = DATE_TIME_VALUE;
     napi_status out = napi_get_date_value(env, arrayBuffer, &ret);
 
-    ASSERT_EQ(ret, DATE_TIME_VALUE);
-    ASSERT_EQ(out, napi_date_expected);
+    EXPECT_EQ(ret, DATE_TIME_VALUE);
+    EXPECT_EQ(out, napi_date_expected);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0200 end";
 }
@@ -3095,16 +3133,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Date_Value_0300, testing::ext::TestSize.
 
     double time = CREATE_DATE_TIME;
     napi_value result = nullptr;
-    napi_create_date(env, time, &result);
+    napi_status verification = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0300 create date complete";
 
     double ret = DATE_TIME_VALUE;
     napi_status out = napi_get_date_value(nullptr, result, &ret);
 
-    ASSERT_EQ(ret, DATE_TIME_VALUE);
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(ret, DATE_TIME_VALUE);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0300 end";
 }
@@ -3125,15 +3164,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Date_Value_0400, testing::ext::TestSize.
 
     double time = CREATE_DATE_TIME;
     napi_value result = nullptr;
-    napi_create_date(env, time, &result);
+    napi_status verification = napi_create_date(env, time, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0400 create date complete";
 
     napi_status out = napi_get_date_value(env, result, nullptr);
 
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0400 end";
 }
@@ -3152,22 +3192,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Date_Value_0500, testing::ext::TestSize.
 
     napi_env env = (napi_env)engine_;
 
-    double time = CREATE_DATE_TIME;
-    napi_value result = nullptr;
-    napi_create_date(nullptr, time, &result);
-
-    ASSERT_EQ(result, nullptr);
-    GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0500 create date";
-
     double ret = DATE_TIME_VALUE;
-    napi_status out = napi_get_date_value(env, result, &ret);
+    napi_status out = napi_get_date_value(env, nullptr, &ret);
 
-    ASSERT_EQ(ret, DATE_TIME_VALUE);
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(ret, DATE_TIME_VALUE);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_Date_Value_0500 end";
 }
-
+#if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
+    // jerryscript 2.3 do nothing
+#else
+   // jerryscript 2.4 or quickjs or V8
 /**
  * @tc.number    : ACE_Napi_Type_Tag_Object_0100
  * @tc.name      : The parameter is valid,
@@ -3185,15 +3221,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Type_Tag_Object_0100, testing::ext::TestSize
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0100 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status out = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(out, napi_ok);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0100 end";
 }
@@ -3216,21 +3253,22 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Type_Tag_Object_0200, testing::ext::TestSize
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0200 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status ret = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0200 type tag obiect complete";
 
     const napi_type_tag typeTagcopy = { 12312, 12 };
     napi_status out = napi_type_tag_object(env, result, &typeTagcopy);
 
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0200 end";
 }
@@ -3252,15 +3290,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Type_Tag_Object_0300, testing::ext::TestSize
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0200 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status out = napi_type_tag_object(nullptr, result, &typeTag);
 
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0300 end";
 }
@@ -3280,9 +3319,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Type_Tag_Object_0400, testing::ext::TestSize
     napi_env env = (napi_env)engine_;
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
-    napi_status out = napi_type_tag_object(env, NULL, &typeTag);
+    napi_status out = napi_type_tag_object(env, nullptr, &typeTag);
 
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0400 end";
 }
@@ -3303,14 +3342,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Type_Tag_Object_0500, testing::ext::TestSize
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0500 create obiect complete";
 
     napi_status out = napi_type_tag_object(env, result, nullptr);
 
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Type_Tag_Object_0500 end";
 }
@@ -3333,21 +3373,23 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0100, testing::ext::Te
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0100 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status ret = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0100 type tag obiect obiect complete";
 
     bool out = false;
-    napi_check_object_type_tag(env, result, &typeTag, &out);
+    napi_status verificationCp = napi_check_object_type_tag(env, result, &typeTag, &out);
 
-    ASSERT_TRUE(out);
+    EXPECT_EQ(verificationCp, napi_ok);
+    EXPECT_TRUE(out);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0100 end";
 }
@@ -3362,23 +3404,25 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0100, testing::ext::Te
  *                 2. Create object.
  *                 3. Verify napi_check_object_type_tag.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0200, testing::ext::TestSize.Level0)
+HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0200, testing::ext::TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0200 start";
 
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0100 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     bool out = true;
-    napi_check_object_type_tag(env, result, &typeTag, &out);
+    napi_status verificationCp = napi_check_object_type_tag(env, result, &typeTag, &out);
 
-    ASSERT_FALSE(out);
+    EXPECT_EQ(verificationCp, napi_ok);
+    EXPECT_FALSE(out);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0200 end";
 }
@@ -3400,21 +3444,22 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0300, testing::ext::Te
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0300 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status ret = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0300 type tag obiect obiect complete";
 
     bool out = false;
     napi_status output = napi_check_object_type_tag(nullptr, result, &typeTag, &out);
 
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0300 end";
 }
@@ -3430,34 +3475,37 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0300, testing::ext::Te
  *                 4. Create object.
  *                 5. Verify napi_check_object_type_tag.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0400, testing::ext::TestSize.Level2)
+HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0400, testing::ext::TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 start";
 
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status ret = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 type tag obiect obiect complete";
 
     napi_value resultcopy = nullptr;
-    napi_create_object(env, &resultcopy);
+    napi_status verifi =napi_create_object(env, &resultcopy);
 
-    ASSERT_NE(resultcopy, nullptr);
+    EXPECT_EQ(verifi, napi_ok);
+    EXPECT_NE(resultcopy, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 create objectcopy complete";
 
     bool out = true;
-    napi_check_object_type_tag(env, resultcopy, &typeTag, &out);
+    napi_status verificationCp = napi_check_object_type_tag(env, resultcopy, &typeTag, &out);
 
-    ASSERT_FALSE(out);
+    EXPECT_EQ(verificationCp, napi_ok);
+    EXPECT_FALSE(out);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 end";
 }
@@ -3478,22 +3526,23 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0500, testing::ext::Te
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0500 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status ret = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 type tag obiect obiect complete";
 
     bool out = false;
     napi_status output = napi_check_object_type_tag(env, result, nullptr, &out);
 
-    ASSERT_FALSE(out);
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_FALSE(out);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0500 end";
 }
@@ -3514,29 +3563,25 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0600, testing::ext::Te
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
 
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(verification, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0600 create obiect complete";
 
     const napi_type_tag typeTag = { 0xFFFFFFFFFFFFFFFF, 34ULL };
     napi_status ret = napi_type_tag_object(env, result, &typeTag);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0600 type tag obiect obiect complete";
 
     napi_status out = napi_check_object_type_tag(env, result, &typeTag, nullptr);
 
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0600 end";
 }
-
-static void finalizer_only_callback(napi_env env, void* data, void* hint)
-{
-    GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer finalizer_only_callback ";
-}
-
+#endif // (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
 /**
  * @tc.number    : ACE_Napi_Add_Finalizer_0100
  * @tc.name      : The necessary parameters of napi_add_finalizer are valid, and callback functions can be added.
@@ -3550,17 +3595,26 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0100, testing::ext::TestSize.L
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref js_cb_ref;
-    napi_ref finalize_hint;
-    napi_ref out;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &js_cb_ref);
-    napi_create_reference(env, result, 1, &finalize_hint);
-    napi_create_reference(env, result, 1, &out);
-    napi_status ret = napi_add_finalizer(env, result, js_cb_ref, finalizer_only_callback, finalize_hint, &out);
+    napi_value jsObj = nullptr;
+    char16_t nativeObj[] = u"napiaddfinalizer";
+    int finalizeHine = 0;
+    static bool testValue = false;
 
-    ASSERT_EQ(ret, napi_ok);
+    napi_status verification = napi_create_object(env, &jsObj);
+
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_ref result = nullptr;
+    napi_status ret = napi_add_finalizer(env, jsObj, &nativeObj, [](napi_env env, void* data, void* hint) {
+        testValue = true;
+    }, &finalizeHine, &result);
+
+    EXPECT_EQ(ret, napi_ok);
+
+    napi_status verifi = napi_delete_reference(env, result);
+
+    EXPECT_TRUE(testValue);
+    EXPECT_EQ(verifi, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0100 end";
 }
@@ -3579,14 +3633,20 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0200, testing::ext::TestSize.L
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref js_cb_ref;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &js_cb_ref);
+    char16_t nativeObj[] = u"napiaddfinalizer";
+    int finalizeHine = 0;
+    static bool testValue = false;
 
-    napi_status ret = napi_add_finalizer(env, NULL, js_cb_ref, finalizer_only_callback, NULL, NULL);
+    napi_ref result = nullptr;
+    napi_status ret = napi_add_finalizer(env, nullptr, &nativeObj, [](napi_env env, void* data, void* hint) {
+        testValue = true;
+    }, &finalizeHine, &result);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
+    EXPECT_FALSE(testValue);
+
+    napi_status output = napi_delete_reference(env, result);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0200 end";
 }
@@ -3605,14 +3665,22 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0300, testing::ext::TestSize.L
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref js_cb_ref;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &js_cb_ref);
-    napi_status ret = napi_add_finalizer(env, result, js_cb_ref, NULL, NULL, NULL);
+    napi_value jsObj = nullptr;
+    char16_t nativeObj[] = u"napiaddfinalizer";
+    int finalizeHine = 0;
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    napi_status verification = napi_create_object(env, &jsObj);
 
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_ref result = nullptr;
+    napi_status ret = napi_add_finalizer(env, jsObj, &nativeObj, nullptr, &finalizeHine, &result);
+
+    EXPECT_EQ(ret, napi_invalid_arg);
+
+    napi_status output = napi_delete_reference(env, result);
+    EXPECT_EQ(output, napi_invalid_arg);
+    
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0300 end";
 }
 
@@ -3630,13 +3698,25 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0400, testing::ext::TestSize.L
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref js_cb_ref;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &js_cb_ref);
-    napi_status ret = napi_add_finalizer(nullptr, result, js_cb_ref, finalizer_only_callback, NULL, NULL);
+    napi_value jsObj = nullptr;
+    char16_t nativeObj[] = u"napiaddfinalizer";
+    int finalizeHine = 0;
+    static bool testValue = false;
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    napi_status verification = napi_create_object(env, &jsObj);
+
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_ref result = nullptr;
+    napi_status ret = napi_add_finalizer(nullptr, jsObj, &nativeObj, [](napi_env env, void* data, void* hint) {
+        testValue = true;
+    }, &finalizeHine, &result);
+
+    EXPECT_EQ(ret, napi_invalid_arg);
+    EXPECT_FALSE(testValue);
+
+    napi_status output = napi_delete_reference(env, result);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0400 end";
 }
@@ -3655,15 +3735,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0500, testing::ext::TestSize.L
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref js_cb_ref;
-    napi_ref finalize_hint;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &js_cb_ref);
-    napi_create_reference(env, result, 1, &finalize_hint);
-    napi_status ret = napi_add_finalizer(env, result, js_cb_ref, finalizer_only_callback, finalize_hint, NULL);
+    napi_value jsObj = nullptr;
+    char16_t nativeObj[] = u"napiaddfinalizer";
+    int finalizeHine = 0;
+    static bool testValue = false;
 
-    ASSERT_EQ(ret, napi_ok);
+    napi_status verification = napi_create_object(env, &jsObj);
+
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_status ret = napi_add_finalizer(env, jsObj, &nativeObj, [](napi_env env, void* data, void* hint) {
+        testValue = true;
+    }, &finalizeHine, nullptr);
+
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_FALSE(testValue);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0500 end";
 }
@@ -3682,13 +3768,20 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0600, testing::ext::TestSize.L
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref js_cb_ref;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &js_cb_ref);
-    napi_status ret = napi_add_finalizer(env, result, js_cb_ref, finalizer_only_callback, NULL, NULL);
+    napi_value jsObj = nullptr;
+    char16_t nativeObj[] = u"napiaddfinalizer";
+    static bool testValue = false;
 
-    ASSERT_EQ(ret, napi_ok);
+    napi_status verification = napi_create_object(env, &jsObj);
+
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_status ret = napi_add_finalizer(env, jsObj, &nativeObj, [](napi_env env, void* data, void* hint) {
+        testValue = true;
+    }, nullptr, nullptr);
+
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_FALSE(testValue);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0600 end";
 }
@@ -3701,17 +3794,22 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0600, testing::ext::TestSize.L
  *                 2. Configuration parameter.
  *                 3. Verify napi_add_finalizer.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0700, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0700, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0700 start";
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_create_object(env, &result);
-    napi_status ret = napi_add_finalizer(env, result, NULL, finalizer_only_callback, NULL, NULL);
+    napi_value jsObj = nullptr;
+    int finalizeHine = 0;
 
-    ASSERT_EQ(ret, napi_ok);
+    napi_status verification = napi_create_object(env, &jsObj);
+
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_status ret = napi_add_finalizer(env, jsObj, nullptr, nullptr, &finalizeHine, nullptr);
+
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0700 end";
 }
@@ -3726,21 +3824,30 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0700, testing::ext::TestSize.L
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0800, testing::ext::TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0100 start";
+    GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0800 start";
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref finalize_hint;
-    napi_ref out;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &finalize_hint);
-    napi_create_reference(env, result, 1, &out);
-    napi_status ret = napi_add_finalizer(env, result, NULL, finalizer_only_callback, &finalize_hint, &out);
+    napi_value jsObj = nullptr;
+    int finalizeHine = 0;
+    static bool testValue = false;
 
-    ASSERT_EQ(ret, napi_ok);
+    napi_status verification = napi_create_object(env, &jsObj);
 
-    GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0100 end";
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_ref result = nullptr;
+    napi_status ret = napi_add_finalizer(env, jsObj, nullptr, [](napi_env env, void* data, void* hint) {
+        testValue = true;
+    }, &finalizeHine, &result);
+
+    EXPECT_EQ(ret, napi_ok);
+
+    napi_status output = napi_delete_reference(env, result);
+    EXPECT_EQ(output, napi_ok);
+    EXPECT_TRUE(testValue);
+
+    GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0800 end";
 }
 
 /**
@@ -3751,19 +3858,26 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0800, testing::ext::TestSize.L
  *                 2. Configuration parameter.
  *                 3. Verify napi_add_finalizer.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0900, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0900, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0900 start";
 
     napi_env env = (napi_env)engine_;
 
-    napi_value result = nullptr;
-    napi_ref out;
-    napi_create_object(env, &result);
-    napi_create_reference(env, result, 1, &out);
-    napi_status ret = napi_add_finalizer(env, result, NULL, finalizer_only_callback, NULL, &out);
+    napi_value jsObj = nullptr;
+    int finalizeHine = 0;
 
-    ASSERT_EQ(ret, napi_ok);
+    napi_status verification = napi_create_object(env, &jsObj);
+
+    EXPECT_EQ(verification, napi_ok);
+
+    napi_ref result = nullptr;
+    napi_status ret = napi_add_finalizer(env, jsObj, nullptr, nullptr, &finalizeHine, &result);
+
+    EXPECT_EQ(ret, napi_invalid_arg);
+
+    napi_status output = napi_delete_reference(env, result);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0900 end";
 }
@@ -3787,7 +3901,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Adjust_External_Memory_0100, testing::ext::T
 
     napi_status ret = napi_adjust_external_memory(env, change_in_bytes, &adjusted_value);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Adjust_External_Memory_0100 end";
 }
@@ -3810,7 +3924,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Adjust_External_Memory_0200, testing::ext::T
 
     napi_status ret = napi_adjust_external_memory(env, change_in_bytes, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Adjust_External_Memory_0200 end";
 }
@@ -3831,11 +3945,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Adjust_External_Memory_0300, testing::ext::T
 
     napi_status ret = napi_adjust_external_memory(nullptr, change_in_bytes, &adjusted_value);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Adjust_External_Memory_0300 end";
 }
-
+#if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
+    // jerryscript 2.3 do nothing
+#else
+   // jerryscript 2.4 or quickjs or V8
 /**
  * @tc.number    : ACE_Napi_Get_All_Property_Names_0100
  * @tc.name      : The parameter is valid,
@@ -3854,12 +3971,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0100, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_create_int32(env, testNumber, &numberAttribute);
-    napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiint = napi_create_int32(env, testNumber, &numberAttribute);
+
+    EXPECT_EQ(verifiint, napi_ok);
+
+    napi_status verifiname = napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+
+    EXPECT_EQ(verifiname, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_own_only;
     napi_key_filter keyFilter = napi_key_all_properties;
@@ -3867,12 +3991,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0100, testing::ext::T
     napi_value propNames = nullptr;
     napi_status ret = napi_get_all_property_names(env, result, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     uint32_t length = 0;
-    napi_get_array_length(env, propNames, &length);
+    napi_status verifilen = napi_get_array_length(env, propNames, &length);
 
-    ASSERT_EQ(length, (size_t)1);
+    EXPECT_EQ(verifilen, napi_ok);
+    EXPECT_EQ(length, (size_t)1);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0100 end";
 }
@@ -3895,12 +4020,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0200, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_create_int32(env, testNumber, &numberAttribute);
-    napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiint = napi_create_int32(env, testNumber, &numberAttribute);
+
+    EXPECT_EQ(verifiint, napi_ok);
+
+    napi_status verifiname = napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+
+    EXPECT_EQ(verifiname, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_own_only;
     napi_key_filter keyFilter = napi_key_all_properties;
@@ -3908,12 +4040,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0200, testing::ext::T
     napi_value propNames = nullptr;
     napi_status ret = napi_get_all_property_names(nullptr, result, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
-
-    uint32_t length = 0;
-    napi_get_array_length(env, propNames, &length);
-
-    ASSERT_EQ(length, (size_t)0);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0200 end";
 }
@@ -3937,19 +4064,26 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0300, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_create_int32(env, testNumber, &numberAttribute);
-    napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiint =napi_create_int32(env, testNumber, &numberAttribute);
+
+    EXPECT_EQ(verifiint, napi_ok);
+
+    napi_status verifiname =napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+
+    EXPECT_EQ(verifiname, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_own_only;
     napi_key_filter keyFilter = napi_key_all_properties;
     napi_key_conversion keyConversion = napi_key_keep_numbers;
     napi_status ret = napi_get_all_property_names(env, result, keyMode, keyFilter, keyConversion, nullptr);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0300 end";
 }
@@ -3976,14 +4110,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0400, testing::ext::T
     napi_key_filter keyFilter = napi_key_all_properties;
     napi_key_conversion keyConversion = napi_key_keep_numbers;
     napi_value propNames = nullptr;
-    napi_status ret = napi_get_all_property_names(env, NULL, keyMode, keyFilter, keyConversion, &propNames);
+    napi_status ret = napi_get_all_property_names(env, nullptr, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
-
-    uint32_t length = 0;
-    napi_get_array_length(env, propNames, &length);
-
-    ASSERT_EQ(length, (size_t)0);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0400 end";
 }
@@ -4006,12 +4135,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0500, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_create_int32(env, testNumber, &numberAttribute);
-    napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiint = napi_create_int32(env, testNumber, &numberAttribute);
+
+    EXPECT_EQ(verifiint, napi_ok);
+
+    napi_status verifiname = napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+
+    EXPECT_EQ(verifiname, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_include_prototypes;
     napi_key_filter keyFilter = napi_key_all_properties;
@@ -4019,12 +4155,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0500, testing::ext::T
     napi_value propNames = nullptr;
     napi_status ret = napi_get_all_property_names(env, result, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     uint32_t length = 0;
-    napi_get_array_length(env, propNames, &length);
+    napi_status verifilen = napi_get_array_length(env, propNames, &length);
 
-    ASSERT_EQ(length, (size_t)1);
+    EXPECT_EQ(verifilen, napi_ok);
+    EXPECT_EQ(length, (size_t)1);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0500 end";
 }
@@ -4047,12 +4184,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0600, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_create_int32(env, testNumber, &numberAttribute);
-    napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiint = napi_create_int32(env, testNumber, &numberAttribute);
+
+    EXPECT_EQ(verifiint, napi_ok);
+
+    napi_status verifiname = napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+
+    EXPECT_EQ(verifiname, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_own_only;
     napi_key_filter keyFilter = napi_key_writable;
@@ -4060,12 +4204,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0600, testing::ext::T
     napi_value propNames = nullptr;
     napi_status ret = napi_get_all_property_names(env, result, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     uint32_t length = 0;
-    napi_get_array_length(env, propNames, &length);
+    napi_status verifilen = napi_get_array_length(env, propNames, &length);
 
-    ASSERT_EQ(length, (size_t)0);
+    EXPECT_EQ(verifilen, napi_ok);
+    EXPECT_EQ(length, (size_t)1);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0600 end";
 }
@@ -4088,12 +4233,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0700, testing::ext::T
     napi_env env = (napi_env)engine_;
 
     napi_value result = nullptr;
-    napi_create_object(env, &result);
+    napi_status verification = napi_create_object(env, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_create_int32(env, testNumber, &numberAttribute);
-    napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiint = napi_create_int32(env, testNumber, &numberAttribute);
+
+    EXPECT_EQ(verifiint, napi_ok);
+
+    napi_status verifiname = napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+
+    EXPECT_EQ(verifiname, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_own_only;
     napi_key_filter keyFilter = napi_key_enumerable;
@@ -4101,12 +4253,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0700, testing::ext::T
     napi_value propNames = nullptr;
     napi_status ret = napi_get_all_property_names(env, result, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     uint32_t length = 0;
-    napi_get_array_length(env, propNames, &length);
+    napi_status verifilen = napi_get_array_length(env, propNames, &length);
 
-    ASSERT_EQ(length, (size_t)0);
+    EXPECT_EQ(verifilen, napi_ok);
+    EXPECT_EQ(length, (size_t)1);
 
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0700 end";
 }
@@ -4128,7 +4281,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0800, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     napi_value result = nullptr;
-    napi_create_string_utf8(env, "napi_get_all_property_namesTest", NAPI_AUTO_LENGTH, &result);
+    napi_status verification = napi_create_string_utf8(env, "napi_get_all_property_namesTest",
+        NAPI_AUTO_LENGTH, &result);
+
+    EXPECT_EQ(verification, napi_ok);
 
     napi_key_collection_mode keyMode = napi_key_include_prototypes;
     napi_key_filter keyFilter = napi_key_all_properties;
@@ -4136,10 +4292,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0800, testing::ext::T
     napi_value propNames = nullptr;
     napi_status ret = napi_get_all_property_names(env, result, keyMode, keyFilter, keyConversion, &propNames);
 
-    ASSERT_EQ(ret, napi_object_expected);
+    EXPECT_EQ(ret, napi_object_expected);
     GTEST_LOG_(INFO) << "ACE_Napi_Get_All_Property_Names_0800 end";
 }
-
+#endif // (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
 /*
  * @tc.number    : ACE_Napi_Create_Buffer_0100
  * @tc.name      : The parameters of napi_create_buffer are valid,
@@ -4161,8 +4317,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0100, testing::ext::TestSize.L
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
     GTEST_LOG_(INFO) << "BufferPtr is" << BufferPtr;
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
-    ASSERT_NE(BufferPtr, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_NE(BufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0100 end";
 }
@@ -4183,12 +4339,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0200, testing::ext::TestSize.L
     napi_env env = (napi_env)engine_;
     napi_value Buffer = nullptr;
     void* BufferPtr = nullptr;
-    size_t BufferSize = BUFFER_MAX_SIZE;
+    size_t BufferSize = BUFFER_OVERMAX_SIZE;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
     GTEST_LOG_(INFO) << "BufferPtr is" << BufferPtr;
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(BufferPtr, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(BufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0200 end";
 }
@@ -4214,8 +4370,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0300, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "BufferSize is" << BufferSize;
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
     GTEST_LOG_(INFO) << "BufferPtr is" << BufferPtr;
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(BufferPtr, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(BufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0300 end";
 }
@@ -4240,8 +4396,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0400, testing::ext::TestSize.L
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
     GTEST_LOG_(INFO) << "BufferPtr is" << BufferPtr;
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(BufferPtr, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(BufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0400 end";
 }
@@ -4263,8 +4419,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0500, testing::ext::TestSize.L
     napi_value Buffer = nullptr;
     size_t BufferSize = 1024;
 
-    napi_status creatresult = napi_create_buffer(env, BufferSize, NULL, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_buffer(env, BufferSize, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0500 end";
 }
@@ -4286,8 +4442,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0600, testing::ext::TestSize.L
     void* BufferPtr = nullptr;
     size_t BufferSize = 1024;
 
-    napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, NULL);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0600 end";
 }
@@ -4311,7 +4467,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0700, testing::ext::TestSize.L
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_0700 end";
 }
@@ -4337,11 +4493,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Buffer_0100, testing::ext::TestSize.Level
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     bool isBuffer = false;
     napi_status isresult = napi_is_buffer(env, Buffer, &isBuffer);
-    ASSERT_EQ(isresult, napi_status::napi_ok);
-    ASSERT_TRUE(isBuffer);
+    EXPECT_EQ(isresult, napi_status::napi_ok);
+    EXPECT_TRUE(isBuffer);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Is_Buffer_0100 end";
 }
@@ -4367,11 +4523,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Buffer_0200, testing::ext::TestSize.Level
     size_t BufferSize = sizeof(Text);
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     bool isBuffer = false;
     napi_status isresult = napi_is_buffer(env, Buffer, &isBuffer);
-    ASSERT_EQ(isresult, napi_status::napi_ok);
-    ASSERT_TRUE(isBuffer);
+    EXPECT_EQ(isresult, napi_status::napi_ok);
+    EXPECT_TRUE(isBuffer);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Is_Buffer_0200 end";
 }
@@ -4395,12 +4551,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Buffer_0300, testing::ext::TestSize.Level
     napi_value Buffer = nullptr;
     size_t BufferSize = sizeof(Text);
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizererr, NULL, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     bool isBuffer = false;
     napi_status isresult = napi_is_buffer(env, Buffer, &isBuffer);
-    ASSERT_EQ(isresult, napi_status::napi_ok);
-    ASSERT_TRUE(isBuffer);
+    EXPECT_EQ(isresult, napi_status::napi_ok);
+    EXPECT_TRUE(isBuffer);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Is_Buffer_0300 end";
 }
@@ -4425,12 +4581,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Buffer_0400, testing::ext::TestSize.Level
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
     GTEST_LOG_(INFO) << "BufferPtr is" << BufferPtr;
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(BufferPtr, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(BufferPtr, nullptr);
     bool isBuffer = false;
     napi_status isresult = napi_is_buffer(env, Buffer, &isBuffer);
-    ASSERT_EQ(isresult, napi_status::napi_invalid_arg);
-    ASSERT_FALSE(isBuffer);
+    EXPECT_EQ(isresult, napi_status::napi_invalid_arg);
+    EXPECT_FALSE(isBuffer);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Is_Buffer_0400 end";
 }
@@ -4454,9 +4610,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Buffer_0500, testing::ext::TestSize.Level
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
-    napi_status isresult = napi_is_buffer(env, Buffer, NULL);
-    ASSERT_EQ(isresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    napi_status isresult = napi_is_buffer(env, Buffer, nullptr);
+    EXPECT_EQ(isresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Is_Buffer_0500 end";
 }
@@ -4481,11 +4637,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Buffer_0600, testing::ext::TestSize.Level
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(envone, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     bool isBuffer = false;
     napi_status isresult = napi_is_buffer(envtwo, Buffer, &isBuffer);
-    ASSERT_EQ(isresult, napi_status::napi_invalid_arg);
-    ASSERT_FALSE(isBuffer);
+    EXPECT_EQ(isresult, napi_status::napi_invalid_arg);
+    EXPECT_FALSE(isBuffer);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Is_Buffer_0600 end";
 }
@@ -4511,13 +4667,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0100, testing::ext::TestSize
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_EQ(BufferPtr, tmpBufferPtr);
-    ASSERT_EQ(BufferSize, BufferLength);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    EXPECT_EQ(BufferPtr, tmpBufferPtr);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, ""), 0);
+    EXPECT_EQ(BufferSize, BufferLength);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0100 end";
 }
@@ -4529,7 +4687,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0100, testing::ext::TestSize
  *                 2.Set test variables
  *                 3.The function of napi_create_buffer_copy is used to create a invalid buffer
  *                 4.The function of napi_get_buffer_info is called
- *                 5.Return value of function is napi_invalid_arg
+ *                 5.Return value of function is napi_ok
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0200, testing::ext::TestSize.Level1)
 {
@@ -4537,15 +4695,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0200, testing::ext::TestSize
 
     napi_env env = (napi_env)engine_;
     napi_value Buffer = nullptr;
+    void* result_data = nullptr;
     size_t BufferSize = sizeof(Text);
 
-    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, NULL, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_NE(BufferSize, BufferLength);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, "hello world"), 0);
+    EXPECT_EQ(result_data, tmpBufferPtr);
+    EXPECT_EQ(BufferSize, BufferLength);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0200 end";
 }
@@ -4558,7 +4720,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0200, testing::ext::TestSize
  *                 3.The function of napi_get_buffer_info is called
  *                 4.Return value of function is napi_invalid_arg
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0300, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0300, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0300 start";
 
@@ -4568,8 +4730,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0300, testing::ext::TestSize
     size_t BufferLength = 0;
 
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(nullptr, tmpBufferPtr);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(nullptr, tmpBufferPtr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0300 end";
 }
@@ -4592,12 +4754,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0400, testing::ext::TestSize
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     size_t BufferLength = 0;
-    napi_status getinforesult = napi_get_buffer_info(env, Buffer, NULL, &BufferLength);
+    napi_status getinforesult = napi_get_buffer_info(env, Buffer, nullptr, &BufferLength);
     GTEST_LOG_(INFO) << "BufferLength" << BufferLength;
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_EQ(BufferLength, BufferSize);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    EXPECT_EQ(BufferLength, BufferSize);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0400 end";
 }
@@ -4620,12 +4782,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0500, testing::ext::TestSize
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
-    napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, NULL);
+    napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, nullptr);
     GTEST_LOG_(INFO) << "tmpBufferPtr" << tmpBufferPtr;
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_EQ(tmpBufferPtr, BufferPtr);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, ""), 0);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    EXPECT_EQ(tmpBufferPtr, BufferPtr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0500 end";
 }
@@ -4649,11 +4813,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Buffer_Info_0600, testing::ext::TestSize
     size_t BufferSize = 1024;
 
     napi_status creatresult = napi_create_buffer(envone, BufferSize, &BufferPtr, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(envtwo, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Get_Buffer_Info_0600 end";
 }
@@ -4676,13 +4840,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0100, testing::ext::TestS
     size_t BufferSize = 1;
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, nullptr, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
-    ASSERT_EQ(BufferLength, (size_t)0);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, (size_t)0);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0100 end";
 }
@@ -4703,46 +4867,46 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0200, testing::ext::TestS
     napi_value Buffer = nullptr;
     void* result_data = nullptr;
 
-    size_t BufferSize = BUFFER_MAX_SIZE;
+    size_t BufferSize = BUFFER_OVERMAX_SIZE;
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
 
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
-    ASSERT_EQ(BufferLength, size_t(0));
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, size_t(0));
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0200 end";
 }
 
 /*
  * @tc.number    : ACE_Napi_Create_Buffer_Copy_0300
- * @tc.name      : The parameters of size(BUFFER_MAX_SIZE) and data are invalid
+ * @tc.name      : The parameters of size(BUFFER_OVERMAX_SIZE) and data are invalid
  * @tc.desc      : 1.The environment engine is created
  *                 2.Set test variables
  *                 3.The function of napi_create_buffer_copy is called
  *                 4.Return value of function is napi_invalid_arg
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0300, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0300, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0300 start";
 
     napi_env env = (napi_env)engine_;
     napi_value Buffer = nullptr;
     void* result_data = nullptr;
-    size_t BufferSize = BUFFER_MAX_SIZE;
+    size_t BufferSize = BUFFER_OVERMAX_SIZE;
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, nullptr, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
-    ASSERT_EQ(BufferLength, (size_t)0);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, (size_t)0);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0300 end";
 }
@@ -4765,12 +4929,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0400, testing::ext::TestS
     size_t BufferSize = -1;
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0400 end";
 }
@@ -4793,12 +4957,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0500, testing::ext::TestS
     size_t BufferSize = 0;
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0500 end";
 }
@@ -4820,17 +4984,20 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0600, testing::ext::TestS
 
     napi_env env = (napi_env)engine_;
     napi_value Buffer = nullptr;
-    void* result_data = nullptr;
-    size_t BufferSize = sizeof(Text) - 1;
+    void* Bufferptr = nullptr;
+    size_t BufferSize = sizeof(Text) - 2;
 
-    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &Bufferptr, &Buffer);
+    GTEST_LOG_(INFO) << "*Bufferptr"<<(char*)Bufferptr;
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_NE(tmpBufferPtr, nullptr);
-    ASSERT_NE(BufferLength, sizeof(Text));
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(memcmp((char*)tmpBufferPtr, "hello worl", 10), 0);
+    EXPECT_EQ(tmpBufferPtr, Bufferptr);
+    EXPECT_EQ(BufferLength, sizeof(Text) - 2);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0600 end";
 }
@@ -4856,13 +5023,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0700, testing::ext::TestS
     size_t BufferSize = sizeof(Text);
 
     napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_NE(tmpBufferPtr, nullptr);
-    ASSERT_EQ(BufferLength, BufferSize);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, "hello world"), 0);
+    EXPECT_NE(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, BufferSize);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0700 end";
 }
@@ -4887,13 +5056,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0800, testing::ext::TestS
     void* result_data = nullptr;
     size_t BufferSize = sizeof(Text);
 
-    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, NULL);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0800 end";
 }
@@ -4920,14 +5089,49 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0900, testing::ext::TestS
     size_t BufferSize = sizeof(Text);
 
     napi_status creatresult = napi_create_buffer_copy(envcopy, BufferSize, Text, &result_data, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(envinfo, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(tmpBufferPtr, nullptr);
+    EXPECT_EQ(getinforesult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(tmpBufferPtr, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_0900 end";
+}
+
+/*
+ * @tc.number    : ACE_Napi_Create_Buffer_Copy_1000
+ * @tc.name      : The parameter of environment is invalid,
+ *                 The buffer can not be created by napi_create_buffer_copy function.
+ * @tc.desc      : 1.The environment engine is created.
+ *                 2.Set test variables.
+ *                 3.The function of napi_create_buffer_copy is used to create
+ *                   a new buffer when the BufferSize is larger then buffer.
+ *                 4.Return value of function is napi_ok.
+ *                 5.The function of napi_get_buffer_info is called.
+ *                 6.Return value of function is napi_ok.
+ */
+HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_1000, testing::ext::TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_1000 start";
+
+    napi_env env = (napi_env)engine_;
+    napi_value Buffer = nullptr;
+    void* result_data = nullptr;
+    size_t BufferSize = 1024;
+
+    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, Text, &result_data, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    void* tmpBufferPtr = nullptr;
+    size_t BufferLength = 0;
+    napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, "hello world"), 0);
+    EXPECT_NE(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, (size_t)1024);
+
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Buffer_Copy_1000 end";
 }
 
 /*
@@ -4949,14 +5153,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0100, testing::ext::T
     napi_value Buffer = nullptr;
     size_t BufferSize = 1;
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_NE(tmpBufferPtr, nullptr);
-    ASSERT_EQ(BufferLength, BufferSize);
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, "hello world"), 0);
+    EXPECT_NE(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, BufferSize);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0100 end";
 }
@@ -4976,10 +5182,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0200, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     napi_value Buffer = nullptr;
-    size_t BufferSize = BUFFER_MAX_SIZE;
+    size_t BufferSize = BUFFER_OVERMAX_SIZE;
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0200 end";
 }
@@ -4993,7 +5199,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0200, testing::ext::T
  *                 3.The function of napi_create_external_buffer is used to create a new buffer
  *                 4.Return value of function is napi_invalid_arg
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0300, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0300, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0300 start";
 
@@ -5001,8 +5207,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0300, testing::ext::T
     napi_value Buffer = nullptr;
     size_t BufferSize = 0;
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0300 end";
 }
@@ -5026,14 +5232,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0400, testing::ext::T
     napi_value Buffer = nullptr;
     size_t BufferSize = sizeof(Text);
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizererr, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, nullptr, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
     void* tmpBufferPtr = nullptr;
     size_t BufferLength = 0;
     napi_status getinforesult = napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    ASSERT_EQ(getinforesult, napi_status::napi_ok);
-    ASSERT_NE(tmpBufferPtr, nullptr);
-    ASSERT_EQ(BufferLength, size_t(12));
+    EXPECT_EQ(getinforesult, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "*tmpBufferPtr"<<(char*)tmpBufferPtr;
+    EXPECT_EQ(strcmp((char*)tmpBufferPtr, "hello world"), 0);
+    EXPECT_NE(tmpBufferPtr, nullptr);
+    EXPECT_EQ(BufferLength, size_t(12));
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0400 end";
 }
@@ -5055,15 +5263,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0500, testing::ext::T
     napi_value Buffer = nullptr;
     size_t BufferSize = -1;
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0500 end";
 }
 
 /*
  * @tc.number    : ACE_Napi_Create_External_Buffer_0600
- * @tc.name      : The parameter of buffer size is invalid,
+ * @tc.name      : The parameter of environment is invalid,
  *                 The buffer can not be created by napi_create_external_buffer function.
  * @tc.desc      : 1.The environment engine is created
  *                 2.Set test variables
@@ -5074,39 +5282,20 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0600, testing::ext::T
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0600 start";
 
-    napi_env env = (napi_env)engine_;
-    napi_value Buffer = nullptr;
-    size_t BufferSize = 0;
-
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0600 end";
-}
-
-/*
- * @tc.number    : ACE_Napi_Create_External_Buffer_0700
- * @tc.name      : The parameter of environment is invalid,
- *                 The buffer can not be created by napi_create_external_buffer function.
- * @tc.desc      : 1.The environment engine is created
- *                 2.Set test variables
- *                 3.The function of napi_create_external_buffer is used to create a new buffer
- *                 4.Return value of function is napi_invalid_arg
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0700, testing::ext::TestSize.Level2)
-{
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0700 start";
-
     napi_env env = nullptr;
     napi_value Buffer = nullptr;
     size_t BufferSize = sizeof(Text);
 
-    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, Text, &Buffer);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_status creatresult = napi_create_external_buffer(env, BufferSize, Text, BufferFinalizer, nullptr, &Buffer);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
 
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0700 end";
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_External_Buffer_0600 end";
 }
 
+#if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
+    // jerryscript 2.3 do nothing
+#else
+   // jerryscript 2.4 or quickjs or V8
 /*
  * @tc.number    : ACE_Napi_Object_Freeze_0100
  * @tc.name      : The parameters of napi_object_freeze are valid,
@@ -5121,27 +5310,39 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0700, testing::ext::T
 HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0100, testing::ext::TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0100 start";
-
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_get_element(env, result, 0, &uint32result);
-    napi_status creatresult = napi_object_freeze(env, result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_NE(20, numresult);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_freeze(env, object);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_number_expected);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 0);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0100 end";
 }
@@ -5162,27 +5363,51 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0200, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0200 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    bool deleteresult = true;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    napi_value afterfreezeresult;
+    napi_value namestr;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    int32_t afternumresulttwo;
+    bool deleteresult = false;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_status creatresult = napi_object_freeze(env, result);
-    napi_delete_element(env, result, 1, &deleteresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-    GTEST_LOG_(INFO) << "freezeresult is" << numresult;
-
-    ASSERT_EQ(numresult, 20);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    napi_status creatresult = napi_object_freeze(env, object);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    status = napi_create_string_utf8(env, "freezeresult", strlen("freezeresult"), &namestr);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_delete_property(env, object, namestr, &deleteresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &afterfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, afterfreezeresult, &afternumresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "afterfreezeresult is" << afternumresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0200 end";
 }
@@ -5203,25 +5428,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0300, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0300 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_get_element(env, result, 0, &uint32result);
-    napi_status creatresult = napi_object_freeze(env, result);
-    napi_set_element(env, result, 0, freezeresult);
-    napi_get_element(env, result, 0, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(10, numresult);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_freeze(env, object);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 10);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0300 end";
 }
@@ -5242,24 +5480,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0400, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0400 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_status creatresult = napi_object_freeze(env, NULL);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(numresult, 20);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_freeze(env, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0400 end";
 }
@@ -5280,24 +5532,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0500, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0500 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_status creatresult = napi_object_freeze(nullptr, result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(numresult, 20);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_freeze(nullptr, object);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0500 end";
 }
@@ -5318,26 +5584,52 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0600, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0600 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    bool deleteresult = true;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    napi_value afterfreezeresult;
+    napi_value namestr;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    int32_t afternumresulttwo;
+    bool deleteresult = false;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_status creatresult = napi_object_freeze(nullptr, result);
-    napi_delete_element(env, result, 1, &deleteresult);
-    ASSERT_EQ(deleteresult, true);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    napi_status creatresult = napi_object_freeze(nullptr, object);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_create_string_utf8(env, "freezeresult", strlen("freezeresult"), &namestr);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_delete_property(env, object, namestr, &deleteresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    EXPECT_EQ(deleteresult, true);
+    status = napi_get_named_property(env, object, "freezeresult", &afterfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, afterfreezeresult, &afternumresulttwo);
+    EXPECT_EQ(status, napi_status::napi_number_expected);
+    GTEST_LOG_(INFO) << "afterfreezeresult is" << afternumresulttwo;
+    EXPECT_EQ(afternumresulttwo, 0);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0600 end";
 }
@@ -5358,27 +5650,65 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0700, testing::ext::TestSize.L
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0700 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_status creatresult = napi_object_freeze(nullptr, result);
-    napi_set_element(env, result, 1, uint32result);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(numresult, 10);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_freeze(nullptr, object);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_set_named_property(env, object, "int32result", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0700 end";
+}
+
+/*
+ * @tc.number    : ACE_Napi_Object_Freeze_0800
+ * @tc.name      : The parameter of environment is invalid,
+ *                 The object can not be freezed by napi_object_freeze function.
+ * @tc.desc      : 1.The environment engine is created
+ *                 2.Set test variables
+ *                 3.The function of napi_object_freeze is used to freeze a number
+ *                 4.Return value of function is napi_object_expected
+ */
+HWTEST_F(NativeEngineTest, ACE_Napi_Object_Freeze_0800, testing::ext::TestSize.Level2)
+{
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0800 start";
+
+    napi_env env = (napi_env)engine_;
+    napi_value int32result;
+    auto numone = static_cast<int32_t>(10);
+
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    napi_status creatresult = napi_object_freeze(env, int32result);
+    EXPECT_EQ(creatresult, napi_status::napi_object_expected);
+
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Freeze_0800 end";
 }
 
 /*
@@ -5397,25 +5727,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0100, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0100 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_get_element(env, result, 0, &uint32result);
-    napi_status creatresult = napi_object_seal(env, result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_NE(20, numresult);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_seal(env, object);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_number_expected);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 0);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0100 end";
 }
@@ -5436,27 +5779,51 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0200, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0200 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    bool deleteresult = true;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    napi_value afterfreezeresult;
+    napi_value namestr;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    int32_t afternumresulttwo;
+    bool deleteresult = false;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_status creatresult = napi_object_seal(env, result);
-    napi_delete_element(env, result, 1, &deleteresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-    GTEST_LOG_(INFO) << "freezeresult is" << numresult;
-
-    ASSERT_NE(numresult, 20);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    napi_status creatresult = napi_object_seal(env, object);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    status = napi_create_string_utf8(env, "freezeresult", strlen("freezeresult"), &namestr);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_delete_property(env, object, namestr, &deleteresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &afterfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, afterfreezeresult, &afternumresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "afterfreezeresult is" << afternumresulttwo;
+    EXPECT_EQ(afternumresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0200 end";
 }
@@ -5477,25 +5844,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0300, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0300 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_get_element(env, result, 0, &uint32result);
-    napi_status creatresult = napi_object_seal(env, result);
-    napi_set_element(env, result, 0, freezeresult);
-    napi_get_element(env, result, 0, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(20, numresult);
-    ASSERT_EQ(creatresult, napi_status::napi_ok);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_seal(env, object);
+    EXPECT_EQ(creatresult, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0300 end";
 }
@@ -5516,24 +5896,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0400, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0400 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_status creatresult = napi_object_seal(env, NULL);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(numresult, 20);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_seal(env, nullptr);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0400 end";
 }
@@ -5554,24 +5948,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0500, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0500 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_status creatresult = napi_object_seal(nullptr, result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(numresult, 20);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_seal(nullptr, object);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0500 end";
 }
@@ -5592,26 +6000,52 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0600, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0600 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    bool deleteresult = true;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    napi_value afterfreezeresult;
+    napi_value namestr;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    int32_t afternumresulttwo;
+    bool deleteresult = false;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_status creatresult = napi_object_seal(nullptr, result);
-    napi_delete_element(env, result, 1, &deleteresult);
-    ASSERT_EQ(deleteresult, true);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    status = napi_set_named_property(env, object, "freezeresult", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "freezeresult", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    napi_status creatresult = napi_object_seal(nullptr, object);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_create_string_utf8(env, "freezeresult", strlen("freezeresult"), &namestr);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_delete_property(env, object, namestr, &deleteresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    EXPECT_EQ(deleteresult, true);
+    status = napi_get_named_property(env, object, "freezeresult", &afterfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, afterfreezeresult, &afternumresulttwo);
+    EXPECT_EQ(status, napi_status::napi_number_expected);
+    GTEST_LOG_(INFO) << "afterfreezeresult is" << afternumresulttwo;
+    EXPECT_EQ(afternumresulttwo, 0);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0600 end";
 }
@@ -5632,28 +6066,67 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0700, testing::ext::TestSize.Lev
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0700 start";
 
     napi_env env = (napi_env)engine_;
-    napi_value result;
-    napi_value uint32result;
+    napi_value object = nullptr;
+    napi_value int32result;
+    napi_value newuint32result;
     napi_value freezeresult;
-    int32_t numresult;
-    auto numone = static_cast<uint32_t>(10);
-    auto numtwo = static_cast<uint32_t>(20);
+    napi_value newfreezeresult;
+    int32_t numresultone;
+    int32_t numresulttwo;
+    auto numone = static_cast<int32_t>(10);
+    auto numtwo = static_cast<int32_t>(20);
 
-    napi_create_uint32(env, numone, &uint32result);
-    napi_create_uint32(env, numtwo, &freezeresult);
-    napi_create_array_with_length(env, 2, &result);
-    napi_set_element(env, result, 0, uint32result);
-    napi_set_element(env, result, 1, freezeresult);
-    napi_status creatresult = napi_object_seal(nullptr, result);
-    napi_set_element(env, result, 1, uint32result);
-    napi_get_element(env, result, 1, &freezeresult);
-    napi_get_value_int32(env, freezeresult, &numresult);
-
-    ASSERT_EQ(numresult, 10);
-    ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
+    napi_create_object(env, &object);
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_create_int32(env, numtwo, &freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_set_named_property(env, object, "int32result", int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newuint32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newuint32result, &numresultone);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newuint32result is" << numresultone;
+    napi_status creatresult = napi_object_seal(nullptr, object);
+    EXPECT_EQ(creatresult, napi_status::napi_invalid_arg);
+    status = napi_set_named_property(env, object, "int32result", freezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_named_property(env, object, "int32result", &newfreezeresult);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    status = napi_get_value_int32(env, newfreezeresult, &numresulttwo);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    GTEST_LOG_(INFO) << "newfreezeresult is" << numresulttwo;
+    EXPECT_EQ(numresulttwo, 20);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0700 end";
 }
+
+/*
+ * @tc.number    : ACE_Napi_Object_Seal_0800
+ * @tc.name      : The parameters of napi_object_seal are valid,
+ *                 The object is sealed by napi_object_seal function.
+ * @tc.desc      : 1.The environment engine is created
+ *                 2.Set test variables
+ *                 3.The function of napi_object_seal is used to seal a number
+ *                 4.Return value of function is napi_object_expected
+ */
+HWTEST_F(NativeEngineTest, ACE_Napi_Object_Seal_0800, testing::ext::TestSize.Level2)
+{
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0800 start";
+
+    napi_env env = (napi_env)engine_;
+    napi_value int32result;
+    auto numone = static_cast<int32_t>(10);
+
+    napi_status status = napi_create_int32(env, numone, &int32result);
+    EXPECT_EQ(status, napi_status::napi_ok);
+    napi_status creatresult = napi_object_seal(env, int32result);
+    EXPECT_EQ(creatresult, napi_status::napi_object_expected);
+
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Object_Seal_0800 end";
+}
+#endif // (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
 /*
  * @tc.number    : ACE_Napi_Call_Threadsafe_Function_0100
  * @tc.name      : napi_create_threadsafe_function creates a queue and
@@ -5669,12 +6142,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0100, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1, &g_finalData,
+
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1, &g_finalData,
         FinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -5683,7 +6159,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0100, testing::ext:
     if (uv_thread_create(&newChildTid, NewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join Failed!";
+    }
     int testCount = 20;
     for (int i = 0; i < testCount; i++) {
         status = napi_call_threadsafe_function(tsFunc, (void*)&g_threadDataContent, napi_tsfn_blocking);
@@ -5712,12 +6190,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0200, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1, &g_finalData,
+
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1, &g_finalData,
         NonBlockFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -5726,7 +6207,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0200, testing::ext:
     if (uv_thread_create(&newChildTid, NewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join Failed!";
+    }
     int testCount = 20;
     for (int i = 0; i < testCount; i++) {
         status = napi_call_threadsafe_function(tsFunc, &g_threadDataContent, napi_tsfn_nonblocking);
@@ -5755,12 +6238,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0300, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 50, 1, &g_finalData,
+
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 50, 1, &g_finalData,
         FinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -5769,7 +6255,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0300, testing::ext:
     if (uv_thread_create(&newChildTid, NewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join Failed!";
+    }
+
     int testCount = 20;
     for (int i = 0; i < testCount; i++) {
         status = napi_call_threadsafe_function(tsFunc, &g_threadDataContent, napi_tsfn_nonblocking);
@@ -5798,12 +6287,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0400, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 50, 1, &g_finalData,
+
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 50, 1, &g_finalData,
         FinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -5812,7 +6304,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0400, testing::ext:
     if (uv_thread_create(&newChildTid, NewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join Failed!";
+    }
+
     int testCount = 20;
     for (int i = 0; i < testCount; i++) {
         status = napi_call_threadsafe_function(tsFunc, &g_threadDataContent, napi_tsfn_blocking);
@@ -5858,7 +6353,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0500, testing::ext:
     if (uv_thread_create(&newChildTid, NonBlockAndBlockNewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join Failed!";
+    }
+
     int testCount = 10;
     for (int i = 0; i < testCount; i++) {
         status = napi_call_threadsafe_function(tsFunc, &g_threadDataContent3, napi_tsfn_blocking);
@@ -5893,13 +6391,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0600, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 50, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 50, 1, &g_finalData,
         OtherFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -5909,11 +6409,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0600, testing::ext:
     if (uv_thread_create(&newChildTid, NonBlockAndBlockNewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
+
     if (uv_thread_create(&newChildTid2, NonBlockAndBlockNewChildThreadMuti, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid2);
+    if (uv_thread_join(&newChildTid2) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid2) Failed!";
+    }
     int testCount = 3;
     for (int i = 0; i < testCount; i++) {
         status = napi_call_threadsafe_function(tsFunc, &g_threadDataContent3, napi_tsfn_blocking);
@@ -5926,6 +6431,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0600, testing::ext:
     }
     status = napi_release_threadsafe_function(tsFunc, napi_tsfn_release);
     EXPECT_EQ(status, napi_ok);
+
     GetFinalizeStatus();
     GTEST_LOG_(INFO) << "ACE_Napi_Call_Threadsafe_Function_0600 called end";
 }
@@ -5938,7 +6444,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0600, testing::ext:
  *                 2.napi_create_threadsafe_function creates a queue.
  *                 3.In the test thread, calls the napi_call_threadsafe_function function [nonblock call 10 times,
  *                   block call 10 times, nonblock call 10 times].
- *                 4.In the three child threads created, calls the napi_call_threadsafe_function 
+ *                 4.In the three child threads created, calls the napi_call_threadsafe_function
  *                   function[nonblock call 10 times, block call 10 times, onblock call 10 times].
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0700, testing::ext::TestSize.Level1)
@@ -5948,30 +6454,38 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0700, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
         MutiModeFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
     uv_thread_t newChildTid, newChildTid2, newChildTid3;
     OneModeCallData_t threadData = { .tsfn = tsFunc, .mode = napi_tsfn_nonblocking, .callCount = 10 };
     if (uv_thread_create(&newChildTid, MutiModeCallOne, (void*)&threadData) != 0) {
-        GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
+        GTEST_LOG_(INFO) << "uv_thread_create(&newChildTid) Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
     if (uv_thread_create(&newChildTid2, MutiModeCallOne, (void*)&threadData) != 0) {
-        GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
+        GTEST_LOG_(INFO) << "uv_thread_create(&newChildTid2) Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid2);
+    if (uv_thread_join(&newChildTid2) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid2) Failed!";
+    }
     if (uv_thread_create(&newChildTid3, MutiModeCallOne, (void*)&threadData) != 0) {
-        GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
+        GTEST_LOG_(INFO) << "uv_thread_create(&newChildTid3) Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid3);
+    if (uv_thread_join(&newChildTid3) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid3) Failed!";
+    }
 
     threadData.mode = napi_tsfn_nonblocking;
     threadData.callCount = 10;
@@ -5996,7 +6510,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0700, testing::ext:
  *                 2.napi_create_threadsafe_function creates a queue.
  *                 3.In the test thread, calls the napi_call_threadsafe_function function [block call 10 times,
  *                   nonblock call 10 times, block call 10 times].
- *                 4.In the three child threads created, calls the napi_call_threadsafe_function 
+ *                 4.In the three child threads created, calls the napi_call_threadsafe_function
  *                   function[block call 10 times, nonblock call 10 times, block call 10 times].
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0800, testing::ext::TestSize.Level1)
@@ -6006,13 +6520,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0800, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
         MutiModeFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6021,15 +6537,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0800, testing::ext:
     if (uv_thread_create(&newChildTid, MutiModeCallTwo, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
     if (uv_thread_create(&newChildTid2, MutiModeCallTwo, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid2);
+    if (uv_thread_join(&newChildTid2) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid2) Failed!";
+    }
     if (uv_thread_create(&newChildTid3, MutiModeCallTwo, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid3);
+    if (uv_thread_join(&newChildTid3) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid3) Failed!";
+    }
 
     threadData.mode = napi_tsfn_blocking;
     threadData.callCount = 10;
@@ -6057,9 +6579,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0800, testing::ext:
  *                   nonblock call 10 times, block call 10 times].
  *                 4.In the first child thread created, calls the napi_call_threadsafe_function 
  *                   function[nonblock call 10 times, block call 10 times, nonblock call 10 times].
- *                 5.In the second child thread created, calls the napi_call_threadsafe_function 
+ *                 5.In the second child thread created, calls the napi_call_threadsafe_function
  *                   function[block call 10 times, nonblock call 10 times, block call 10 times].
- *                 6.In the third child thread created, calls the napi_call_threadsafe_function 
+ *                 6.In the third child thread created, calls the napi_call_threadsafe_function
  *                   function[nonblock call 10 times, block call 10 times, nonblock call 10 times].
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0900, testing::ext::TestSize.Level1)
@@ -6069,13 +6591,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0900, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
         MutiModeFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6084,15 +6608,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0900, testing::ext:
     if (uv_thread_create(&newChildTid, MutiModeCallOne, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
     if (uv_thread_create(&newChildTid2, MutiModeCallTwo, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid2);
+    if (uv_thread_join(&newChildTid2) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid2) Failed!";
+    }
     if (uv_thread_create(&newChildTid3, MutiModeCallOne, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid3);
+    if (uv_thread_join(&newChildTid3) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid3) Failed!";
+    }
 
     threadData.mode = napi_tsfn_blocking;
     threadData.callCount = 10;
@@ -6106,6 +6636,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_0900, testing::ext:
 
     status = napi_release_threadsafe_function(tsFunc, napi_tsfn_release);
     EXPECT_EQ(status, napi_ok);
+
     GetFinalizeStatus();
     GTEST_LOG_(INFO) << "ACE_Napi_Call_Threadsafe_Function_0900 called end";
 }
@@ -6126,13 +6657,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1000, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
         MutiModeFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6141,15 +6672,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1000, testing::ext:
     if (uv_thread_create(&newChildTid, MutiModeCallThree, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
     if (uv_thread_create(&newChildTid2, MutiModeCallThree, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid2);
+    if (uv_thread_join(&newChildTid2) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid2) Failed!";
+    }
     if (uv_thread_create(&newChildTid3, MutiModeCallThree, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid3);
+    if (uv_thread_join(&newChildTid3) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid3) Failed!";
+    }
 
     threadData.mode = napi_tsfn_nonblocking;
     threadData.callCount = 30;
@@ -6167,7 +6704,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1000, testing::ext:
  * @tc.desc      : 1.The environment engine is created.
  *                 2.napi_create_threadsafe_function creates a queue.
  *                 3.In the test thread, calls the napi_call_threadsafe_function function [block call 30 times].
- *                 4.In the three child threads created, calls the napi_call_threadsafe_function 
+ *                 4.In the three child threads created, calls the napi_call_threadsafe_function
  *                   function[block call 30 times].
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1100, testing::ext::TestSize.Level1)
@@ -6177,13 +6714,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1100, testing::ext:
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
     g_callJSCallBackCount = 0;
     g_callFinalizeEnd = false;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 200, 1, &g_finalData,
         MutiModeFinalizeThreadCallBack, &g_jsData, CallJSCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6192,15 +6730,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1100, testing::ext:
     if (uv_thread_create(&newChildTid, MutiModeCallFour, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid)!= 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
     if (uv_thread_create(&newChildTid2, MutiModeCallFour, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid2);
+    if (uv_thread_join(&newChildTid2) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid2) Failed!";
+    }
     if (uv_thread_create(&newChildTid3, MutiModeCallFour, (void*)&threadData) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid3);
+    if (uv_thread_join(&newChildTid3) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid3) Failed!";
+    }
 
     threadData.mode = napi_tsfn_blocking;
     threadData.callCount = 30;
@@ -6219,7 +6763,8 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1100, testing::ext:
  *                2.napi_create_threadsafe_function creates a queue with size 10.
  *                3.In the child thread, calls the napi_call_threadsafe_function function in non-blocking modes for 30
  *                  times. 
- *                4.Normally for each CallJSSlowCallBack takes at least 1 second, the created queue would be full quickly.
+ *                4.Normally for each CallJSSlowCallBack takes at least 1 second,
+ *                  the created queue would be full quickly.
  *                5.Check if napi_call_threadsafe_function failure happens.
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1200, testing::ext::TestSize.Level1)
@@ -6233,11 +6778,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1200, testing::ext:
     g_bFailFlag = false;
     g_bIsFinish = false;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 10, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 10, 1, &g_finalData,
         FinalCallBack, &g_jsData, CallJSSlowCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6245,9 +6792,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1200, testing::ext:
     if (uv_thread_create(&newChildTid, NewChildThreadMutiCallNoneBlocking, tsFunc) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-
-    uv_thread_join(&newChildTid);
-
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
     status = napi_release_threadsafe_function(tsFunc, napi_tsfn_release);
     EXPECT_EQ(status, napi_ok);
 
@@ -6278,11 +6825,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1300, testing::ext:
     g_callCount = 0;
     g_bIsFinish = false;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 10, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 10, 1, &g_finalData,
         FinalCallBack, &g_jsData, CallJSSlowCallBack, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6290,8 +6839,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1300, testing::ext:
     if (uv_thread_create(&newChildTid, NewChildThreadMutiCallBlocking, tsFunc) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
 
     status = napi_release_threadsafe_function(tsFunc, napi_tsfn_release);
     EXPECT_EQ(status, napi_ok);
@@ -6326,11 +6876,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1400, testing::ext:
     g_bIsFinish = false;
     int iFailTimes = 0;
 
-    napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    auto status = napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
+    EXPECT_EQ(status, napi_ok);
+
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
     g_finalData.id = FINAL_CB_DATA_TEST_ID;
 
-    auto status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 10, 1, &g_finalData,
+    status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 10, 1, &g_finalData,
         FinalCallBack, &g_jsData, CallJSSlowCallBack4Block, &tsFunc);
     EXPECT_EQ(status, napi_ok);
 
@@ -6348,7 +6900,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Call_Threadsafe_Function_1400, testing::ext:
     if (0 < iFailTimes) {
         g_bFailFlag = true;
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid) Failed!";
+    }
+
     status = napi_release_threadsafe_function(tsFunc, napi_tsfn_release);
     EXPECT_EQ(status, napi_ok);
     WaitForFinish();
@@ -6372,6 +6927,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0100, testing::ex
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0100 start";
 
     napi_env env = (napi_env)engine_;
+    g_callFinalizeEnd = false;
     size_t strsize = 13;
     napi_value resource_name;
     napi_threadsafe_function result = nullptr;
@@ -6379,16 +6935,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0100, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncDataSourceThread, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
-    sleep(1);
-
+    GetFinalizeStatus();
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0100 end";
 }
 
@@ -6408,22 +6963,23 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0200, testing::ex
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0200 start";
 
     napi_env env = (napi_env)engine_;
+    g_callFinalizeEnd = false;
     size_t strsize = 13;
     napi_value resource_name;
     napi_threadsafe_function result = nullptr;
     jsData.id = CALL_JSCB_DATA;
     finalData.id = FINAL_CB_DATA;
-    napi_create_string_utf8(env, "JSstringTest2", strsize, &resource_name);
-    napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, MAX_COUNT, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+    napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
+    napi_status threadresult = napi_create_threadsafe_function(env, nullptr, nullptr, resource_name,
+        0, MAX_COUNT, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncDataSourceThread0200, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
-    sleep(1);
+    GetFinalizeStatus();
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0200 end";
 }
@@ -6447,12 +7003,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0300, testing::ex
     jsData.id = CALL_JSCB_DATA;
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
-    napi_status threadresult = napi_create_threadsafe_function(env, NULL, NULL, resource_name, 0, OVER_MAX_COUNT,
+    napi_status threadresult = napi_create_threadsafe_function(env, nullptr, nullptr, resource_name, 0, OVER_MAX_COUNT,
         &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0300 end";
 }
@@ -6476,11 +7032,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0400, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, nullptr, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, nullptr, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0400 end";
 }
@@ -6507,11 +7063,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0500, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, &finalData, nullptr, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, &finalData, nullptr, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncDataSourceThread, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
@@ -6539,11 +7095,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0600, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, &finalData, nullptr, &jsData, nullptr, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, &finalData, nullptr, &jsData, nullptr, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0600 end";
 }
@@ -6567,11 +7123,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0700, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 0, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 0, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0700 end";
 }
@@ -6595,10 +7151,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0800, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, -1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, -1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0800 end";
 }
@@ -6619,11 +7175,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_0900, testing::ex
     jsData.id = CALL_JSCB_DATA;
     finalData.id = FINAL_CB_DATA;
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, NULL, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, nullptr, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_0900 end";
 }
@@ -6646,9 +7202,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_1000, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, nullptr);
+        env, nullptr, nullptr, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, nullptr);
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_1000 end";
 }
@@ -6672,11 +7228,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Threadsafe_Function_1100, testing::ex
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Create_Threadsafe_Function_1100 end";
 }
@@ -6702,15 +7258,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0100, testin
     jsData.id = CALL_JSCB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status getcontextresult = napi_get_threadsafe_function_context(result, &contextresult);
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
-    ASSERT_EQ(getcontextresult, napi_status::napi_ok);
+    EXPECT_EQ(getcontextresult, napi_status::napi_ok);
     CallJsCbData* cbdata = nullptr;
     cbdata = (CallJsCbData*)contextresult;
-    ASSERT_EQ(cbdata->id, CALL_JSCB_DATA);
+    EXPECT_EQ(cbdata->id, CALL_JSCB_DATA);
     napi_status releaseresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
     EXPECT_EQ(releaseresult, napi_status::napi_ok);
@@ -6739,11 +7295,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0200, testin
     jsData.id = CALL_JSCB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status getcontextresult = napi_get_threadsafe_function_context(result, nullptr);
-    ASSERT_EQ(getcontextresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(getcontextresult, napi_status::napi_invalid_arg);
     napi_status releaseresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
     EXPECT_EQ(releaseresult, napi_status::napi_ok);
@@ -6774,12 +7330,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0300, testin
     jsData.id = CALL_JSCB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status getcontextresult = napi_get_threadsafe_function_context(nullptr, &contextresult);
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
-    ASSERT_EQ(getcontextresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(getcontextresult, napi_status::napi_invalid_arg);
     napi_status releaseresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
     EXPECT_EQ(releaseresult, napi_status::napi_ok);
@@ -6810,19 +7366,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0400, testin
     strcpy(jsData_str.strdata, "contextdata");
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status getcontextresult = napi_get_threadsafe_function_context(result, &contextresult);
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
-    ASSERT_EQ(getcontextresult, napi_status::napi_ok);
+    EXPECT_EQ(getcontextresult, napi_status::napi_ok);
     CallJsCbData_str* cbdata = nullptr;
     cbdata = (CallJsCbData_str*)contextresult;
     GTEST_LOG_(INFO) << "cbdata is " << cbdata;
     GTEST_LOG_(INFO) << "cbdata->id is " << cbdata->id;
-    ASSERT_EQ(cbdata->id, CALL_JSCB_DATA);
+    EXPECT_EQ(cbdata->id, CALL_JSCB_DATA);
     GTEST_LOG_(INFO) << "cbdata->strdata is " << cbdata->strdata;
-    ASSERT_EQ(strcmp(cbdata->strdata, "contextdata"), 0);
+    EXPECT_EQ(strcmp(cbdata->strdata, "contextdata"), 0);
     napi_status releaseresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
     EXPECT_EQ(releaseresult, napi_status::napi_ok);
@@ -6854,19 +7410,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0500, testin
     strcpy(jsData_str.strdata, "~!@#$%^&*( ");
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status getcontextresult = napi_get_threadsafe_function_context(result, &contextresult);
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
-    ASSERT_EQ(getcontextresult, napi_status::napi_ok);
+    EXPECT_EQ(getcontextresult, napi_status::napi_ok);
     CallJsCbData_str* cbdata = nullptr;
     cbdata = (CallJsCbData_str*)contextresult;
     GTEST_LOG_(INFO) << "cbdata is " << cbdata;
     GTEST_LOG_(INFO) << "cbdata->id is " << cbdata->id;
-    ASSERT_EQ(cbdata->id, CALL_JSCB_DATA);
+    EXPECT_EQ(cbdata->id, CALL_JSCB_DATA);
     GTEST_LOG_(INFO) << "cbdata->strdata is " << cbdata->strdata;
-    ASSERT_EQ(strcmp(cbdata->strdata, "~!@#$%^&*( "), 0);
+    EXPECT_EQ(strcmp(cbdata->strdata, "~!@#$%^&*( "), 0);
     napi_status releaseresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
     EXPECT_EQ(releaseresult, napi_status::napi_ok);
@@ -6898,19 +7454,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0600, testin
     strcpy(jsData_str.strdata, "大家好!!");
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status getcontextresult = napi_get_threadsafe_function_context(result, &contextresult);
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
-    ASSERT_EQ(getcontextresult, napi_status::napi_ok);
+    EXPECT_EQ(getcontextresult, napi_status::napi_ok);
     CallJsCbData_str* cbdata = nullptr;
     cbdata = (CallJsCbData_str*)contextresult;
     GTEST_LOG_(INFO) << "cbdata is " << cbdata;
     GTEST_LOG_(INFO) << "cbdata->id is " << cbdata->id;
-    ASSERT_EQ(cbdata->id, CALL_JSCB_DATA);
+    EXPECT_EQ(cbdata->id, CALL_JSCB_DATA);
     GTEST_LOG_(INFO) << "cbdata->strdata is " << cbdata->strdata;
-    ASSERT_EQ(strcmp(cbdata->strdata, "大家好!!"), 0);
+    EXPECT_EQ(strcmp(cbdata->strdata, "大家好!!"), 0);
     napi_status releaseresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
     EXPECT_EQ(releaseresult, napi_status::napi_ok);
@@ -6939,18 +7495,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Acquire_Threadsafe_Function_0100, testing::e
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status acquireresult = napi_acquire_threadsafe_function(result);
     GTEST_LOG_(INFO) << "acquireresult is " << acquireresult;
-    ASSERT_EQ(acquireresult, napi_status::napi_ok);
+    EXPECT_EQ(acquireresult, napi_status::napi_ok);
     napi_status releaseresultone = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresultone is " << releaseresultone;
-    ASSERT_EQ(releaseresultone, napi_status::napi_ok);
+    EXPECT_EQ(releaseresultone, napi_status::napi_ok);
     napi_status releaseresulttwo = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresulttwo is " << releaseresulttwo;
-    ASSERT_EQ(releaseresulttwo, napi_status::napi_ok);
+    EXPECT_EQ(releaseresulttwo, napi_status::napi_ok);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Acquire_Threadsafe_Function_0100 end";
@@ -6976,18 +7532,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Acquire_Threadsafe_Function_0200, testing::e
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status acquireresult = napi_acquire_threadsafe_function(nullptr);
     GTEST_LOG_(INFO) << "acquireresult is " << acquireresult;
-    ASSERT_EQ(acquireresult, napi_status::napi_invalid_arg);
+    EXPECT_EQ(acquireresult, napi_status::napi_invalid_arg);
     napi_status releaseresultone = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresult is " << releaseresultone;
-    ASSERT_EQ(releaseresultone, napi_status::napi_ok);
+    EXPECT_EQ(releaseresultone, napi_status::napi_ok);
     napi_status releaseresulttwo = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresult is " << releaseresulttwo;
-    ASSERT_EQ(releaseresulttwo, napi_status::napi_generic_failure);
+    EXPECT_EQ(releaseresulttwo, napi_status::napi_generic_failure);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Acquire_Threadsafe_Function_0200 end";
@@ -7013,24 +7569,24 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Acquire_Threadsafe_Function_0300, testing::e
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
     napi_status acquireresultone = napi_acquire_threadsafe_function(result);
     GTEST_LOG_(INFO) << "acquireresult is " << acquireresultone;
-    ASSERT_EQ(acquireresultone, napi_status::napi_ok);
+    EXPECT_EQ(acquireresultone, napi_status::napi_ok);
     napi_status acquireresulttwo = napi_acquire_threadsafe_function(result);
     GTEST_LOG_(INFO) << "acquireresult is " << acquireresulttwo;
-    ASSERT_EQ(acquireresulttwo, napi_status::napi_ok);
+    EXPECT_EQ(acquireresulttwo, napi_status::napi_ok);
     napi_status releaseresultone = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresultone is " << releaseresultone;
-    ASSERT_EQ(releaseresultone, napi_status::napi_ok);
+    EXPECT_EQ(releaseresultone, napi_status::napi_ok);
     napi_status releaseresulttwo = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresulttwo is " << releaseresulttwo;
-    ASSERT_EQ(releaseresulttwo, napi_status::napi_ok);
+    EXPECT_EQ(releaseresulttwo, napi_status::napi_ok);
     napi_status releaseresultthree = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresultthree is " << releaseresultthree;
-    ASSERT_EQ(releaseresultthree, napi_status::napi_ok);
+    EXPECT_EQ(releaseresultthree, napi_status::napi_ok);
     GTEST_LOG_(INFO) << "napi_release_threadsafe_function finish!";
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Acquire_Threadsafe_Function_0300 end";
@@ -7054,11 +7610,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Release_Threadsafe_Function_0100, testing::e
     napi_threadsafe_function result = nullptr;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncreleaseThread, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
@@ -7086,18 +7642,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Release_Threadsafe_Function_0200, testing::e
     napi_threadsafe_function result = nullptr;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncErrReleaseThread, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
     sleep(1);
     napi_status releaselastresult = napi_release_threadsafe_function(result, napi_tsfn_release);
     GTEST_LOG_(INFO) << "releaseresultthree is " << releaselastresult;
-    ASSERT_EQ(releaselastresult, napi_status::napi_ok);
+    EXPECT_EQ(releaselastresult, napi_status::napi_ok);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Release_Threadsafe_Function_0200 end";
 }
@@ -7120,11 +7676,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Release_Threadsafe_Function_0300, testing::e
     napi_threadsafe_function result = nullptr;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 5, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 5, nullptr, nullptr, nullptr, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncreleasefiveThread, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
@@ -7147,6 +7703,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Release_Threadsafe_Function_0400, testing::e
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Release_Threadsafe_Function_0400 start";
 
     napi_env env = (napi_env)engine_;
+    g_callFinalizeEnd = false;
     size_t strsize = 13;
     napi_value resource_name;
     napi_threadsafe_function result = nullptr;
@@ -7154,27 +7711,39 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Release_Threadsafe_Function_0400, testing::e
     finalData.id = FINAL_CB_DATA;
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
-        env, NULL, NULL, resource_name, 0, 2, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
+        env, nullptr, nullptr, resource_name, 0, 2, &finalData, Threadfinalcb, &jsData, ThreadSafeCallJs, &result);
     GTEST_LOG_(INFO) << "result is " << result;
     GTEST_LOG_(INFO) << "threadresult is " << threadresult;
-    ASSERT_EQ(threadresult, napi_status::napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(threadresult, napi_status::napi_ok);
+    EXPECT_NE(result, nullptr);
     if (uv_thread_create(&g_uvThread, TsFuncabortThread, result) != 0) {
         GTEST_LOG_(INFO) << "Failed to create uv thread!";
     }
-    sleep(2);
+    GetFinalizeStatus();
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Release_Threadsafe_Function_0400 end";
 }
 
 static void Cleanup(void* arg)
 {
-    printf("cleanup(%d)\n", *(int*)(arg));
+    GTEST_LOG_(INFO) << "Cleanup(void* arg) start";
+
+    HOOK_TAG += INT_ONE;
+    if (arg != nullptr) {
+        GTEST_LOG_(INFO) << "cleanup(" << *(int*)(arg) << ")";
+    }
+    GTEST_LOG_(INFO) << "Cleanup(void* arg) end";
 }
 
 static void CleanupCopy(void* arg)
 {
-    printf("CleanupCopy(%d)\n", *(int*)(arg));
+    GTEST_LOG_(INFO) << "CleanupCopy(void* arg) start";
+
+    HOOK_TAGCP += INT_ONE;
+    if (arg != nullptr) {
+        GTEST_LOG_(INFO) << "CleanupCopy(" << *(int*)(arg) << ")";
+    }
+    GTEST_LOG_(INFO) << "CleanupCopy(void* arg) end";
 }
 
 /*
@@ -7190,8 +7759,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0100, testing::ext::Tes
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0100 start";
     napi_env env = (napi_env)engine_;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    HOOK_TAG = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0100 end";
 }
 
@@ -7208,10 +7779,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0200, testing::ext::Tes
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0200 start";
     napi_env env = (napi_env)engine_;
-    napi_status ret = napi_ok;
+    napi_status ret = napi_invalid_arg;
     ret = napi_add_env_cleanup_hook(env, Cleanup, nullptr);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0200 end";
 }
 
@@ -7230,7 +7801,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0300, testing::ext::Tes
     napi_status ret = napi_ok;
     ret = napi_add_env_cleanup_hook(env, nullptr, &HOOK_ARG_ONE);
 
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0300 end";
 }
 
@@ -7248,7 +7819,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0400, testing::ext::Tes
     napi_status ret = napi_ok;
     ret = napi_add_env_cleanup_hook(nullptr, Cleanup, &HOOK_ARG_ONE);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0400 end";
 }
 
@@ -7266,12 +7837,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0400, testing::ext::Tes
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0500, testing::ext::TestSize.Level1)
 {
-    napi_env env = (napi_env)engine_;
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0500 start";
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    napi_env env = (napi_env)engine_;
+    HOOK_TAG = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0500 end";
 }
 
@@ -7286,11 +7859,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0500, testing::ext::Tes
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0600, testing::ext::TestSize.Level1)
 {
-    napi_env env = (napi_env)engine_;
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0600 start";
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    HOOK_TAG = INT_ZERO;
+    napi_env env = (napi_env)engine_;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_TWO);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0600 end";
 }
 
@@ -7305,11 +7880,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0600, testing::ext::Tes
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0700, testing::ext::TestSize.Level2)
 {
-    napi_env env = (napi_env)engine_;
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0700 start";
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    napi_env env = (napi_env)engine_;
+    HOOK_TAG = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0700 end";
 }
 
@@ -7323,12 +7900,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0700, testing::ext::Tes
  */
 HWTEST_F(NativeEngineTest, ACE_Napi_Add_Env_Cleanup_Hook_0800, testing::ext::TestSize.Level1)
 {
-    napi_env env = (napi_env)engine_;
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0800 start";
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_THREE));
+    napi_env env = (napi_env)engine_;
+    HOOK_TAG = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_THREE));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_THREE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Env_Cleanup_Hook_0800 end";
 }
 
@@ -7345,10 +7924,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Env_Cleanup_Hook_0100, testing::ext::
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0100 start";
     napi_env env = (napi_env)engine_;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
-    AssertCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    HOOK_TAG = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0100 end";
 }
 
@@ -7364,12 +7945,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Env_Cleanup_Hook_0200, testing::ext::
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0200 start";
     napi_env env = (napi_env)engine_;
-    napi_status ret = napi_ok;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    HOOK_TAG = INT_ZERO;
+    napi_status ret = napi_invalid_arg;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
     ret = napi_remove_env_cleanup_hook(env, Cleanup, nullptr);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(HOOK_TAG, INT_TWO);
+    EXPECT_EQ(ret, napi_ok);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0200 end";
 }
 
@@ -7385,12 +7968,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Env_Cleanup_Hook_0300, testing::ext::
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0300 start";
     napi_env env = (napi_env)engine_;
+    HOOK_TAG = INT_ZERO;
     napi_status ret = napi_ok;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
     ret = napi_remove_env_cleanup_hook(env, nullptr, &HOOK_ARG_TWO);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(HOOK_TAG, INT_TWO);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0300 end";
 }
 
@@ -7406,12 +7991,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Env_Cleanup_Hook_0400, testing::ext::
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0400 start";
     napi_env env = (napi_env)engine_;
+    HOOK_TAG = INT_ZERO;
     napi_status ret = napi_ok;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
     ret = napi_remove_env_cleanup_hook(nullptr, Cleanup, &HOOK_ARG_TWO);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(HOOK_TAG, INT_TWO);
+    EXPECT_EQ(ret, napi_invalid_arg);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0400 end";
 }
 
@@ -7429,11 +8016,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Env_Cleanup_Hook_0500, testing::ext::
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0500 start";
     napi_env env = (napi_env)engine_;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_TWO));
-    AssertCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
-    AssertCheckCall(napi_remove_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_ONE));
+    HOOK_TAG = INT_ZERO;
+    HOOK_TAGCP = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_remove_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_ONE));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
+    EXPECT_EQ(HOOK_TAGCP, INT_ONE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0500 end";
 }
 
@@ -7450,17 +8041,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Env_Cleanup_Hook_0600, testing::ext::
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0600 start";
     napi_env env = (napi_env)engine_;
-    AssertCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_add_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_TWO));
-    AssertCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
-    AssertCheckCall(napi_remove_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_TWO));
+    HOOK_TAG = INT_ZERO;
+    HOOK_TAGCP = INT_ZERO;
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_add_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_TWO));
+    ExpectCheckCall(napi_remove_env_cleanup_hook(env, Cleanup, &HOOK_ARG_ONE));
+    ExpectCheckCall(napi_remove_env_cleanup_hook(env, CleanupCopy, &HOOK_ARG_TWO));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ZERO);
+    EXPECT_EQ(HOOK_TAGCP, INT_ZERO);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Env_Cleanup_Hook_0600 end";
 }
 
 static void MustNotCall(napi_async_cleanup_hook_handle hook, void* arg)
 {
-    ASSERT_EQ(1, 0);
+    EXPECT_EQ(1, 0);
 }
 
 struct AsyncData {
@@ -7471,41 +8066,45 @@ struct AsyncData {
 
 static struct AsyncData* CreateAsyncData()
 {
-    printf("CreateAsyncData \n");
+    GTEST_LOG_(INFO) << "CreateAsyncData";
     struct AsyncData* data = (struct AsyncData*)malloc(sizeof(struct AsyncData));
+    if (data == nullptr) {
+        return nullptr;
+    }
     data->handle = nullptr;
     return data;
 }
 
 static void AfterCleanupHookTwo(uv_handle_t* handle)
 {
-    printf("AfterCleanupHookTwo start \n");
+    GTEST_LOG_(INFO) << "AfterCleanupHookTwo start";
     struct AsyncData* data = (struct AsyncData*)handle->data;
-    AssertCheckCall(napi_remove_async_cleanup_hook(data->handle));
+    ExpectCheckCall(napi_remove_async_cleanup_hook(data->handle));
+    HOOK_TAG += INT_ONE;
     free(data);
-    printf("AfterCleanupHookTwo end \n");
+    GTEST_LOG_(INFO) << "AfterCleanupHookTwo end";
 }
 
 static void AfterCleanupHookOne(uv_async_t* async)
 {
-    printf("AfterCleanupHookOne start \n");
+    GTEST_LOG_(INFO) << "AfterCleanupHookOne start";
     uv_close((uv_handle_t*)async, AfterCleanupHookTwo);
-    printf("AfterCleanupHookOne end \n");
+    GTEST_LOG_(INFO) << "AfterCleanupHookOne end";
 }
 
 static void AsyncCleanupHook(napi_async_cleanup_hook_handle handle, void* arg)
 {
-    printf("AsyncCleanupHook start \n");
+    GTEST_LOG_(INFO) << "AsyncCleanupHook start";
     struct AsyncData* data = (struct AsyncData*)arg;
     uv_loop_t* loop;
-    AssertCheckCall(napi_get_uv_event_loop(data->env, &loop));
+    ExpectCheckCall(napi_get_uv_event_loop(data->env, &loop));
     int err = uv_async_init(loop, &data->async, AfterCleanupHookOne);
-    ASSERT_EQ(err, 0);
+    EXPECT_EQ(err, 0);
 
     data->async.data = data;
     data->handle = handle;
     uv_async_send(&data->async);
-    printf("AsyncCleanupHook end \n");
+    GTEST_LOG_(INFO) << "AsyncCleanupHook end";
     sleep(1);
 }
 
@@ -7524,11 +8123,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0100, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     struct AsyncData* data = CreateAsyncData();
+    HOOK_TAG = INT_ZERO;
     data->env = env;
     napi_status ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0100 ee111";
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0100 end";
     sleep(1);
 }
@@ -7548,10 +8148,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0200, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     struct AsyncData* data = CreateAsyncData();
+    HOOK_TAG = INT_ZERO;
     data->env = env;
     napi_status ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, nullptr);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
+    EXPECT_EQ(ret, napi_ok);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0200 end";
 }
@@ -7573,9 +8175,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0300, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     napi_async_cleanup_hook_handle must_not_call_handle;
-    AssertCheckCall(napi_add_async_cleanup_hook(env, MustNotCall, nullptr, &must_not_call_handle));
-    AssertCheckCall(napi_remove_async_cleanup_hook(must_not_call_handle));
+    HOOK_TAG = INT_ZERO;
+    ExpectCheckCall(napi_add_async_cleanup_hook(env, MustNotCall, nullptr, &must_not_call_handle));
+    ExpectCheckCall(napi_remove_async_cleanup_hook(must_not_call_handle));
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ZERO);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0300 start";
 }
@@ -7594,9 +8198,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0400, testing::ext::T
 
     napi_status ret = napi_ok;
     napi_async_cleanup_hook_handle must_not_call_handle;
+    HOOK_TAG = INT_ZERO;
     ret = napi_add_async_cleanup_hook(nullptr, MustNotCall, nullptr, &must_not_call_handle);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0400 start";
 }
@@ -7618,14 +8223,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0500, testing::ext::T
     napi_async_cleanup_hook_handle must_not_call_handle;
     ret = napi_add_async_cleanup_hook(env, nullptr, nullptr, &must_not_call_handle);
     engine_->RunCleanup();
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0500 start";
 }
 
 /*
  * @tc.number    : ACE_Napi_Add_Async_Cleanup_Hook_0600
- * @tc.name      : Test napi_add_async_cleanup_hook to pass the normal environment
+ * @tc.name      : Test napi_add_async_cleanup_hook, after registering the function,
+ *                 call remove to delete the registered function, and then re-register the function.
  * @tc.desc      : 1.The environment engine is created
  *                 2.Set test variables
  *                 3.The function of napi_add_async_cleanup_hook is called
@@ -7639,9 +8245,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0600, testing::ext::T
     napi_env env = (napi_env)engine_;
     struct AsyncData* data = CreateAsyncData();
     data->env = env;
-    napi_status ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
-    engine_->RunCleanup();
+    HOOK_TAG = INT_ZERO;
+    napi_status ret = napi_invalid_arg;
+    ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
     ASSERT_EQ(ret, napi_ok);
+    ret = napi_remove_async_cleanup_hook(data->handle);
+    ASSERT_EQ(ret, napi_ok);
+    ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
+    ASSERT_EQ(ret, napi_ok);
+    engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ONE);
+    EXPECT_EQ(ret, napi_ok);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0600 end";
 }
@@ -7661,22 +8275,24 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0700, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     napi_env envtwo = (napi_env)engine_;
+    HOOK_TAG = INT_ZERO;
     struct AsyncData* data = CreateAsyncData();
     data->env = env;
     napi_status ret = napi_invalid_arg;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     struct AsyncData* datatwo = CreateAsyncData();
     datatwo->env = envtwo;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, datatwo, &datatwo->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_TWO);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0700 end";
 }
 
 /*
- * @tc.number    : ACE_Napi_Add_Async_Cleanup_Hook_0900
+ * @tc.number    : ACE_Napi_Add_Async_Cleanup_Hook_0800
  * @tc.name      : Test napi_add_async_cleanup_hook to pass the normal environment
  * @tc.desc      : 1.The environment engine is created
  *                 2.Set test variables
@@ -7684,31 +8300,33 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0700, testing::ext::T
  *                 4.Return value of function is napi_ok
  *                 5.Call the incoming function normally after the environment exits
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0900, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Add_Async_Cleanup_Hook_0800, testing::ext::TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0900 start";
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0800 start";
 
     napi_env env = (napi_env)engine_;
     napi_env envtwo = (napi_env)engine_;
     napi_env envthree = (napi_env)engine_;
     struct AsyncData* data = CreateAsyncData();
+    HOOK_TAG = INT_ZERO;
     data->env = env;
     napi_status ret = napi_invalid_arg;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     struct AsyncData* datatwo = CreateAsyncData();
     datatwo->env = envtwo;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, datatwo, &datatwo->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     struct AsyncData* datathree = CreateAsyncData();
     datathree->env = envthree;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, datathree, &datathree->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_THREE);
     sleep(2);
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0900 end";
+    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Add_Async_Cleanup_Hook_0800 end";
 }
 
 /*
@@ -7728,12 +8346,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Async_Cleanup_Hook_0100, testing::ext
     napi_env env = (napi_env)engine_;
     struct AsyncData* data = CreateAsyncData();
     napi_status ret = napi_invalid_arg;
+    HOOK_TAG = INT_ZERO;
     data->env = env;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, &data->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     ret = napi_remove_async_cleanup_hook(data->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     engine_->RunCleanup();
+    EXPECT_EQ(HOOK_TAG, INT_ZERO);
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Async_Cleanup_Hook_0100 end";
 }
@@ -7752,7 +8372,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Async_Cleanup_Hook_0200, testing::ext
 
     napi_status ret = napi_ok;
     ret = napi_remove_async_cleanup_hook(nullptr);
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Async_Cleanup_Hook_0200 end";
 }
@@ -7778,13 +8398,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Remove_Async_Cleanup_Hook_0300, testing::ext
     napi_status ret = napi_invalid_arg;
     data->env = env;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, data, nullptr);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     struct AsyncData* datatwo = CreateAsyncData();
     datatwo->env = envtwo;
     ret = napi_add_async_cleanup_hook(env, AsyncCleanupHook, datatwo, &datatwo->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     ret = napi_remove_async_cleanup_hook(datatwo->handle);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     engine_->RunCleanup();
     sleep(1);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Remove_Async_Cleanup_Hook_0300 end";
@@ -7809,12 +8429,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0100, testing::ext::TestSize.Leve
     napi_value asyncResourceName = nullptr;
     napi_async_context result = nullptr;
 
-    napi_create_date(env, time, &asyncResource);
-    napi_create_string_utf8(env, "ACE_Napi_Async_Init_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_date(env, time, &asyncResource);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Async_Init_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
 
     napi_status ret = napi_async_init(env, asyncResource, asyncResourceName, &result);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0100 end";
 }
@@ -7838,11 +8462,13 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0200, testing::ext::TestSize.Leve
     napi_value asyncResourceName = nullptr;
     napi_async_context result = nullptr;
 
-    napi_create_string_utf8(env, "ACE_Napi_Async_Init_0200", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_string_utf8(env, "ACE_Napi_Async_Init_0200", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
 
     napi_status ret = napi_async_init(env, asyncResource, asyncResourceName, &result);
-
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
+    
+    EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0200 end";
 }
@@ -7866,12 +8492,16 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0300, testing::ext::TestSize.Leve
     napi_value asyncResourceName = nullptr;
     napi_async_context result = nullptr;
 
-    napi_create_date(env, time, &asyncResource);
-    napi_create_string_utf8(env, "ACE_Napi_Async_Init_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_date(env, time, &asyncResource);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Async_Init_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
 
     napi_status ret = napi_async_init(nullptr, asyncResource, asyncResourceName, &result);
-
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
+    
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0300 end";
 }
@@ -7895,11 +8525,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0400, testing::ext::TestSize.Leve
     double time = 2731123.12;
     napi_async_context result = nullptr;
 
-    napi_create_date(env, time, &asyncResource);
+    napi_status status = napi_create_date(env, time, &asyncResource);
+    EXPECT_EQ(status, napi_ok);
 
-    napi_status ret = napi_async_init(env, asyncResource, NULL, &result);
-
-    ASSERT_EQ(ret, napi_invalid_arg);
+    napi_status ret = napi_async_init(env, asyncResource, nullptr, &result);
+    EXPECT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0400 end";
 }
@@ -7922,12 +8553,14 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0500, testing::ext::TestSize.Leve
     double time = 2731123.12;
     napi_value asyncResourceName = nullptr;
 
-    napi_create_date(env, time, &asyncResource);
-    napi_create_string_utf8(env, "ACE_Napi_Async_Init_0500", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_date(env, time, &asyncResource);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Async_Init_0500", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
 
     napi_status ret = napi_async_init(env, asyncResource, asyncResourceName, nullptr);
-
-    ASSERT_EQ(ret, napi_invalid_arg);
+    EXPECT_EQ(ret, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0500 end";
 }
@@ -7949,15 +8582,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Destroy_0100, testing::ext::TestSize.L
     napi_value asyncResourceName = nullptr;
     napi_async_context result = nullptr;
 
-    napi_create_string_utf8(env, "ACE_Napi_Async_Destroy_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status status = napi_create_string_utf8(env, "ACE_Napi_Async_Destroy_0100",
+        NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+
+    EXPECT_EQ(verification, napi_ok);
+
     napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &result);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     napi_status out = napi_async_destroy(env, result);
-
-    ASSERT_EQ(out, napi_ok);
+    EXPECT_EQ(out, napi_ok);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0100 end";
 }
@@ -7976,8 +8615,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Destroy_0200, testing::ext::TestSize.L
     napi_async_context result = nullptr;
 
     napi_status out = napi_async_destroy(env, result);
-
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0200 end";
 }
@@ -7999,20 +8637,26 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Destroy_0300, testing::ext::TestSize.L
     napi_value asyncResourceName = nullptr;
     napi_async_context result = nullptr;
 
-    napi_create_string_utf8(env, "ACE_Napi_Async_Destroy_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_string_utf8(env, "ACE_Napi_Async_Destroy_0300",
+        NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0300 napi_create_string_utf8 successful";
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    napi_status verification = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+
+    EXPECT_EQ(verification, napi_ok);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0300 napi_create_arraybuffer successful";
 
     napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &result);
-
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
+    EXPECT_NE(result, nullptr);
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0300 napi_async_init successful";
 
     napi_status out = napi_async_destroy(nullptr, result);
 
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
+    EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0300 end";
 }
@@ -8030,8 +8674,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Destroy_0400, testing::ext::TestSize.L
     napi_async_context result = nullptr;
 
     napi_status out = napi_async_destroy(nullptr, result);
-
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Destroy_0400 end";
 }
@@ -8058,15 +8701,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0100, testing::ext::Test
     napi_value asyncResourceName = nullptr;
     napi_callback_scope result = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
-    napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
 
-    ASSERT_EQ(ret, napi_ok);
+    status = napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
+    napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    EXPECT_EQ(ret, napi_ok);
 
     napi_status out = napi_open_callback_scope(env, arrayBuffer, connext, &result);
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0100 end";
 }
@@ -8081,7 +8727,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0100, testing::ext::Test
  *                 3.parameter context input valid parameter connext.
  *                 4.parameter result input valid parameter.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0200, testing::ext::TestSize.Level1)
+HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0200, testing::ext::TestSize.Level2)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0200 start";
 
@@ -8092,14 +8738,17 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0200, testing::ext::Test
     napi_async_context connext = nullptr;
     napi_value asyncResourceName = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0200", NAPI_AUTO_LENGTH, &asyncResourceName);
-    napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
 
-    ASSERT_EQ(ret, napi_ok);
+    status = napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0200", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
+    napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    EXPECT_EQ(ret, napi_ok);
 
     napi_status out = napi_open_callback_scope(env, arrayBuffer, connext, nullptr);
-    ASSERT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(out, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0200 end";
 }
@@ -8126,15 +8775,19 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0300, testing::ext::Test
     napi_value asyncResourceName = nullptr;
     napi_callback_scope result = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
     napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     napi_status out = napi_open_callback_scope(nullptr, arrayBuffer, connext, &result);
-    ASSERT_EQ(out, napi_invalid_arg);
-    ASSERT_EQ(result, nullptr);
+    EXPECT_EQ(out, napi_invalid_arg);
+    EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0300 end";
 }
@@ -8161,15 +8814,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0400, testing::ext::Test
     napi_value asyncResourceName = nullptr;
     napi_callback_scope result = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0400", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0400", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
     napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    EXPECT_EQ(ret, napi_ok);
 
-    ASSERT_EQ(ret, napi_ok);
-
-    napi_status out = napi_open_callback_scope(env, NULL, connext, &result);
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_NE(result, nullptr);
+    napi_status out = napi_open_callback_scope(env, nullptr, connext, &result);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0400 end";
 }
@@ -8184,7 +8840,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0400, testing::ext::Test
  *                 3.the parameter result is a valid parameter.
  *                 4.parameter result input valid parameter.
  */
-HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0500, testing::ext::TestSize.Level2)
+HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0500, testing::ext::TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0500 start";
 
@@ -8196,15 +8852,18 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Open_callback_Scope_0500, testing::ext::Test
     napi_value asyncResourceName = nullptr;
     napi_callback_scope result = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0500", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Open_callback_Scope_0500", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
     napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    EXPECT_EQ(ret, napi_ok);
 
-    ASSERT_EQ(ret, napi_ok);
-
-    napi_status out = napi_open_callback_scope(env, arrayBuffer, NULL, &result);
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_NE(result, nullptr);
+    napi_status out = napi_open_callback_scope(env, arrayBuffer, nullptr, &result);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Open_callback_Scope_0500 end";
 }
@@ -8227,18 +8886,21 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Close_callback_Scope_0100, testing::ext::Tes
     napi_value asyncResourceName = nullptr;
     napi_callback_scope result = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Close_callback_Scope_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
-    napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
 
-    ASSERT_EQ(ret, napi_ok);
+    status = napi_create_string_utf8(env, "ACE_Napi_Close_callback_Scope_0100", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
+    napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
+    EXPECT_EQ(ret, napi_ok);
 
     napi_status out = napi_open_callback_scope(env, arrayBuffer, connext, &result);
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     napi_status output = napi_close_callback_scope(env, result);
-    ASSERT_EQ(output, napi_ok);
+    EXPECT_EQ(output, napi_ok);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Close_callback_Scope_0100 end";
 }
@@ -8258,7 +8920,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Close_callback_Scope_0200, testing::ext::Tes
     napi_callback_scope result = nullptr;
 
     napi_status output = napi_close_callback_scope(env, result);
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Close_callback_Scope_0200 end";
 }
@@ -8282,18 +8944,22 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Close_callback_Scope_0300, testing::ext::Tes
     napi_value asyncResourceName = nullptr;
     napi_callback_scope result = nullptr;
 
-    napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
-    napi_create_string_utf8(env, "ACE_Napi_Close_callback_Scope_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    napi_status status = napi_create_arraybuffer(env, arrayBufferSize, &arrayBufferPtr, &arrayBuffer);
+    EXPECT_EQ(status, napi_ok);
+
+    status = napi_create_string_utf8(env, "ACE_Napi_Close_callback_Scope_0300", NAPI_AUTO_LENGTH, &asyncResourceName);
+    EXPECT_EQ(status, napi_ok);
+
     napi_status ret = napi_async_init(env, arrayBuffer, asyncResourceName, &connext);
 
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     napi_status out = napi_open_callback_scope(env, arrayBuffer, connext, &result);
-    ASSERT_EQ(out, napi_ok);
-    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(out, napi_ok);
+    EXPECT_NE(result, nullptr);
 
     napi_status output = napi_close_callback_scope(nullptr, result);
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Close_callback_Scope_0300 end";
 }
@@ -8308,58 +8974,10 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Close_callback_Scope_0400, testing::ext::Tes
 {
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Close_callback_Scope_0400 start";
 
-    napi_status output = napi_close_callback_scope(nullptr, NULL);
-    ASSERT_EQ(output, napi_invalid_arg);
+    napi_status output = napi_close_callback_scope(nullptr, nullptr);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Close_callback_Scope_0400 end";
-}
-
-/*
- * @tc.number    : ACE_Napi_Fatal_Exception_0300
- * @tc.name      : napi_fatal_exception is passed to the JS uncaughtException error message is invalid nullptr,
- *                 triggering uncaughtException exception failure.
- * @tc.desc      : 1.The environment engine is created.
- *                 2.Set test variables.
- *                 3.The function of napi_fatal_exception is called.
- *                 4.Return value of function is napi_invalid_arg.
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Fatal_Exception_0300, testing::ext::TestSize.Level2)
-{
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Fatal_Exception_0300 start";
-
-    napi_env env = (napi_env)engine_;
-
-    napi_status output = napi_fatal_exception(env, NULL);
-
-    ASSERT_EQ(output, napi_invalid_arg);
-
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Fatal_Exception_0300 end";
-}
-
-/*
- * @tc.number    : ACE_Napi_Fatal_Exception_0400
- * @tc.name      : The environment parameter of napi_fatal_exception nullptr,
- *                 triggering uncaughtException failed.
- * @tc.desc      : 1.The environment engine is created
- *                 2.Set test variables
- *                 3.The function of napi_fatal_exception is called
- *                 4.Return value of function is napi_invalid_arg
- */
-HWTEST_F(NativeEngineTest, ACE_Napi_Fatal_Exception_0400, testing::ext::TestSize.Level2)
-{
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Fatal_Exception_0400 start";
-
-    napi_env env = (napi_env)engine_;
-
-    napi_value err = nullptr;
-    size_t sizeLen = sizeof("uncaughtException");
-    napi_create_string_utf8(env, "uncaughtException", sizeLen, &err);
-
-    napi_status output = napi_fatal_exception(nullptr, err);
-
-    ASSERT_EQ(output, napi_invalid_arg);
-
-    GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Fatal_Exception_0400 end";
 }
 
 /*
@@ -8377,15 +8995,15 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Fatal_Exception_0700, testing::ext::TestSize
 
     napi_env env = (napi_env)engine_;
 
-    napi_status output = napi_fatal_exception(env, NULL);
+    napi_status output = napi_fatal_exception(env, nullptr);
 
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Fatal_Exception_0700 end";
 }
 
 /*
- * @tc.number    : ACE_Napi_Fatal_Exception_0400
+ * @tc.number    : ACE_Napi_Fatal_Exception_0800
  * @tc.name      : The environment parameter of napi_fatal_exception nullptr,
  *                 triggering uncaughtException failed.
  * @tc.desc      : 1.The environment engine is created
@@ -8401,11 +9019,12 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Fatal_Exception_0800, testing::ext::TestSize
 
     napi_value err = nullptr;
     size_t sizeLen = sizeof("uncaughtException");
-    napi_create_string_utf8(env, "uncaughtException", sizeLen, &err);
+    napi_status verification = napi_create_string_utf8(env, "uncaughtException", sizeLen, &err);
 
+    EXPECT_EQ(verification, napi_ok);
     napi_status output = napi_fatal_exception(nullptr, err);
 
-    ASSERT_EQ(output, napi_invalid_arg);
+    EXPECT_EQ(output, napi_invalid_arg);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Fatal_Exception_0800 end";
 }
@@ -8520,7 +9139,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Ref_Threadsafe_Function_0300, testing::ext::
     if (uv_thread_create(&newChildTid, NewChildRef, tsFunc) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join Failed!";
+    }
 
     auto safeAsyncWork = reinterpret_cast<NativeSafeAsyncWork*>(tsFunc);
 
@@ -8680,7 +9301,9 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Unref_Threadsafe_Function_0300, testing::ext
     if (uv_thread_create(&newChildTid, NewChildUnRef, tsFunc) != 0) {
         GTEST_LOG_(INFO) << "NewChildThreadMuti Failed to create uv thread!";
     }
-    uv_thread_join(&newChildTid);
+    if (uv_thread_join(&newChildTid) != 0) {
+        GTEST_LOG_(INFO) << "uv_thread_join(&newChildTid)!";
+    }
 
     auto safeAsyncWork = reinterpret_cast<NativeSafeAsyncWork*>(tsFunc);
 

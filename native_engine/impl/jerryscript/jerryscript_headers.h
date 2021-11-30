@@ -26,4 +26,10 @@ jerry_value_t jerry_create_external(void* value, jerry_finalizer_t finalizer, vo
 bool jerry_value_is_external(const jerry_value_t object);
 void* jerry_value_get_external(const jerry_value_t object);
 
+void jerry_freeze(jerry_value_t value);
+void jerry_seal(jerry_value_t value);
+jerry_value_t jerry_strict_date(double time);
+double jerry_get_date(jerry_value_t value);
+bool jerry_is_date(jerry_value_t value);
+
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_JERRYSCRIPT_HEADERS_H */

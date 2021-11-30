@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_DATE_H
-#define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_DATE_H
+#include "jerryscript_native_date.h"
 
-#include "quickjs_native_object.h"
+JerryScriptNativeDate::JerryScriptNativeDate(JerryScriptNativeEngine* engine, jerry_value_t value)
+    : JerryScriptNativeObject(engine, value)
+{}
 
-class QuickJSNativeDate : public QuickJSNativeObject, public NativeDate {
-public:
-    QuickJSNativeDate(QuickJSNativeEngine* engine, JSValue value);
-    ~QuickJSNativeDate() override;
+JerryScriptNativeDate::~JerryScriptNativeDate() {}
 
-    void* GetInterface(int interfaceId) override;
+void* JerryScriptNativeDate::GetInterface(int interfaceId)
+{
+    return (NativeDate::INTERFACE_ID == interfaceId) ? (NativeDate*)this
+        : JerryScriptNativeObject::GetInterface(interfaceId);
+}
 
-    virtual double GetTime() override;
-};
-
-#endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_DATE_H */
+double JerryScriptNativeDate::GetTime()
+{
+    return jerry_get_date(value_);
+}
