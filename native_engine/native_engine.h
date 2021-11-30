@@ -158,6 +158,9 @@ public:
 
     virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) = 0;
 
+    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) = 0;
+
     virtual NativeAsyncWork* CreateAsyncWork(NativeValue* asyncResource,
                                              NativeValue* asyncResourceName,
                                              NativeAsyncExecuteCallback execute,
@@ -173,9 +176,6 @@ public:
     virtual void InitAsyncWork(NativeAsyncExecuteCallback execute, NativeAsyncCompleteCallback complete, void* data);
     virtual bool SendAsyncWork(void* data);
     virtual void CloseAsyncWork();
-
-    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
-        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) = 0;
 
     virtual bool Throw(NativeValue* error) = 0;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) = 0;
@@ -260,7 +260,7 @@ protected:
     NativeErrorExtendedInfo lastError_;
     NativeValue* lastException_ = nullptr;
 
-    uv_loop_t* loop_;
+    uv_loop_t* loop_ = nullptr;
 
     void *jsEngine_;
 

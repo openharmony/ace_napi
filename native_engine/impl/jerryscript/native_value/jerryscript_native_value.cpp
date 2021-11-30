@@ -15,15 +15,13 @@
 
 #include "jerryscript_native_value.h"
 
+#include "jerryscript-ext/handler.h"
 #include "jerryscript_native_boolean.h"
 #include "jerryscript_native_number.h"
 #include "jerryscript_native_object.h"
 #include "jerryscript_native_string.h"
 
-#include "jerryscript-ext/handler.h"
-
-JerryScriptNativeValue::JerryScriptNativeValue(JerryScriptNativeEngine* engine, jerry_value_t value)
-    : engine_(engine)
+JerryScriptNativeValue::JerryScriptNativeValue(JerryScriptNativeEngine* engine, jerry_value_t value) : engine_(engine)
 {
     value_ = value;
     engine_->GetScopeManager()->CreateHandle(this);
@@ -77,7 +75,14 @@ NativeValueType JerryScriptNativeValue::TypeOf()
         case JERRY_TYPE_SYMBOL:
             result = NATIVE_SYMBOL;
             break;
-        default:;
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+        case JERRY_TYPE_BIGINT:
+            result = NATIVE_BIGINT;
+            break;
+#endif
+        default:
+            result = NATIVE_UNDEFINED;
+            break;
     }
     return result;
 }
@@ -96,6 +101,11 @@ bool JerryScriptNativeValue::IsArray()
 bool JerryScriptNativeValue::IsArrayBuffer()
 {
     return jerry_value_is_arraybuffer(value_);
+}
+
+bool JerryScriptNativeValue::IsBuffer()
+{
+    return false;
 }
 
 bool JerryScriptNativeValue::IsDate()

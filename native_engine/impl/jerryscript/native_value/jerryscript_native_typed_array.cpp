@@ -58,7 +58,9 @@ JerryScriptNativeTypedArray::JerryScriptNativeTypedArray(JerryScriptNativeEngine
         case NATIVE_FLOAT64_ARRAY:
             jtype = JERRY_TYPEDARRAY_FLOAT64;
             break;
-        default:;
+        default:
+            jtype = JERRY_TYPEDARRAY_INVALID;
+            break;
     }
     value_ = jerry_create_typedarray_for_arraybuffer_sz(jtype, *value, offset, length);
 }
@@ -102,7 +104,9 @@ NativeTypedArrayType JerryScriptNativeTypedArray::GetTypedArrayType()
         case JERRY_TYPEDARRAY_FLOAT64:
             result = NATIVE_FLOAT64_ARRAY;
             break;
-        default:;
+        default:
+            result = NATIVE_FLOAT64_ARRAY;
+            break;
     }
     return result;
 }

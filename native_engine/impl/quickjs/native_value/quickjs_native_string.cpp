@@ -75,7 +75,7 @@ void QuickJSNativeString::GetCString16(char16_t* buffer, size_t size, size_t* le
     }
     if (length != nullptr) {
         *length = Utf8ToUtf16Length(str, strlen(str));
-        if(buffer != nullptr ) {
+        if (buffer != nullptr) {
             memset_s(buffer, sizeof(char16_t) * size, 0x0, sizeof(char16_t) * size);
             Utf8ToUtf16(str, strlen(str), buffer, size);
         }
