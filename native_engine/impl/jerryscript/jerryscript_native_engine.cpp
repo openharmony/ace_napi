@@ -13,25 +13,21 @@
  * limitations under the License.
  */
 
-
 #include "jerryscript_native_engine.h"
 
+#include "jerryscript-ext/handler.h"
 #include "jerryscript_native_deferred.h"
 #include "jerryscript_native_reference.h"
-
-#include "jerryscript-ext/handler.h"
-
 #include "native_value/jerryscript_native_array.h"
 #include "native_value/jerryscript_native_array_buffer.h"
 #include "native_value/jerryscript_native_boolean.h"
 #include "native_value/jerryscript_native_data_view.h"
+#include "native_value/jerryscript_native_external.h"
 #include "native_value/jerryscript_native_function.h"
 #include "native_value/jerryscript_native_number.h"
 #include "native_value/jerryscript_native_object.h"
 #include "native_value/jerryscript_native_string.h"
 #include "native_value/jerryscript_native_typed_array.h"
-#include "native_value/jerryscript_native_external.h"
-
 #include "utils/log.h"
 
 JerryScriptNativeEngine::JerryScriptNativeEngine(void* jsEngine) : NativeEngine(jsEngine)
@@ -55,9 +51,10 @@ JerryScriptNativeEngine::JerryScriptNativeEngine(void* jsEngine) : NativeEngine(
             if (moduleNameSize == 0) {
                 return result;
             }
-            
+
             char *moduleName = new char[moduleNameSize + 1] { 0 };
-            uint32_t moduleNameLength = jerry_string_to_char_buffer(args[0], (jerry_char_t*)moduleName, moduleNameSize + 1);
+            uint32_t moduleNameLength =
+                jerry_string_to_char_buffer(args[0], (jerry_char_t*)moduleName, moduleNameSize + 1);
             moduleName[moduleNameLength] = '\0';
             NativeModule* module = that->GetModuleManager()->LoadNativeModule(moduleName, nullptr, false);
 

@@ -15,10 +15,10 @@
 
 #include "native_reference_manager.h"
 
-typedef struct NativeReferenceHandler {
+struct NativeReferenceHandler {
     NativeReference* reference = nullptr;
     NativeReferenceHandler* next = nullptr;
-} NativeReferenceHandler;
+};
 
 NativeReferenceManager::NativeReferenceManager() : referenceHandlers_(nullptr) {}
 
