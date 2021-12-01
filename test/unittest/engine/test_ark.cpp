@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
-    panda::JSNApi::DestoryJSVM(vm);
+    panda::JSNApi::DestroyJSVM(vm);
     vm = nullptr;
 
     return ret;
