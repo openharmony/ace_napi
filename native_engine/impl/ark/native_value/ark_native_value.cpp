@@ -141,6 +141,107 @@ bool ArkNativeValue::IsCallable()
     return value->IsFunction();
 }
 
+bool ArkNativeValue::IsArgumentsObject()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsArgumentsObject();
+}
+
+bool ArkNativeValue::IsAsyncFunction()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsAsyncFunction();
+}
+
+bool ArkNativeValue::IsBooleanObject()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsJSPrimitiveBoolean();
+}
+
+bool ArkNativeValue::IsGeneratorFunction()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsGeneratorFunction();
+}
+
+bool ArkNativeValue::IsGeneratorObject()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsGeneratorObject();
+}
+
+bool ArkNativeValue::IsMap()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsMap();
+}
+
+bool ArkNativeValue::IsMapIterator()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsMapIterator();
+}
+
+bool ArkNativeValue::IsModuleNamespaceObject()
+{
+    return false;
+}
+
+bool ArkNativeValue::IsNumberObject()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsJSPrimitiveNumber();
+}
+
+bool ArkNativeValue::IsProxy()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsProxy();
+}
+
+bool ArkNativeValue::IsRegExp()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsRegExp();
+}
+
+bool ArkNativeValue::IsSet()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsSet();
+}
+
+bool ArkNativeValue::IsSetIterator()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsSetIterator();
+}
+
+bool ArkNativeValue::IsStringObject()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsJSPrimitiveString();
+}
+
+bool ArkNativeValue::IsSymbolObject()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsJSPrimitiveSymbol();
+}
+
+bool ArkNativeValue::IsWeakMap()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsWeakMap();
+}
+
+bool ArkNativeValue::IsWeakSet()
+{
+    Global<JSValueRef> value = value_;
+    return value->IsWeakSet();
+}
+
 NativeValue* ArkNativeValue::ToBoolean()
 {
     auto vm = engine_->GetEcmaVm();

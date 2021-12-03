@@ -42,6 +42,24 @@ public:
     bool IsPromise() override;
     bool IsCallable() override;
 
+    bool IsArgumentsObject() override;
+    bool IsAsyncFunction() override;
+    bool IsBooleanObject() override;
+    bool IsGeneratorFunction() override;
+    bool IsGeneratorObject() override;
+    bool IsMap() override;
+    bool IsMapIterator() override;
+    bool IsModuleNamespaceObject() override;
+    bool IsNumberObject() override;
+    bool IsProxy() override;
+    bool IsRegExp() override;
+    bool IsSet() override;
+    bool IsSetIterator() override;
+    bool IsStringObject() override;
+    bool IsSymbolObject() override;
+    bool IsWeakMap() override;
+    bool IsWeakSet() override;
+
     NativeValue* ToBoolean() override;
     NativeValue* ToNumber() override;
     NativeValue* ToString() override;
