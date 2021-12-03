@@ -16,10 +16,11 @@
 #ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H
 
+#include <functional>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <functional>
+
 #include "callback_scope_manager/native_callback_scope_manager.h"
 #include "module_manager/native_module_manager.h"
 #include "native_engine/native_async_work.h"
