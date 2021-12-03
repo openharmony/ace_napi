@@ -39,6 +39,17 @@ void JS_SetNativePointer(JSContext* context, JSValue value, void* pointer, JSFin
 void* JS_GetNativePointer(JSContext* context, JSValue value);
 
 bool JS_IsPromise(JSContext* context, JSValue value);
+bool JS_IsMapIterator(JSContext* context, JSValue value);
+bool JS_IsSetIterator(JSContext* context, JSValue value);
+bool JS_IsGeneratorObject(JSContext* context, JSValue value);
+bool JS_IsModuleNamespaceObject(JSContext* context, JSValue value);
+bool JS_IsProxy(JSContext* context, JSValue value);
+bool JS_IsRegExp(JSContext* context, JSValue value);
+bool JS_IsNumberObject(JSContext* context, JSValue value);
+bool JS_IsMap(JSContext* context, JSValue value);
+bool JS_IsSet(JSContext* context, JSValue value);
+bool JS_IsKeyObject(JSContext* context, JSValue value);
+
 bool JS_IsArrayBuffer(JSContext* context, JSValue value);
 bool JS_IsBuffer(JSContext* context, JSValue value);
 bool JS_IsDate(JSContext* context, JSValue value);

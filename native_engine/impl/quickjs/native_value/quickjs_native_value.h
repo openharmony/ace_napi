@@ -40,6 +40,24 @@ public:
     virtual bool IsPromise() override;
     virtual bool IsCallable() override;
 
+    virtual bool IsMapIterator() override;
+    virtual bool IsSetIterator() override;
+    virtual bool IsGeneratorObject() override;
+    virtual bool IsModuleNamespaceObject() override;
+    virtual bool IsProxy() override;
+    virtual bool IsRegExp() override;
+    virtual bool IsNumberObject() override;
+    virtual bool IsMap() override;
+    virtual bool IsSet() override;
+    virtual bool IsArgumentsObject() override;
+    virtual bool IsAsyncFunction() override;
+    virtual bool IsBooleanObject() override;
+    virtual bool IsGeneratorFunction() override;
+    virtual bool IsStringObject() override;
+    virtual bool IsSymbolObject() override;
+    virtual bool IsWeakMap() override;
+    virtual bool IsWeakSet() override;
+
     virtual NativeValue* ToBoolean() override;
     virtual NativeValue* ToNumber() override;
     virtual NativeValue* ToString() override;
