@@ -72,8 +72,13 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 }
                 NativeModule* module =
                     moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, isAppModule, false, true);
-                Global<ObjectRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
+                Global<JSValueRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
+                    auto it = engine->loadedModules_.find(module);
+                    if (it != engine->loadedModules_.end()) {
+                        return scope.Escape(it->second.ToLocal(ecmaVm));
+                    }
+
                     if (module->jsCode != nullptr) {
                         HILOG_INFO("load js code");
                         NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
@@ -90,11 +95,13 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                             return scope.Escape(exports.ToLocal(ecmaVm));
                         } else {
                             exports = *exportObject;
+                            engine->loadedModules_[module] = Global<JSValueRef>(ecmaVm, exports.ToLocal(ecmaVm));
                         }
                     } else if (module->registerCallback != nullptr) {
                         NativeValue* exportObject = engine->CreateObject();
                         module->registerCallback(engine, exportObject);
                         exports = *exportObject;
+                        engine->loadedModules_[module] = Global<JSValueRef>(ecmaVm, exports.ToLocal(ecmaVm));
                     } else {
                         HILOG_ERROR("init module failed");
                         return scope.Escape(exports.ToLocal(ecmaVm));
@@ -115,12 +122,18 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(data);
                 Local<StringRef> moduleName(argv[0]);
                 NativeModule* module = moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, false);
-                Global<ObjectRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
+                Global<JSValueRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
+                    auto it = engine->loadedModules_.find(module);
+                    if (it != engine->loadedModules_.end()) {
+                        return scope.Escape(it->second.ToLocal(ecmaVm));
+                    }
+
                     NativeValue* exportObject = engine->CreateObject();
                     if (exportObject != nullptr) {
                         module->registerCallback(engine, exportObject);
                         exports = *exportObject;
+                        engine->loadedModules_[module] = Global<JSValueRef>(ecmaVm, exports.ToLocal(ecmaVm));
                     } else {
                         HILOG_ERROR("exportObject is nullptr");
                         return scope.Escape(exports.ToLocal(ecmaVm));
@@ -141,6 +154,11 @@ ArkNativeEngine::~ArkNativeEngine()
 {
     // need to call deinit before base class.
     Deinit();
+
+    // Free cached objects
+    for (auto&& [module, exportObj] : loadedModules_) {
+        exportObj.FreeGlobalHandleAddr();
+    }
 }
 
 panda::Global<panda::ObjectRef> ArkNativeEngine::LoadModuleByName(

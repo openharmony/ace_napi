@@ -16,6 +16,8 @@
 #ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H
 
+#include <unordered_map>
+
 #include "ark_headers.h"
 #include "ecmascript/napi/include/jsnapi.h"
 #include "native_engine/native_engine.h"
@@ -170,6 +172,8 @@ private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;
     panda::LocalScope topScope_;
+
+    std::unordered_map<NativeModule*, panda::Global<panda::JSValueRef>> loadedModules_;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H */
