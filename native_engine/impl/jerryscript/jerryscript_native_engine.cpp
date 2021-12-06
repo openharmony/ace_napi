@@ -454,6 +454,9 @@ NativeValue* JerryScriptNativeEngine::CreateDate(double time)
     return JerryValueToNativeValue(this, value);
 }
 
+void JerryScriptNativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                                       NativeReference* checkCallbackRef) {}
+
 NativeValue* JerryScriptNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)
 {
 #if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4

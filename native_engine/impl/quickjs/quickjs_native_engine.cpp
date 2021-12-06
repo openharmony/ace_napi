@@ -877,3 +877,6 @@ bool QuickJSNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* A
     HILOG_INFO("L2: napi_adjust_external_memory not supported!");
     return true;
 }
+
+void QuickJSNativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                                   NativeReference* checkCallbackRef) {}

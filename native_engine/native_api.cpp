@@ -1730,6 +1730,21 @@ NAPI_EXTERN napi_status napi_is_promise(napi_env env, napi_value value, bool* is
     return napi_clear_last_error(env);
 }
 
+// promise reject events
+NAPI_EXTERN napi_status napi_set_promise_rejection_callback(napi_env env, napi_ref ref, napi_ref checkRef)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, ref);
+    CHECK_ARG(env, checkRef);
+
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto rejectCallbackRef = reinterpret_cast<NativeReference*>(ref);
+    auto checkCallbackRef = reinterpret_cast<NativeReference*>(checkRef);
+
+    engine->SetPromiseRejectCallback(rejectCallbackRef, checkCallbackRef);
+    return napi_clear_last_error(env);
+}
+
 // Running a script
 NAPI_EXTERN napi_status napi_run_script(napi_env env, napi_value script, napi_value* result)
 {

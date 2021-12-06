@@ -45,6 +45,7 @@ using panda::TypedArrayRef;
 using panda::PromiseCapabilityRef;
 using panda::NativePointerRef;
 using panda::SymbolRef;
+using panda::IntegerRef;
 
 static constexpr auto PANDA_MAIN_FUNCTION = "_GLOBAL::func_main_0";
 
@@ -158,6 +159,13 @@ ArkNativeEngine::~ArkNativeEngine()
     // Free cached objects
     for (auto&& [module, exportObj] : loadedModules_) {
         exportObj.FreeGlobalHandleAddr();
+    }
+    // Free callbackRef
+    if (promiseRejectCallbackRef_ != nullptr) {
+        delete promiseRejectCallbackRef_;
+    }
+    if (checkCallbackRef_ != nullptr) {
+        delete checkCallbackRef_;
     }
 }
 
@@ -705,4 +713,53 @@ bool ArkNativeEngine::TriggerFatalException(NativeValue* error)
 bool ArkNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue)
 {
     return true;
+}
+
+void ArkNativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef)
+{
+    if (rejectCallbackRef == nullptr || checkCallbackRef == nullptr) {
+        HILOG_ERROR("rejectCallbackRef or checkCallbackRef is nullptr");
+        return;
+    }
+    promiseRejectCallbackRef_ = rejectCallbackRef;
+    checkCallbackRef_ = checkCallbackRef;
+    JSNApi::SetHostPromiseRejectionTracker(vm_, reinterpret_cast<void*>(PromiseRejectCallback),
+                                           reinterpret_cast<void*>(this));
+}
+
+// values = {type, promise, reason}
+void ArkNativeEngine::PromiseRejectCallback(void* info)
+{
+    panda::PromiseRejectInfo* promiseRejectInfo = reinterpret_cast<panda::PromiseRejectInfo*>(info);
+    ArkNativeEngine* env = reinterpret_cast<ArkNativeEngine*>(promiseRejectInfo->GetData());
+    Local<JSValueRef> promise = promiseRejectInfo->GetPromise();
+    Local<JSValueRef> reason = promiseRejectInfo->GetReason();
+    panda::PromiseRejectInfo::PROMISE_REJECTION_EVENT operation = promiseRejectInfo->GetOperation();
+
+    if (env == nullptr) {
+        HILOG_ERROR("engine is nullptr");
+        return;
+    }
+
+    if (env->promiseRejectCallbackRef_ == nullptr || env->checkCallbackRef_ == nullptr) {
+        HILOG_ERROR("promiseRejectCallbackRef or checkCallbackRef is nullptr");
+        return;
+    }
+
+    const panda::ecmascript::EcmaVM* vm = env->GetEcmaVm();
+    Local<JSValueRef> type(IntegerRef::New(vm, static_cast<int32_t>(operation)));
+
+    Local<JSValueRef> args[] = {type, promise, reason};
+    Global<FunctionRef> promiseRejectCallback = *(env->promiseRejectCallbackRef_->Get());
+    if (!promiseRejectCallback.IsEmpty()) {
+        Global<JSValueRef> thisObj = Global<JSValueRef>(vm, JSValueRef::Undefined(vm));
+        promiseRejectCallback->Call(vm, thisObj.ToLocal(vm), args, 3); // 3 args size
+    }
+
+    if (operation == panda::PromiseRejectInfo::PROMISE_REJECTION_EVENT::REJECT) {
+        Global<JSValueRef> checkCallback = *(env->checkCallbackRef_->Get());
+        if (!checkCallback.IsEmpty()) {
+            JSNApi::SetHostEnqueueJob(vm, checkCallback.ToLocal(vm));
+        }
+    }
 }

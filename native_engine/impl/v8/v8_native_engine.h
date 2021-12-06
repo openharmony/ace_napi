@@ -146,6 +146,9 @@ public:
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     // Create native promise value
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                          NativeReference* checkCallbackRef) override;
+    static void PromiseRejectCallback(v8::PromiseRejectMessage message);
     // Create native error value
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* message) override;
     // Call function
@@ -209,6 +212,8 @@ private:
     v8::HandleScope handleScope_;
     v8::Context::Scope contextScope_;
     v8::TryCatch tryCatch_ { NULL };
+    NativeReference* promiseRejectCallbackRef_ { nullptr };
+    NativeReference* checkCallbackRef_ { nullptr };
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_V8_NATIVE_ENGINE_H */
