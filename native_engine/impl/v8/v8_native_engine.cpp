@@ -33,6 +33,9 @@
 #include "v8_native_deferred.h"
 #include "v8_native_reference.h"
 
+
+static thread_local V8NativeEngine* g_env = nullptr;
+
 V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
     v8::Persistent<v8::Context>& context, void* jsEngine)
     : NativeEngine(jsEngine),
@@ -44,6 +47,7 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
       contextScope_(context.Get(isolate_)),
       tryCatch_(isolate_)
 {
+    g_env = this;
     v8::Local<v8::String> requireNapiName = v8::String::NewFromUtf8(isolate_, "requireNapi").ToLocalChecked();
     v8::Local<v8::String> requireInternalName = v8::String::NewFromUtf8(isolate_, "requireInternal").ToLocalChecked();
 
@@ -142,6 +146,12 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
 
 V8NativeEngine::~V8NativeEngine()
 {
+    if (promiseRejectCallbackRef_ != nullptr) {
+        delete promiseRejectCallbackRef_;
+    }
+    if (checkCallbackRef_ != nullptr) {
+        delete checkCallbackRef_;
+    }
     // need to call deinit before base class.
     Deinit();
 }
@@ -949,4 +959,52 @@ NativeValue* V8NativeEngine::ValueToNativeValue(JSValueWrapper& value)
 {
     v8::Local<v8::Value> v8Value = value;
     return V8ValueToNativeValue(this, v8Value);
+}
+
+void V8NativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef)
+{
+    if (rejectCallbackRef == nullptr || checkCallbackRef == nullptr) {
+        HILOG_ERROR("rejectCallbackRef or checkCallbackRef is nullptr");
+        return;
+    }
+    promiseRejectCallbackRef_ = rejectCallbackRef;
+    checkCallbackRef_ = checkCallbackRef;
+    isolate_->SetPromiseRejectCallback(PromiseRejectCallback);
+}
+
+
+void V8NativeEngine::PromiseRejectCallback(v8::PromiseRejectMessage message)
+{
+    v8::Local<v8::Promise> promise = message.GetPromise();
+    v8::PromiseRejectEvent event = message.GetEvent();
+    v8::Isolate* isolate = promise->GetIsolate();
+    v8::Local<v8::Value> reason = message.GetValue();
+    if (reason.IsEmpty()) {
+        reason = v8::Undefined(isolate);
+    }
+    V8NativeEngine* engine = g_env;
+    if (engine == nullptr) {
+        HILOG_ERROR("engine is nullptr");
+        return;
+    }
+    v8::Local<v8::Function> promiseRejectCallback = *(engine->promiseRejectCallbackRef_->Get());
+
+    if (promiseRejectCallback.IsEmpty()) {
+        HILOG_ERROR("promiseRejectCallback is empty");
+        return;
+    }
+    v8::Local<v8::Value> type = v8::Number::New(isolate, event);
+    v8::Local<v8::Value> promiseValue(promise);
+    v8::Local<v8::Context> context = engine->context_.Get(isolate);
+    v8::Local<v8::Value> args[] = {type, promiseValue, reason};
+
+    size_t size = sizeof(args) / sizeof(args[0]);
+    bool succ = promiseRejectCallback->Call(context, v8::Undefined(isolate), size, args).IsEmpty();
+    if (succ) {
+        HILOG_ERROR("error : call function promiseRejectCallback is failed");
+    }
+    if (event == v8::kPromiseRejectWithNoHandler) {
+        v8::Local<v8::Function> cb = *(engine->checkCallbackRef_->Get());
+        isolate->EnqueueMicrotask(cb);
+    }
 }

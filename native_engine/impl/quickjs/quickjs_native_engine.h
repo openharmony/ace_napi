@@ -85,6 +85,8 @@ public:
                                           size_t offset) override;
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                          NativeReference* checkCallbackRef) override;
 
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* Message) override;
     virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;

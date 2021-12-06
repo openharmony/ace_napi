@@ -143,6 +143,7 @@ public:
                                           size_t offset) = 0;
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) = 0;
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) = 0;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef) = 0;
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* message) = 0;
 
     virtual NativeValue* CallFunction(NativeValue* thisVar,

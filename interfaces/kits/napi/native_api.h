@@ -30,6 +30,7 @@ napi_status napi_delete_serialization_data(napi_env env, napi_value value);
 napi_status napi_get_exception_info_for_worker(napi_env env, napi_value obj);
 napi_status napi_get_jsEngine(napi_env env, void** pEngine);
 napi_status napi_run_buffer_script(napi_env env, std::vector<uint8_t>& buffer, napi_value* result);
+napi_status napi_set_promise_rejection_callback(napi_env env, napi_ref ref, napi_ref checkRef);
 
 napi_status napi_is_arguments_object(napi_env env, napi_value value, bool* result);
 napi_status napi_is_async_function(napi_env env, napi_value value, bool* result);

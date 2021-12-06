@@ -118,6 +118,8 @@ public:
     NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     // Create native promise value
     NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    void SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef) override;
+    static void PromiseRejectCallback(void* values);
     // Create native error value
     NativeValue* CreateError(NativeValue* code, NativeValue* message) override;
     // Call function
@@ -172,7 +174,8 @@ private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;
     panda::LocalScope topScope_;
-
+    NativeReference* promiseRejectCallbackRef_ { nullptr };
+    NativeReference* checkCallbackRef_ { nullptr };
     std::unordered_map<NativeModule*, panda::Global<panda::JSValueRef>> loadedModules_;
 };
 
