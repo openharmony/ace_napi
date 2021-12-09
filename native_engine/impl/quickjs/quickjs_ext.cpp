@@ -14,6 +14,7 @@
  */
 
 #include <cstring>
+
 #include "native_engine/native_value.h"
 #include "quickjs_headers.h"
 #include "utils/log.h"
@@ -369,7 +370,9 @@ JSValue JS_CreateBigIntWords(JSContext* context, int signBit, size_t wordCount, 
     }
 
     for (size_t i = 0; i < wordCount; i++) {
+        // shift 32 bits right to get high bit
         JSValue idxValueHigh = JS_NewUint32(context, (uint32_t)(words[i] >> 32));
+        // gets lower 32 bits
         JSValue idxValueLow = JS_NewUint32(context, (uint32_t)(words[i] & 0xFFFFFFFF));
         if (!(JS_IsException(idxValueHigh)) && !(JS_IsException(idxValueLow))) {
             JS_SetPropertyUint32(context, wordsValue, (i * Two), idxValueHigh);

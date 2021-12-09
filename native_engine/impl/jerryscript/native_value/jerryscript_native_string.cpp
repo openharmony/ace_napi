@@ -214,7 +214,7 @@ int JerryScriptNativeString::Utf16ToUtf8Length(const char16_t* str16, size_t str
             charLen = UTF8_BYTES_FOUR;
             str16 += UTF8_BYTES_TWO;
         } else {
-            charLen = Utf32CodePointUtf8Length((char32_t)* str16++);
+            charLen = Utf32CodePointUtf8Length((char32_t)*str16++);
         }
 
         if (utf8Len > (INT_MAX - charLen)) {

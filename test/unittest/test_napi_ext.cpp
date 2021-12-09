@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "napi/native_common.h"
 #include "napi/native_api.h"
+#include "napi/native_common.h"
 #include "napi/native_node_api.h"
+#include "securec.h"
 #include "test.h"
 #include "test_common.h"
-#include "securec.h"
 #include "utils/log.h"
 #ifdef FOR_JERRYSCRIPT_TEST
 #include "jerryscript-core.h"
@@ -221,7 +221,7 @@ HWTEST_F(NativeEngineTest, Is_detached_ArrayBuffer_Test, testing::ext::TestSize.
 #if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
     // jerryscript 2.3 do nothing
 #else
-   // jerryscript 2.4 or quickjs or V8
+// jerryscript 2.4 or quickjs or V8
 
 static constexpr size_t NAPI_UT_STR_LENGTH = 30;
 
