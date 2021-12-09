@@ -16,8 +16,8 @@
 #ifndef NAPI_EXPERIMENTAL
 #define NAPI_EXPERIMENTAL
 #endif
-#include <securec.h>
 #include <ctime>
+#include <securec.h>
 #ifdef FOR_JERRYSCRIPT_TEST
 #include "jerryscript-core.h"
 #endif
@@ -64,6 +64,7 @@ static constexpr int32_t CALL_JSCB_DATA = 20;
 static constexpr int32_t FINAL_CB_DATA = 30;
 static constexpr size_t MAX_COUNT = 128;
 static constexpr size_t OVER_MAX_COUNT = 129;
+static constexpr size_t DATA_MAX_LENGTH = 12;
 static uv_thread_t g_uvThread;
 static FinalCbData finalData;
 static CallJsCbData jsData;
@@ -1001,7 +1002,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Value_String_Utf16_0800, testing::ext::T
 #if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
     // jerryscript 2.3 do nothing
 #else
-   // jerryscript 2.4 or quickjs or V8
+// jerryscript 2.4 or quickjs or V8
 /*
  * @tc.number    : ACE_Napi_Create_Bigint_Int64_0100
  * @tc.name      : Test the maximum value of napi_create_bigint_int64
@@ -3203,7 +3204,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Date_Value_0500, testing::ext::TestSize.
 #if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
     // jerryscript 2.3 do nothing
 #else
-   // jerryscript 2.4 or quickjs or V8
+// jerryscript 2.4 or quickjs or V8
 /**
  * @tc.number    : ACE_Napi_Type_Tag_Object_0100
  * @tc.name      : The parameter is valid,
@@ -3952,7 +3953,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Adjust_External_Memory_0300, testing::ext::T
 #if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
     // jerryscript 2.3 do nothing
 #else
-   // jerryscript 2.4 or quickjs or V8
+// jerryscript 2.4 or quickjs or V8
 /**
  * @tc.number    : ACE_Napi_Get_All_Property_Names_0100
  * @tc.name      : The parameter is valid,
@@ -5295,7 +5296,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_External_Buffer_0600, testing::ext::T
 #if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
     // jerryscript 2.3 do nothing
 #else
-   // jerryscript 2.4 or quickjs or V8
+// jerryscript 2.4 or quickjs or V8
 /*
  * @tc.number    : ACE_Napi_Object_Freeze_0100
  * @tc.name      : The parameters of napi_object_freeze are valid,
@@ -7363,7 +7364,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0400, testin
     void* contextresult;
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
     jsData_str.id = CALL_JSCB_DATA;
-    strcpy(jsData_str.strdata, "contextdata");
+    strcpy_s(jsData_str.strdata, DATA_MAX_LENGTH, "contextdata");
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
         env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
@@ -7407,7 +7408,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0500, testin
     void* contextresult;
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
     jsData_str.id = CALL_JSCB_DATA;
-    strcpy(jsData_str.strdata, "~!@#$%^&*( ");
+    strcpy_s(jsData_str.strdata, DATA_MAX_LENGTH, "~!@#$%^&*( ");
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
         env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);
@@ -7451,7 +7452,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_Threadsafe_Function_Context_0600, testin
     void* contextresult;
     GTEST_LOG_(INFO) << "contextresult is " << contextresult;
     jsData_str.id = CALL_JSCB_DATA;
-    strcpy(jsData_str.strdata, "大家好!!");
+    strcpy_s(jsData_str.strdata, DATA_MAX_LENGTH, "大家好!!");
     napi_create_string_utf8(env, "JSstringTest", strsize, &resource_name);
     napi_status threadresult = napi_create_threadsafe_function(
         env, nullptr, nullptr, resource_name, 0, 1, nullptr, nullptr, &jsData_str, ThreadSafeCallJs, &result);

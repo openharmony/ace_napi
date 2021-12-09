@@ -31,7 +31,6 @@
 #include "native_value/jerryscript_native_object.h"
 #include "native_value/jerryscript_native_string.h"
 #include "native_value/jerryscript_native_typed_array.h"
-#include "native_value/jerryscript_native_external.h"
 #include "utils/log.h"
 
 JerryScriptNativeEngine::JerryScriptNativeEngine(void* jsEngine) : NativeEngine(jsEngine)
@@ -371,8 +370,7 @@ NativeValue* JerryScriptNativeEngine::LoadModule(NativeValue* str, const std::st
     return nullptr;
 }
 
-NativeValue* JerryScriptNativeEngine::JerryValueToNativeValue(JerryScriptNativeEngine* engine,
-                                                               jerry_value_t value)
+NativeValue* JerryScriptNativeEngine::JerryValueToNativeValue(JerryScriptNativeEngine* engine, jerry_value_t value)
 {
     NativeValue* result = nullptr;
     switch (jerry_value_get_type(value)) {
