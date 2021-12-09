@@ -169,7 +169,9 @@ public:
     NativeValue* CreateDate(double value) override;
     NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
     bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
-
+    // Detect performance to obtain cpuprofiler file
+    void StartCpuProfiler() override;
+    void StopCpuProfiler() override;
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;

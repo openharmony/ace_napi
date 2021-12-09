@@ -200,6 +200,8 @@ public:
     v8::Local<v8::Object> LoadModuleByName(
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
+    void StartCpuProfiler() override {}
+    void StopCpuProfiler() override {}
 private:
     static void ExecuteWrap(NativeEngine* engine, void* data);
     static void CompleteWrap(NativeEngine* engine, int status, void* data);
