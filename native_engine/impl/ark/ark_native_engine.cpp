@@ -584,6 +584,16 @@ void ArkNativeEngine::DeleteSerializationData(NativeValue* value) const
     panda::JSNApi::DeleteSerializationData(data);
 }
 
+void ArkNativeEngine::StartCpuProfiler()
+{
+    panda::JSNApi::StartCpuProfiler(vm_);
+}
+
+void ArkNativeEngine::StopCpuProfiler()
+{
+    panda::JSNApi::StopCpuProfiler();
+}
+
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
