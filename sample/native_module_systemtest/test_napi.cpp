@@ -64,7 +64,6 @@ static constexpr int32_t CALL_JSCB_DATA = 20;
 static constexpr int32_t FINAL_CB_DATA = 30;
 static constexpr size_t MAX_COUNT = 128;
 static constexpr size_t OVER_MAX_COUNT = 129;
-static constexpr size_t DATA_MAX_LENGTH = 12;
 static uv_thread_t g_uvThread;
 static FinalCbData finalData;
 static CallJsCbData jsData;
