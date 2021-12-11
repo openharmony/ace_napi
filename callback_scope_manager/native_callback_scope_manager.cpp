@@ -43,9 +43,12 @@ NativeCallbackScopeManager::~NativeCallbackScopeManager() {}
 NativeCallbackScope* NativeCallbackScopeManager::Open(NativeEngine* env)
 {
     NativeCallbackScope* scope = new (std::nothrow)NativeCallbackScope(env);
-    asyncCallbackScopeDepth_++;
-
-    return scope;
+    if (scope) {
+        asyncCallbackScopeDepth_++;
+        return scope;
+    } else {
+        return nullptr;
+    }
 }
 
 void NativeCallbackScopeManager::Close(NativeCallbackScope* scope)

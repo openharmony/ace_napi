@@ -390,6 +390,7 @@ HWTEST_F(NativeEngineTest, BigInt_Words_Test_Minus_Normal, testing::ext::TestSiz
 
 HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
 {
+    constexpr int DataSize = 60;
     napi_env env = (napi_env)engine_;
     napi_value object = nullptr;
     napi_create_object(env, &object);
@@ -422,7 +423,7 @@ HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
     ASSERT_EQ(arrayLength, (uint32_t)2);
 
     char names[2][30];
-    memset_s(names, 60, 0, 60);
+    memset_s(names, DataSize, 0, DataSize);
     memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
     memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
     for (uint32_t i = 0; i < arrayLength; i++) {
@@ -536,8 +537,12 @@ HWTEST_F(NativeEngineTest, all_property_names_Test, testing::ext::TestSize.Level
 
     char names[2][NAPI_UT_STR_LENGTH];
     memset_s(names, NAPI_UT_STR_LENGTH * 2, 0, NAPI_UT_STR_LENGTH * 2);
-    memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
-    memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    if (memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute")) != EOK) {
+        return;
+    }
+    if (memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute") != EOK) {
+        return;
+    }
 
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
@@ -675,7 +680,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_001, testing::ext::
 
     napi_callback_scope scope = nullptr;
     napi_status ret = napi_open_callback_scope(env, NULL, context, &scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     EXPECT_NE(scope, nullptr);
 
     int openCallbackScopes = callbackScopeManager->GetOpenCallbackScopes();
@@ -684,7 +689,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_001, testing::ext::
     EXPECT_EQ(asyncCallbackScopeDepth, (asyncCallbackScopeDepthBefore + 1));
 
     ret = napi_close_callback_scope(env, scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     int openCallbackScopesAfter = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepthAfter = callbackScopeManager->GetAsyncCallbackScopeDepth();
@@ -712,6 +717,9 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
 
     int openCallbackScopesBefore = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepthBefore = callbackScopeManager->GetAsyncCallbackScopeDepth();
+    if (openCallbackScopesBefore == nullptr || asyncCallbackScopeDepthBefore == nullptr) {
+        return;
+    }
 
     napi_value resourceName;
     NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, "test", NAPI_AUTO_LENGTH, &resourceName));
@@ -721,7 +729,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
 
     napi_callback_scope scope = nullptr;
     napi_status ret = napi_open_callback_scope(env, NULL, context, &scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     EXPECT_NE(scope, nullptr);
 
     int openCallbackScopes1 = callbackScopeManager->GetOpenCallbackScopes();
@@ -735,7 +743,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
     EXPECT_NE(scope2, nullptr);
     EXPECT_EQ(openCallbackScopes2, openCallbackScopes1);
     EXPECT_EQ(asyncCallbackScopeDepth2, (asyncCallbackScopeDepth1 + 1));
-    
+
     callbackScopeManager->Close(scope2);
     int openCallbackScopes2After = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepth2After = callbackScopeManager->GetAsyncCallbackScopeDepth();
@@ -744,7 +752,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
     EXPECT_EQ(asyncCallbackScopeDepth2After, asyncCallbackScopeDepth1);
 
     ret = napi_close_callback_scope(env, scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     int openCallbackScopes1After = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepth1After = callbackScopeManager->GetAsyncCallbackScopeDepth();
