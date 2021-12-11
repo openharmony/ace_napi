@@ -524,7 +524,7 @@ struct JS_BigFloatExt {
 
 bool JS_ToInt64WithBigInt(JSContext* context, JSValueConst value, int64_t* pres, bool* lossless)
 {
-    if (pres == nullptr && lossless == nullptr) {
+    if (pres == nullptr || lossless == nullptr) {
         HILOG_INFO("%{public}s called. Params are invalid.", __func__);
         return false;
     }
@@ -545,7 +545,7 @@ bool JS_ToInt64WithBigInt(JSContext* context, JSValueConst value, int64_t* pres,
 
 bool JS_ToUInt64WithBigInt(JSContext* context, JSValueConst value, uint64_t* pres, bool* lossless)
 {
-    if (pres == nullptr && lossless == nullptr) {
+    if (pres == nullptr || lossless == nullptr) {
         HILOG_INFO("%{public}s called. Params are invalid.", __func__);
         return false;
     }
