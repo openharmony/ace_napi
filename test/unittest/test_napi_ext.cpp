@@ -424,8 +424,10 @@ HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
 
     char names[2][30];
     memset_s(names, DataSize, 0, DataSize);
-    memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
-    memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
+    ASSERT_EQ(ret, EOK);
+    ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    ASSERT_EQ(ret, EOK);
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
         ASSERT_CHECK_CALL(napi_has_element(env, propNames, i, &hasElement));
@@ -481,8 +483,10 @@ HWTEST_F(NativeEngineTest, seal_object_Test, testing::ext::TestSize.Level0)
 
     char names[2][NAPI_UT_STR_LENGTH];
     memset_s(names, NAPI_UT_STR_LENGTH * 2, 0, NAPI_UT_STR_LENGTH * 2);
-    memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
-    memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
+    ASSERT_EQ(ret, EOK);
+    ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    ASSERT_EQ(ret, EOK);
 
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
@@ -537,12 +541,10 @@ HWTEST_F(NativeEngineTest, all_property_names_Test, testing::ext::TestSize.Level
 
     char names[2][NAPI_UT_STR_LENGTH];
     memset_s(names, NAPI_UT_STR_LENGTH * 2, 0, NAPI_UT_STR_LENGTH * 2);
-    if (memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute")) != EOK) {
-        return;
-    }
-    if (memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute") != EOK) {
-        return;
-    }
+    auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
+    ASSERT_EQ(ret, EOK);
+    ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    ASSERT_EQ(ret, EOK);
 
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
@@ -717,9 +719,6 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
 
     int openCallbackScopesBefore = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepthBefore = callbackScopeManager->GetAsyncCallbackScopeDepth();
-    if (openCallbackScopesBefore == nullptr || asyncCallbackScopeDepthBefore == nullptr) {
-        return;
-    }
 
     napi_value resourceName;
     NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, "test", NAPI_AUTO_LENGTH, &resourceName));
