@@ -14,7 +14,6 @@
  */
 
 #include "native_engine.h"
-#include "utils/log.h"
 
 #if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
 #include <sys/epoll.h>
