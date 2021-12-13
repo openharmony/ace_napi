@@ -152,7 +152,6 @@ NAPI_EXTERN napi_status napi_add_env_cleanup_hook(napi_env env, void (*fun)(void
 {
     CHECK_ENV(env);
     CHECK_ARG(env, fun);
-    CHECK_ARG(env, arg);
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     engine->AddCleanupHook(fun, arg);
@@ -164,7 +163,6 @@ NAPI_EXTERN napi_status napi_remove_env_cleanup_hook(napi_env env, void (*fun)(v
 {
     CHECK_ENV(env);
     CHECK_ARG(env, fun);
-    CHECK_ARG(env, arg);
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     engine->RemoveCleanupHook(fun, arg);
@@ -323,7 +321,7 @@ NAPI_EXTERN napi_status napi_create_threadsafe_function(napi_env env, napi_value
     CHECK_ARG(env, result);
     if (func == nullptr) {
         CHECK_ARG(env, call_js_cb);
-    } 
+    }
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     auto jsFunc = reinterpret_cast<NativeValue*>(func);

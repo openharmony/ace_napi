@@ -270,19 +270,19 @@ bool QuickJSNativeObject::DeletePrivateProperty(const char* name)
 NativeValue* QuickJSNativeObject::GetAllPropertyNames(
     napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion)
 {
-    auto getPower = 0;
+    auto getPower = JS_PROP_CONFIGURABLE;
     if (keyFilter == napi_key_all_properties) {
         getPower = getPower | JS_PROP_GETSET | JS_PROP_WRITABLE | JS_PROP_ENUMERABLE | JS_PROP_CONFIGURABLE;
     } else {
-        if (keyFilter & napi_key_writable) {
+        if (keyFilter == napi_key_writable) {
             getPower = getPower | JS_PROP_WRITABLE | JS_PROP_GETSET;
         }
 
-        if (keyFilter & napi_key_enumerable) {
+        if (keyFilter == napi_key_enumerable) {
             getPower = getPower | JS_PROP_ENUMERABLE;
         }
 
-        if (keyFilter & napi_key_configurable) {
+        if (keyFilter == napi_key_configurable) {
             getPower = getPower | JS_PROP_CONFIGURABLE;
         }
     }

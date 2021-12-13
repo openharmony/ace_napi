@@ -14,10 +14,11 @@
  */
 
 #include "jerryscript_native_object.h"
-#include "jerryscript_native_array.h"
-#include "jerryscript_native_function.h"
 
 #include "jerryscript-ext/handler.h"
+#include "jerryscript_native_array.h"
+#include "jerryscript_native_function.h"
+#include "utils/log.h"
 
 struct JerryScriptNativeObjectInfo {
     NativeEngine* engine = nullptr;
@@ -78,6 +79,23 @@ void* JerryScriptNativeObject::GetNativePointer()
     }
 }
 
+void JerryScriptNativeObject::AddFinalizer(void* pointer, NativeFinalize cb, void* hint)
+{
+    if (pointer == nullptr) {
+        jerry_delete_object_native_pointer(value_, &g_freeCallback);
+        return;
+    }
+
+    JerryScriptNativeObjectInfo* info = new JerryScriptNativeObjectInfo {
+        .engine = engine_,
+        .cb = cb,
+        .data = pointer,
+        .hint = hint,
+    };
+
+    jerry_set_object_native_pointer(value_, info, &g_freeCallback);
+}
+
 void* JerryScriptNativeObject::GetInterface(int interfaceId)
 {
     return (NativeObject::INTERFACE_ID == interfaceId) ? (NativeObject*)this : nullptr;
@@ -115,8 +133,8 @@ bool JerryScriptNativeObject::DefineProperty(NativePropertyDescriptor propertyDe
     }
 
     if (propertyDescriptor.method != nullptr) {
-        prop.value = *(new JerryScriptNativeFunction(engine_, propertyDescriptor.utf8name, propertyDescriptor.method,
-                                                     propertyDescriptor.data));
+        prop.value = *(new JerryScriptNativeFunction(
+            engine_, propertyDescriptor.utf8name, propertyDescriptor.method, propertyDescriptor.data));
         prop.is_value_defined = true;
     }
 
@@ -228,4 +246,103 @@ bool JerryScriptNativeObject::DeletePrivateProperty(const char* name)
     result = jerry_delete_property(value_, key);
     jerry_release_value(key);
     return result;
+}
+
+void JerryScriptNativeObject::Freeze()
+{
+    jerry_freeze(value_);
+}
+
+void JerryScriptNativeObject::Seal()
+{
+    jerry_seal(value_);
+}
+
+NativeValue* JerryScriptNativeObject::GetAllPropertyNames(
+    napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion)
+{
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+    jerry_property_filter_t filter = JERRY_PROPERTY_FILTER_ALL;
+
+    if (keyFilter & napi_key_writable) {
+        filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_EXLCUDE_NON_WRITABLE);
+    }
+    if (keyFilter & napi_key_enumerable) {
+        filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_EXLCUDE_NON_ENUMERABLE);
+    }
+    if (keyFilter & napi_key_configurable) {
+        filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_EXLCUDE_NON_CONFIGURABLE);
+    }
+    if (keyFilter & napi_key_skip_strings) {
+        filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_EXLCUDE_STRINGS);
+    }
+    if (keyFilter & napi_key_skip_symbols) {
+        filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_EXLCUDE_SYMBOLS);
+    }
+
+    switch (keyConversion) {
+        case napi_key_keep_numbers:
+            filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_EXLCUDE_INTEGER_INDICES);
+            break;
+        case napi_key_numbers_to_strings:
+            filter = static_cast<jerry_property_filter_t>(filter | JERRY_PROPERTY_FILTER_INTEGER_INDICES_AS_NUMBER);
+            break;
+        default:
+            break;
+    }
+
+    jerry_value_t result = jerry_object_get_property_names(value_, filter);
+
+    return JerryScriptNativeEngine::JerryValueToNativeValue(engine_, result);
+#else
+    return nullptr;
+#endif
+}
+
+bool JerryScriptNativeObject::AssociateTypeTag(NapiTypeTag* typeTag)
+{
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+    const char name[] = "ACENAPI_TYPETAG";
+    bool result = false;
+    bool hasPribate = false;
+    hasPribate = HasPrivateProperty(name);
+    if (!hasPribate) {
+        jerry_value_t key = jerry_create_string_from_utf8((const unsigned char*)name);
+        uint32_t size = 2;
+        jerry_value_t value = jerry_create_bigint((uint64_t*)typeTag, size, false);
+
+        result = jerry_set_property(value_, key, value);
+        jerry_release_value(key);
+    }
+    return result;
+#else
+    return true;
+#endif
+}
+
+bool JerryScriptNativeObject::CheckTypeTag(NapiTypeTag* typeTag)
+{
+#if JERRY_API_MINOR_VERSION > 3 // jerryscript2.3: 3,  jerryscript2.4: 4
+    const char name[] = "ACENAPI_TYPETAG";
+    bool result = false;
+    result = HasPrivateProperty(name);
+    if (result) {
+        jerry_value_t key = jerry_create_string_from_utf8((const unsigned char*)name);
+        jerry_value_t value = jerry_get_property(value_, key);
+        jerry_release_value(key);
+
+        NapiTypeTag typeTagOut;
+        uint32_t size = 2;
+        bool sign = false;
+
+        jerry_get_bigint_digits(value, (uint64_t*)(&typeTagOut), size, &sign);
+
+        if ((typeTagOut.lower != typeTag->lower) || (typeTagOut.upper != typeTag->upper)) {
+            result = false;
+        }
+    }
+    return result;
+#else
+    return true;
+#endif
 }

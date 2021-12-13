@@ -199,7 +199,7 @@ NAPI_EXTERN napi_status napi_create_string_utf16(napi_env env, const char16_t* s
     CHECK_ENV(env);
     CHECK_ARG(env, str);
     CHECK_ARG(env, result);
-    RETURN_STATUS_IF_FALSE(env, (length == NAPI_AUTO_LENGTH) || length <= INT_MAX, napi_invalid_arg);
+    RETURN_STATUS_IF_FALSE(env, (length == NAPI_AUTO_LENGTH) || (length <= INT_MAX && length > 0), napi_invalid_arg);
     auto engine = reinterpret_cast<NativeEngine*>(env);
     int char16Length = static_cast<int>(std::char_traits<char16_t>::length(str));
     auto resultValue = engine->CreateString16(str, (length == NAPI_AUTO_LENGTH) ? char16Length : length);
@@ -1491,7 +1491,6 @@ NAPI_EXTERN napi_status napi_create_external_buffer(
     napi_env env, size_t length, void* data, napi_finalize finalize_cb, void* finalize_hint, napi_value* result)
 {
     CHECK_ENV(env);
-    CHECK_ARG(env, finalize_cb);
     CHECK_ARG(env, result);
     CHECK_ARG(env, data);
     RETURN_STATUS_IF_FALSE(env, length > 0, napi_invalid_arg);
@@ -2264,10 +2263,9 @@ NAPI_EXTERN napi_status napi_get_date_value(napi_env env, napi_value value, doub
     CHECK_ARG(env, result);
 
     auto nativeValue = reinterpret_cast<NativeValue*>(value);
-    auto nativeDate = reinterpret_cast<NativeDate*>(nativeValue->GetInterface(NativeDate::INTERFACE_ID));
-
     auto IsDate_result = nativeValue->IsDate();
     if (IsDate_result) {
+        auto nativeDate = reinterpret_cast<NativeDate*>(nativeValue->GetInterface(NativeDate::INTERFACE_ID));
         *result = nativeDate->GetTime();
     } else {
         return napi_set_last_error(env, napi_date_expected);

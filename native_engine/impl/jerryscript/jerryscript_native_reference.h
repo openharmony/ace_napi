@@ -22,7 +22,8 @@
 
 class JerryScriptNativeReference : public NativeReference {
 public:
-    JerryScriptNativeReference(JerryScriptNativeEngine* engine, NativeValue* value, uint32_t initialRefcount);
+    JerryScriptNativeReference(JerryScriptNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr);
     virtual ~JerryScriptNativeReference();
 
     virtual uint32_t Ref() override;
@@ -33,7 +34,13 @@ public:
 private:
     JerryScriptNativeEngine* engine_;
     jerry_value_t value_;
+
     uint32_t refCount_;
+    NativeFinalize callback_ = nullptr;
+    void* data_ = nullptr;
+    void* hint_ = nullptr;
+
+    void FinalizeCallback(void);
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_JERRYSCRIPT_NATIVE_REFERENCE_H */
