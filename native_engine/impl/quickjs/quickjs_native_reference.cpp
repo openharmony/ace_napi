@@ -19,8 +19,8 @@
 #include "quickjs_native_reference.h"
 
 QuickJSNativeReference::QuickJSNativeReference(
-    QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount, 
-    NativeFinalize callback , void* data, void* hint)
+    QuickJSNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
+    NativeFinalize callback, void* data, void* hint)
     : engine_(engine), value_(*value), refCount_(initialRefcount), callback_(callback), data_(data),
     hint_(hint)
 {

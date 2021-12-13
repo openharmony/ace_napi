@@ -31,7 +31,10 @@ ohos_unittest("test_quickjs_systemtest") {
     "//foundation/ace/napi/interfaces/kits/napi",
   ]
 
-  cflags = [ "-g3" ]
+  cflags = [
+    "-g3",
+    "-DFOR_QUICKJS_TEST",
+  ]
 
   sources = [
     "test_napi.cpp",

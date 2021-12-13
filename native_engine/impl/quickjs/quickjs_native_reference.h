@@ -37,7 +37,7 @@ private:
     uint32_t refCount_;
     NativeFinalize callback_ = nullptr;
     void* data_ = nullptr;
-    void* hint_ = nullptr; 
+    void* hint_ = nullptr;
 
     void FinalizeCallback(void);
 };

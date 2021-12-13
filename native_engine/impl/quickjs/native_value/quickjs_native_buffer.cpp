@@ -64,7 +64,7 @@ QuickJSNativeBuffer::QuickJSNativeBuffer(
         engine_->GetContext(), data, length,
         [](JSRuntime* rt, void* opaque, void* ptr) -> void {
             auto cbinfo = reinterpret_cast<QuickJSBufferCallback*>(opaque);
-            if (cbinfo != nullptr) {
+            if (cbinfo != nullptr && cbinfo->cb != nullptr) {
                 cbinfo->cb(cbinfo->engine, ptr, cbinfo->hint);
                 delete cbinfo;
             }

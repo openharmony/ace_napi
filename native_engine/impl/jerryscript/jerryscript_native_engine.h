@@ -34,7 +34,10 @@ public:
     virtual NativeValue* CreateNumber(uint32_t value) override;
     virtual NativeValue* CreateNumber(int64_t value) override;
     virtual NativeValue* CreateNumber(double value) override;
+    virtual NativeValue* CreateBigInt(int64_t value) override;
+    virtual NativeValue* CreateBigInt(uint64_t value) override;
     virtual NativeValue* CreateString(const char* value, size_t length) override;
+    virtual NativeValue* CreateString16(const char16_t* value, size_t length) override;
 
     virtual NativeValue* CreateSymbol(NativeValue* value) override;
     virtual NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) override;
@@ -42,7 +45,9 @@ public:
     virtual NativeValue* CreateObject() override;
     virtual NativeValue* CreateFunction(const char* name, size_t length, NativeCallback cb, void* value) override;
     virtual NativeValue* CreateArray(size_t length) override;
-
+    virtual NativeValue* CreateBuffer(void** value, size_t length) override;
+    virtual NativeValue* CreateBufferCopy(void** value, size_t length, const void* data) override;
+    virtual NativeValue* CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
     virtual NativeValue* CreateArrayBuffer(void** value, size_t length) override;
     virtual NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
 
@@ -70,21 +75,26 @@ public:
                                         NativeValue* const* argv,
                                         size_t argc) override;
 
-    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) override;
+    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) override;
 
     virtual bool Throw(NativeValue* error) override;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
-    virtual void* CreateRuntime() override { return nullptr; }
-    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override { return nullptr; }
-    virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override { return nullptr; }
-    virtual ExceptionInfo* GetExceptionForWorker() const override { return nullptr; }
+    virtual void* CreateRuntime() override;
+    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
+    virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
+    virtual ExceptionInfo* GetExceptionForWorker() const override;
     virtual void DeleteSerializationData(NativeValue* value) const override {}
 
-    virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override { return nullptr; }
+    virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
 
     static NativeValue* JerryValueToNativeValue(JerryScriptNativeEngine* engine, jerry_value_t value);
     virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
+    virtual bool TriggerFatalException(NativeValue* error) override;
+    virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
+    virtual NativeValue* CreateDate(double time) override;
+    virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_JERRYSCRIPT_NATIVE_ENGINE_H_ */

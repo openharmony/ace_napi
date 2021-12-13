@@ -54,7 +54,7 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
     JSValue jsRequireInternal = JS_NewCFunctionData(
         context_,
         [](JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv, int magic,
-           JSValue* funcData) -> JSValue {
+            JSValue* funcData) -> JSValue {
             JSValue result = JS_UNDEFINED;
 
             QuickJSNativeEngine* that = (QuickJSNativeEngine*)JS_VALUE_GET_PTR(funcData[0]);
@@ -84,7 +84,7 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
     JSValue jsRequire = JS_NewCFunctionData(
         context_,
         [](JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv, int magic,
-           JSValue* funcData) -> JSValue {
+            JSValue* funcData) -> JSValue {
             JSValue result = JS_UNDEFINED;
 
             QuickJSNativeEngine* that = (QuickJSNativeEngine*)JS_VALUE_GET_PTR(funcData[0]);
@@ -363,7 +363,7 @@ NativeValue* QuickJSNativeEngine::CreateInstance(NativeValue* constructor, Nativ
     return QuickJSNativeEngine::JSValueToNativeValue(this, result);
 }
 
-NativeReference* QuickJSNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount, 
+NativeReference* QuickJSNativeEngine::CreateReference(NativeValue* value, uint32_t initialRefcount,
     NativeFinalize callback, void* data, void* hint)
 {
     return new QuickJSNativeReference(this, value, initialRefcount, callback, data, hint);
@@ -403,7 +403,7 @@ NativeValue* QuickJSNativeEngine::CallFunction(NativeValue* thisVar,
     JS_DupValue(context_, result);
 
     if (args != nullptr) {
-        delete []args;
+        delete[] args;
     }
 
     scopeManager_->Close(scope);
@@ -473,7 +473,6 @@ NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string
 
     JSValue ns = JS_GetNameSpace(context_, moduleVal);
     JSValue result = JS_GetPropertyStr(context_, ns, "default");
-
     JS_FreeValue(context_, ns);
     JS_FreeValue(context_, evalRes);
     JS_FreeCString(context_, moduleSource);
@@ -587,18 +586,20 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
 
     JS_DefinePropertyValueStr(context_, *nativeClass, "prototype", JS_DupValue(context_, *nativeClassProto), 0);
 
-    JSValue classContext = JS_NewExternal(context_, functionInfo,
-                                          [](JSContext* ctx, void* data, void* hint) {
-                                              auto info = (NativeFunctionInfo*)data;
-                                              HILOG_INFO("_classContext Destroy");
-                                              if (info != nullptr) {
-                                                  delete info;
-                                              }
-                                          }, nullptr);
+    JSValue classContext = JS_NewExternal(
+        context_, functionInfo,
+        [](JSContext* ctx, void* data, void* hint) {
+            auto info = (NativeFunctionInfo*)data;
+            HILOG_INFO("_classContext Destroy");
+            if (info != nullptr) {
+                delete info;
+            }
+        },
+        nullptr);
     JS_DefinePropertyValueStr(context_, *nativeClass, "_classContext", classContext, 0);
 
     JS_DefinePropertyValueStr(context_, *nativeClassProto, "constructor", JS_DupValue(context_, *nativeClass),
-                              JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
+        JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
 
     return nativeClass;
 }
@@ -633,6 +634,8 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
     int tag = JS_VALUE_GET_NORM_TAG(value);
     switch (tag) {
         case JS_TAG_BIG_INT:
+            result = new QuickJSNativeBigInt(engine, value);
+            break;
         case JS_TAG_BIG_FLOAT:
             result = new QuickJSNativeObject(engine, value);
             break;
@@ -651,6 +654,8 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
                 result = new QuickJSNativeValue(engine, value);
             } else if (JS_IsArrayBuffer(engine->GetContext(), value)) {
                 result = new QuickJSNativeArrayBuffer(engine, value);
+            } else if (JS_IsBuffer(engine->GetContext(), value)) {
+                result = new QuickJSNativeBuffer(engine, value);
             } else if (JS_IsDataView(engine->GetContext(), value)) {
                 result = new QuickJSNativeDataView(engine, value);
             } else if (JS_IsTypedArray(engine->GetContext(), value)) {
@@ -659,6 +664,8 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
                 result = new QuickJSNativeExternal(engine, value);
             } else if (JS_IsFunction(engine->GetContext(), value)) {
                 result = new QuickJSNativeFunction(engine, value);
+            } else if (JS_IsDate(engine->GetContext(), value)) {
+                result = new QuickJSNativeDate(engine, value);
             } else {
                 result = new QuickJSNativeObject(engine, value);
             }
