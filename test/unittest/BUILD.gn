@@ -95,7 +95,7 @@ ohos_unittest("test_ark_unittest") {
 group("unittest") {
   testonly = true
   deps = [
-    ":test_ark_unittest",
+   # ":test_ark_unittest",
     ":test_quickjs_unittest",
   ]
 }
