@@ -130,7 +130,11 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
         0, 0, 1, &jsNativeEngine);
 
     JS_SetPropertyStr(context_, jsGlobal, "requireInternal", jsRequireInternal);
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
     JS_SetPropertyStr(context_, jsGlobal, "requireNapi", jsRequire);
+#else
+    JS_SetPropertyStr(context_, jsGlobal, "requireNapiPreview", jsRequire);
+#endif
     JS_FreeValue(context_, jsGlobal);
     // need to call init of base class.
     Init();
