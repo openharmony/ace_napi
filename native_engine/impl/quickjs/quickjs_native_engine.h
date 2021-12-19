@@ -124,10 +124,12 @@ public:
     JSValue LoadModuleByName(
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
+
     virtual NativeValue* CreateDate(double time) override;
     virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
     virtual bool TriggerFatalException(NativeValue* error) override;
     virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
+
     void StartCpuProfiler() override {}
     void StopCpuProfiler() override {}
 private:

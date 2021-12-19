@@ -742,7 +742,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
     EXPECT_NE(scope2, nullptr);
     EXPECT_EQ(openCallbackScopes2, openCallbackScopes1);
     EXPECT_EQ(asyncCallbackScopeDepth2, (asyncCallbackScopeDepth1 + 1));
-
+    
     callbackScopeManager->Close(scope2);
     int openCallbackScopes2After = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepth2After = callbackScopeManager->GetAsyncCallbackScopeDepth();

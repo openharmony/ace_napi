@@ -295,6 +295,7 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
             *p = '_';
         }
 
+
         auto getJSCode = reinterpret_cast<NAPIGetJSCode>(LIBSYM(lib, symbol));
         if (getJSCode != nullptr) {
             const char* buf = nullptr;

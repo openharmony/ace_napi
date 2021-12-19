@@ -18,6 +18,7 @@
 #include "jerryscript-ext/handler.h"
 #include "jerryscript_native_deferred.h"
 #include "jerryscript_native_reference.h"
+
 #include "native_value/jerryscript_native_array.h"
 #include "native_value/jerryscript_native_array_buffer.h"
 #include "native_value/jerryscript_native_big_int.h"
@@ -454,6 +455,7 @@ NativeValue* JerryScriptNativeEngine::CreateDate(double time)
 
 void JerryScriptNativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
                                                        NativeReference* checkCallbackRef) {}
+
 
 NativeValue* JerryScriptNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)
 {
