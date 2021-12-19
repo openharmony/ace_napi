@@ -21,6 +21,7 @@
 #include "js_native_api.h"
 #include "native_common.h"
 
+NAPI_EXTERN napi_status napi_adjust_external_memory(napi_env env, int64_t change_in_bytes, int64_t* adjusted_value);
 NAPI_EXTERN napi_status napi_is_callable(napi_env env, napi_value value, bool* result);
 NAPI_EXTERN napi_status napi_create_runtime(napi_env env, napi_env* result_env);
 NAPI_EXTERN napi_status napi_serialize(napi_env env, napi_value object, napi_value transfer_list, napi_value* result);
