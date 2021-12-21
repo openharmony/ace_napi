@@ -28,7 +28,7 @@ QuickJSNativeString::QuickJSNativeString(QuickJSNativeEngine* engine, JSAtom val
 }
 
 QuickJSNativeString::QuickJSNativeString(QuickJSNativeEngine* engine, const char* value, size_t length)
-    : QuickJSNativeString(engine, JS_NewStringLen(engine->GetContext(), value, length + 1))
+    : QuickJSNativeString(engine, JS_NewStringLen(engine->GetContext(), value, length))
 {
 }
 
