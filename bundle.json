@@ -1,0 +1,59 @@
+{
+    "name": "@ohos/ace_napi",
+    "version": "",
+    "description": "提供JS - C/C++ API封装机制。",
+    "homePage": "https://gitee.com/openharmony",
+    "license": "Apache V2",
+    "repository": "https://gitee.com/openharmony/ace_napi",
+    "domain": "os",
+    "language": "",
+    "publishAs": "code-segment",
+    "private": false,
+    "scripts": {},
+    "tags": [
+        "foundation"
+    ],
+    "keywords": [
+        "ace",
+        "napi"
+    ],
+    "envs": [],
+    "dirs": [],
+    "author": {
+        "name": "",
+        "email": "",
+        "url": ""
+    },
+    "contributors": [
+        {
+            "name": "",
+            "email": "",
+            "url": ""
+        }
+    ],
+    "segment": {
+        "destPath": "foundation/ace/napi"
+    },
+    "component": {
+        "name": "napi",
+        "subsystem": "ace",
+        "syscap": [
+            "SystemCapability.ACE.Addons"
+        ],
+        "features": [],
+        "adated_system_type": [
+            "standard"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [],
+            "third_party": []
+        },
+        "build": {
+            "sub_component": [],
+            "inner_kits": [],
+            "test": []
+        }
+    }
+}
