@@ -13,22 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef FOUNDATION_ACE_NAPI_REFERENCE_MANAGER_NATIVE_REFERENCE_MANAGER_H
-#define FOUNDATION_ACE_NAPI_REFERENCE_MANAGER_NATIVE_REFERENCE_MANAGER_H
+#ifndef FOUNDATION_ACE_NAPI_UTILS_MACROS_H
+#define FOUNDATION_ACE_NAPI_UTILS_MACROS_H
 
-#include "native_engine/native_reference.h"
+#ifndef NAPI_EXPORT
+#ifdef WINDOWS_PLATFORM
+#define NAPI_EXPORT __declspec(dllexport)
+#else
+#define NAPI_EXPORT __attribute__((visibility("default")))
+#endif
+#endif
 
-struct NativeReferenceHandler;
-
-class NativeReferenceManager {
-public:
-    NativeReferenceManager();
-    virtual ~NativeReferenceManager();
-
-    void CreateHandler(NativeReference *reference);
-    void ReleaseHandler(NativeReference* reference);
-
-private:
-    NativeReferenceHandler *referenceHandlers_;
-};
-#endif /* FOUNDATION_ACE_NAPI_REFERENCE_MANAGER_NATIVE_REFERENCE_MANAGER_H */
+#endif /* FOUNDATION_ACE_NAPI_UTILS_MACROS_H */

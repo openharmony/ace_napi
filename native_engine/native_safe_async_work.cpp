@@ -19,8 +19,8 @@
 #include "native_async_work.h"
 #include "native_engine.h"
 #include "native_value.h"
-#include "utils/log.h"
 #include "securec.h"
+#include "utils/log.h"
 
 // static methods start
 void NativeSafeAsyncWork::AsyncCallback(uv_async_t* asyncHandler)

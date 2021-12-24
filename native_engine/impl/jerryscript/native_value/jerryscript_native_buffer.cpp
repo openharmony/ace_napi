@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-#include <map>
-#include "utils/log.h"
 #include "jerryscript_native_buffer.h"
+
+#include <map>
+
+#include "utils/log.h"
 
 // The maximum length for NativaBuffer, default is 2MiB.
 static constexpr size_t kMaxByteLength = 2097152;

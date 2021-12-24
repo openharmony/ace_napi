@@ -146,6 +146,9 @@ public:
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     // Create native promise value
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                          NativeReference* checkCallbackRef) override;
+    static void PromiseRejectCallback(v8::PromiseRejectMessage message);
     // Create native error value
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* message) override;
     // Call function
@@ -163,6 +166,13 @@ public:
                                      void* data,
                                      const NativePropertyDescriptor* properties,
                                      size_t length) override;
+
+    virtual NativeAsyncWork* CreateAsyncWork(NativeValue* asyncResource,
+                                             NativeValue* asyncResourceName,
+                                             NativeAsyncExecuteCallback execute,
+                                             NativeAsyncCompleteCallback complete,
+                                             void* data) override;
+
     // Create instance by defined class
     virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
 
@@ -190,7 +200,12 @@ public:
     v8::Local<v8::Object> LoadModuleByName(
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
+    void StartCpuProfiler() override {}
+    void StopCpuProfiler() override {}
 private:
+    static void ExecuteWrap(NativeEngine* engine, void* data);
+    static void CompleteWrap(NativeEngine* engine, int status, void* data);
+
     v8::Platform* platform_;
     v8::Isolate* isolate_;
     WorkerIsolateScope workerIsolateScope_;
@@ -199,6 +214,8 @@ private:
     v8::HandleScope handleScope_;
     v8::Context::Scope contextScope_;
     v8::TryCatch tryCatch_ { NULL };
+    NativeReference* promiseRejectCallbackRef_ { nullptr };
+    NativeReference* checkCallbackRef_ { nullptr };
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_V8_NATIVE_ENGINE_H */

@@ -16,8 +16,12 @@
 #ifndef FOUNDATION_ACE_NAPI_UTILS_LOG_H
 #define FOUNDATION_ACE_NAPI_UTILS_LOG_H
 
-#include "hilog/log.h"
 #include <string>
+
+#define __FILENAME__ strrchr(__FILE__, '/') + 1
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include "hilog/log.h"
 
 #undef LOG_DOMAIN
 #undef LOG_TAG
@@ -33,11 +37,46 @@
 
 static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, LOG_DOMAIN, LOG_TAG };
 
-#define __FILENAME__ strrchr(__FILE__, '/') + 1
-
 #define HILOG_PRINT(Level, fmt, ...)                                                                            \
     (void)OHOS::HiviewDFX::HiLog::Level(LOG_LABEL, "[%{public}s(%{public}s)] " fmt, __FILENAME__, __FUNCTION__, \
                                         ##__VA_ARGS__)
+#else
+#include <stdarg.h>
+#include <stdio.h>
+
+constexpr uint32_t MAX_BUFFER_SIZE = 4096;
+
+static void StripFormatString(const std::string& prefix, std::string& str)
+{
+    for (auto pos = str.find(prefix, 0); pos != std::string::npos; pos = str.find(prefix, pos)) {
+        str.erase(pos, prefix.size());
+    }
+}
+
+static void PrintLog(const char* fmt, ...)
+{
+    std::string newFmt(fmt);
+    StripFormatString("{public}", newFmt);
+    StripFormatString("{private}", newFmt);
+
+    va_list args;
+    va_start(args, fmt);
+
+    char buf[MAX_BUFFER_SIZE] = { "\0" };
+    int ret = vsnprintf(buf, sizeof(buf) - 1, newFmt.c_str(), args);
+    if (ret < 0) {
+        return;
+    }
+    va_end(args);
+
+    printf("%s\r\n", buf);
+    fflush(stdout);
+}
+
+#define HILOG_PRINT(Level, fmt, ...)                                                                            \
+    PrintLog("[%-20s(%s)] " fmt, __FILENAME__, __FUNCTION__, ##__VA_ARGS__);
+
+#endif
 
 #define HILOG_FATAL(fmt, ...) HILOG_PRINT(Fatal, fmt, ##__VA_ARGS__)
 #define HILOG_ERROR(fmt, ...) HILOG_PRINT(Error, fmt, ##__VA_ARGS__)

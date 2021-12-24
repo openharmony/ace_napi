@@ -16,9 +16,9 @@
 #include "napi/native_common.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "securec.h"
 #include "test.h"
 #include "test_common.h"
-#include "securec.h"
 #include "utils/log.h"
 #ifdef FOR_JERRYSCRIPT_TEST
 #include "jerryscript-core.h"
@@ -221,7 +221,7 @@ HWTEST_F(NativeEngineTest, Is_detached_ArrayBuffer_Test, testing::ext::TestSize.
 #if  (defined(FOR_JERRYSCRIPT_TEST)) &&  (JERRY_API_MINOR_VERSION <= 3)
     // jerryscript 2.3 do nothing
 #else
-   // jerryscript 2.4 or quickjs or V8
+// jerryscript 2.4 or quickjs or V8
 
 static constexpr size_t NAPI_UT_STR_LENGTH = 30;
 
@@ -390,6 +390,7 @@ HWTEST_F(NativeEngineTest, BigInt_Words_Test_Minus_Normal, testing::ext::TestSiz
 
 HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
 {
+    constexpr int DataSize = 60;
     napi_env env = (napi_env)engine_;
     napi_value object = nullptr;
     napi_create_object(env, &object);
@@ -422,9 +423,11 @@ HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
     ASSERT_EQ(arrayLength, (uint32_t)2);
 
     char names[2][30];
-    memset_s(names, 60, 0, 60);
-    memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
-    memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    memset_s(names, DataSize, 0, DataSize);
+    auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
+    ASSERT_EQ(ret, EOK);
+    ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    ASSERT_EQ(ret, EOK);
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
         ASSERT_CHECK_CALL(napi_has_element(env, propNames, i, &hasElement));
@@ -480,8 +483,10 @@ HWTEST_F(NativeEngineTest, seal_object_Test, testing::ext::TestSize.Level0)
 
     char names[2][NAPI_UT_STR_LENGTH];
     memset_s(names, NAPI_UT_STR_LENGTH * 2, 0, NAPI_UT_STR_LENGTH * 2);
-    memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
-    memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
+    ASSERT_EQ(ret, EOK);
+    ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    ASSERT_EQ(ret, EOK);
 
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
@@ -536,8 +541,10 @@ HWTEST_F(NativeEngineTest, all_property_names_Test, testing::ext::TestSize.Level
 
     char names[2][NAPI_UT_STR_LENGTH];
     memset_s(names, NAPI_UT_STR_LENGTH * 2, 0, NAPI_UT_STR_LENGTH * 2);
-    memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
-    memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
+    ASSERT_EQ(ret, EOK);
+    ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
+    ASSERT_EQ(ret, EOK);
 
     for (uint32_t i = 0; i < arrayLength; i++) {
         bool hasElement = false;
@@ -675,7 +682,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_001, testing::ext::
 
     napi_callback_scope scope = nullptr;
     napi_status ret = napi_open_callback_scope(env, NULL, context, &scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     EXPECT_NE(scope, nullptr);
 
     int openCallbackScopes = callbackScopeManager->GetOpenCallbackScopes();
@@ -684,7 +691,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_001, testing::ext::
     EXPECT_EQ(asyncCallbackScopeDepth, (asyncCallbackScopeDepthBefore + 1));
 
     ret = napi_close_callback_scope(env, scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     int openCallbackScopesAfter = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepthAfter = callbackScopeManager->GetAsyncCallbackScopeDepth();
@@ -721,7 +728,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
 
     napi_callback_scope scope = nullptr;
     napi_status ret = napi_open_callback_scope(env, NULL, context, &scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
     EXPECT_NE(scope, nullptr);
 
     int openCallbackScopes1 = callbackScopeManager->GetOpenCallbackScopes();
@@ -744,7 +751,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::
     EXPECT_EQ(asyncCallbackScopeDepth2After, asyncCallbackScopeDepth1);
 
     ret = napi_close_callback_scope(env, scope);
-    ASSERT_EQ(ret, napi_ok);
+    EXPECT_EQ(ret, napi_ok);
 
     int openCallbackScopes1After = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepth1After = callbackScopeManager->GetAsyncCallbackScopeDepth();

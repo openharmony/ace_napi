@@ -57,6 +57,8 @@ public:
                                           size_t offset) override;
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                          NativeReference* checkCallbackRef) override;
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* Message) override;
 
     virtual NativeValue* CallFunction(NativeValue* thisVar,
@@ -95,6 +97,9 @@ public:
     virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
     virtual NativeValue* CreateDate(double time) override;
     virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
+
+    void StartCpuProfiler() override {}
+    void StopCpuProfiler() override {}
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_JERRYSCRIPT_NATIVE_ENGINE_H_ */

@@ -482,6 +482,8 @@ napi_status napi_open_callback_scope(
 
     auto engine = reinterpret_cast<NativeEngine*>(env);
     auto callbackScopeManager = engine->GetCallbackScopeManager();
+    CHECK_ARG(env, callbackScopeManager);
+
     auto callbackScope = callbackScopeManager->Open(engine);
     callbackScopeManager->IncrementOpenCallbackScopes();
 

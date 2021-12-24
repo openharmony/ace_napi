@@ -53,27 +53,38 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
     LocalScope scope(vm);
     Global<ObjectRef> value = value_;
 
-    NativeObjectInfo* objInfo = NativeObjectInfo::CreateNewInstance();
-    objInfo->engine = engine_;
-    objInfo->nativeObject = nullptr;
-    objInfo->callback = cb;
-    objInfo->hint = hint;
-
-    Local<ObjectRef> object = ObjectRef::New(vm);
-    object->SetNativePointerFieldCount(1);
-    object->SetNativePointerField(0, pointer,
-        [](void* data, void* info) {
-            auto externalInfo = reinterpret_cast<NativeObjectInfo*>(info);
-            auto engine = externalInfo->engine;
-            auto callback = externalInfo->callback;
-            auto hint = externalInfo->hint;
-            callback(engine, data, hint);
-            delete externalInfo;
-        },
-        objInfo);
-
     Local<StringRef> key = StringRef::NewFromUtf8(vm, "_napiwrapper");
-    value->Set(vm, key, object);
+    if (value->Has(vm, key) && pointer == nullptr) {
+        Local<ObjectRef> wrapper = value->Get(vm, key);
+        auto oldInfo = reinterpret_cast<NativeObjectInfo*>(wrapper->GetNativePointerField(0));
+        // Try to remove native pointer from ArrayDataList
+        wrapper->SetNativePointerField(0, nullptr, nullptr, nullptr);
+        value->Delete(vm, key);
+        delete oldInfo;
+    } else {
+        NativeObjectInfo* objInfo = NativeObjectInfo::CreateNewInstance();
+        objInfo->engine = engine_;
+        objInfo->nativeObject = pointer;
+        objInfo->callback = cb;
+        objInfo->hint = hint;
+
+        Local<ObjectRef> object = ObjectRef::New(vm);
+        object->SetNativePointerFieldCount(1);
+        object->SetNativePointerField(0, objInfo,
+            [](void* data, void* info) {
+                auto externalInfo = reinterpret_cast<NativeObjectInfo*>(data);
+                auto engine = externalInfo->engine;
+                auto nativeObject = externalInfo->nativeObject;
+                auto callback = externalInfo->callback;
+                auto hint = externalInfo->hint;
+                if (callback != nullptr) {
+                    callback(engine, nativeObject, hint);
+                }
+                delete externalInfo;
+            },
+            nullptr);
+        value->Set(vm, key, object);
+    }
 }
 
 void* ArkNativeObject::GetNativePointer()
@@ -88,7 +99,7 @@ void* ArkNativeObject::GetNativePointer()
         Local<ObjectRef> ext(val);
         result = ext->GetNativePointerField(0);
     }
-    return result;
+    return (result != nullptr) ? reinterpret_cast<NativeObjectInfo*>(result)->nativeObject : nullptr;
 }
 
 NativeValue* ArkNativeObject::GetPropertyNames()

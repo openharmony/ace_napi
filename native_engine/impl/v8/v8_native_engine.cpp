@@ -33,6 +33,9 @@
 #include "v8_native_deferred.h"
 #include "v8_native_reference.h"
 
+
+static thread_local V8NativeEngine* g_env = nullptr;
+
 V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
     v8::Persistent<v8::Context>& context, void* jsEngine)
     : NativeEngine(jsEngine),
@@ -44,6 +47,7 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
       contextScope_(context.Get(isolate_)),
       tryCatch_(isolate_)
 {
+    g_env = this;
     v8::Local<v8::String> requireNapiName = v8::String::NewFromUtf8(isolate_, "requireNapi").ToLocalChecked();
     v8::Local<v8::String> requireInternalName = v8::String::NewFromUtf8(isolate_, "requireInternal").ToLocalChecked();
 
@@ -53,6 +57,9 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
         v8::Function::New(
             context_.Get(isolate_),
             [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+                v8::Isolate::Scope isolateScope(info.GetIsolate());
+                v8::HandleScope handleScope(info.GetIsolate());
+
                 V8NativeEngine* engine = (V8NativeEngine*)info.Data().As<v8::External>()->Value();
                 if (engine == nullptr) {
                     return;
@@ -102,6 +109,9 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
         v8::Function::New(
             context_.Get(isolate_),
             [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+                v8::Isolate::Scope isolateScope(info.GetIsolate());
+                v8::HandleScope handleScope(info.GetIsolate());
+
                 V8NativeEngine* engine = (V8NativeEngine*)info.Data().As<v8::External>()->Value();
                 if (engine == nullptr) {
                     return;
@@ -136,6 +146,12 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
 
 V8NativeEngine::~V8NativeEngine()
 {
+    if (promiseRejectCallbackRef_ != nullptr) {
+        delete promiseRejectCallbackRef_;
+    }
+    if (checkCallbackRef_ != nullptr) {
+        delete checkCallbackRef_;
+    }
     // need to call deinit before base class.
     Deinit();
 }
@@ -203,7 +219,7 @@ v8::Local<v8::Object> V8NativeEngine::LoadModuleByName(
         paramProperty.utf8name = "param";
         paramProperty.value = paramValue;
 
-        auto instanceValue = new V8NativeObject(this);
+        V8NativeObject* instanceValue = new V8NativeObject(this);
         instanceValue->SetNativePointer(instance, nullptr, nullptr);
         instanceProperty.utf8name = instanceName.c_str();
         instanceProperty.value = instanceValue;
@@ -362,6 +378,44 @@ NativeValue* V8NativeEngine::CreateTypedArray(NativeTypedArrayType type,
             return nullptr;
     }
     return new V8NativeTypedArray(this, typedArray);
+}
+
+struct CompleteWrapData {
+    NativeAsyncExecuteCallback execute_ = nullptr;
+    NativeAsyncCompleteCallback complete_ = nullptr;
+    void* data_ = nullptr;
+    v8::Isolate* isolate_ = nullptr;
+};
+
+void V8NativeEngine::ExecuteWrap(NativeEngine* engine, void* data)
+{
+    CompleteWrapData* wrapData = (CompleteWrapData*)data;
+    wrapData->execute_(engine, wrapData->data_);
+}
+
+void V8NativeEngine::CompleteWrap(NativeEngine* engine, int status, void* data)
+{
+    CompleteWrapData* wrapData = (CompleteWrapData*)data;
+    v8::Isolate::Scope isolateScope(wrapData->isolate_);
+    v8::HandleScope handleScope(wrapData->isolate_);
+    wrapData->complete_(engine, status, wrapData->data_);
+    delete wrapData;
+}
+
+NativeAsyncWork* V8NativeEngine::CreateAsyncWork(NativeValue* asyncResource, NativeValue* asyncResourceName,
+    NativeAsyncExecuteCallback execute, NativeAsyncCompleteCallback complete, void* data)
+{
+    CompleteWrapData* wrapData = new CompleteWrapData();
+    if (wrapData == nullptr) {
+        HILOG_ERROR("create wrap data failed");
+        return nullptr;
+    }
+    wrapData->execute_ = execute;
+    wrapData->complete_ = complete;
+    wrapData->data_ = data;
+    wrapData->isolate_ = GetIsolate();
+
+    return NativeEngine::CreateAsyncWork(asyncResource, asyncResourceName, ExecuteWrap, CompleteWrap, (void*)wrapData);
 }
 
 NativeValue* V8NativeEngine::CreateDataView(NativeValue* value, size_t length, size_t offset)
@@ -905,4 +959,52 @@ NativeValue* V8NativeEngine::ValueToNativeValue(JSValueWrapper& value)
 {
     v8::Local<v8::Value> v8Value = value;
     return V8ValueToNativeValue(this, v8Value);
+}
+
+void V8NativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef)
+{
+    if (rejectCallbackRef == nullptr || checkCallbackRef == nullptr) {
+        HILOG_ERROR("rejectCallbackRef or checkCallbackRef is nullptr");
+        return;
+    }
+    promiseRejectCallbackRef_ = rejectCallbackRef;
+    checkCallbackRef_ = checkCallbackRef;
+    isolate_->SetPromiseRejectCallback(PromiseRejectCallback);
+}
+
+
+void V8NativeEngine::PromiseRejectCallback(v8::PromiseRejectMessage message)
+{
+    v8::Local<v8::Promise> promise = message.GetPromise();
+    v8::PromiseRejectEvent event = message.GetEvent();
+    v8::Isolate* isolate = promise->GetIsolate();
+    v8::Local<v8::Value> reason = message.GetValue();
+    if (reason.IsEmpty()) {
+        reason = v8::Undefined(isolate);
+    }
+    V8NativeEngine* engine = g_env;
+    if (engine == nullptr) {
+        HILOG_ERROR("engine is nullptr");
+        return;
+    }
+    v8::Local<v8::Function> promiseRejectCallback = *(engine->promiseRejectCallbackRef_->Get());
+
+    if (promiseRejectCallback.IsEmpty()) {
+        HILOG_ERROR("promiseRejectCallback is empty");
+        return;
+    }
+    v8::Local<v8::Value> type = v8::Number::New(isolate, event);
+    v8::Local<v8::Value> promiseValue(promise);
+    v8::Local<v8::Context> context = engine->context_.Get(isolate);
+    v8::Local<v8::Value> args[] = {type, promiseValue, reason};
+
+    size_t size = sizeof(args) / sizeof(args[0]);
+    bool succ = promiseRejectCallback->Call(context, v8::Undefined(isolate), size, args).IsEmpty();
+    if (succ) {
+        HILOG_ERROR("error : call function promiseRejectCallback is failed");
+    }
+    if (event == v8::kPromiseRejectWithNoHandler) {
+        v8::Local<v8::Function> cb = *(engine->checkCallbackRef_->Get());
+        isolate->EnqueueMicrotask(cb);
+    }
 }
