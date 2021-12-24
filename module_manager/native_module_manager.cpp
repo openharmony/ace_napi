@@ -300,19 +300,9 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
             const char* buf = nullptr;
             int bufLen = 0;
             getJSCode(&buf, &bufLen);
-            char* jsCode = new char[bufLen + 1];
-            if ((jsCode == nullptr) || (memcpy_s(jsCode, bufLen + 1, buf, bufLen) != EOK)) {
-                HILOG_ERROR("copy js code failed");
-                if (jsCode != nullptr) {
-                    delete[] jsCode;
-                }
-                LIBFREE(lib);
-                return nullptr;
-            }
-            jsCode[bufLen] = '\0';
             if (lastNativeModule_ != nullptr) {
                 HILOG_INFO("get js code from module: bufLen: %{public}d", bufLen);
-                lastNativeModule_->jsCode = jsCode;
+                lastNativeModule_->jsCode = buf;
                 lastNativeModule_->jsCodeLen = bufLen;
             }
         } else {
