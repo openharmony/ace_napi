@@ -913,6 +913,7 @@ HWTEST_F(NativeEngineTest, LoadModuleTest, testing::ext::TestSize.Level0)
 
     std::string file = "file.js";
     NativeValue *moduleValue = engine_->LoadModule(sourceString, file);
+    ASSERT_TRUE(moduleValue != nullptr);
     auto moduleObject = reinterpret_cast<NativeObject*>(moduleValue->GetInterface(NativeObject::INTERFACE_ID));
 
     std::string key = "val";

@@ -51,10 +51,13 @@ if (defined(ohos_lite)) {
 
     deps = [ "//foundation/ace/napi:ace_napi" ]
 
-    if (is_standard_system) {
-      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-    } else {
-      external_deps = [ "hilog:libhilog" ]
+    if ("${current_os}_${current_cpu}" != "mingw_x86_64" &&
+        "${current_os}_${current_cpu}" != "mac_x64") {
+      if (is_standard_system) {
+        external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+      } else {
+        external_deps = [ "hilog:libhilog" ]
+      }
     }
 
     relative_install_dir = "module"

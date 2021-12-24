@@ -52,13 +52,21 @@ template("ace_napi_impl") {
       "quickjs_native_reference.cpp",
     ]
 
+    if (use_mingw_win) {
+      defines += [ "WINDOWS_PLATFORM" ]
+    } else if (use_mac) {
+      defines += [ "MAC_PLATFORM" ]
+    } else {
+      external_deps = hilog_deps
+    }
+
     deps = [
       "//foundation/ace/napi:ace_napi",
       "//third_party/quickjs:qjs",
+      "//utils/native/base:utilsecurec",
     ]
 
     cflags_cc = [ "-Wno-missing-braces" ]
-    external_deps = hilog_deps
   }
 }
 

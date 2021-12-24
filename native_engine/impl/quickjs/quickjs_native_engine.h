@@ -85,6 +85,8 @@ public:
                                           size_t offset) override;
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                          NativeReference* checkCallbackRef) override;
 
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* Message) override;
     virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
@@ -116,14 +118,20 @@ public:
 
     static NativeValue* JSValueToNativeValue(QuickJSNativeEngine* engine, JSValue value);
     virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
-
-    JSValue GetModuleFromName(const std::string& moduleName, bool isAppModule, const std::string& id,
-        const std::string& param, const std::string& instanceName, void** instance);
+    JSValue GetModuleFromName(
+        const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
+        const std::string& instanceName, void** instance);
+    JSValue LoadModuleByName(
+        const std::string& moduleName, bool isAppModule, const std::string& param,
+        const std::string& instanceName, void* instance);
 
     virtual NativeValue* CreateDate(double time) override;
     virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
     virtual bool TriggerFatalException(NativeValue* error) override;
     virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
+
+    void StartCpuProfiler() override {}
+    void StopCpuProfiler() override {}
 private:
     JSRuntime* runtime_;
     JSContext* context_;

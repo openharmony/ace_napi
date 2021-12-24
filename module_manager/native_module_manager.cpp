@@ -17,11 +17,10 @@
 
 #include "native_engine/native_engine.h"
 
+#include <dirent.h>
+
 #include "securec.h"
 #include "utils/log.h"
-
-#include <dirent.h>
-#include <dlfcn.h>
 
 namespace {
 constexpr static int32_t NATIVE_PATH_NUMBER = 2;
@@ -105,6 +104,9 @@ void NativeModuleManager::SetAppLibPath(const char* appLibPath)
         delete[] tmp;
         return;
     }
+    if (appLibPath_ != nullptr) {
+        delete[] appLibPath_;
+    }
     appLibPath_ = tmp;
 }
 
@@ -138,11 +140,22 @@ NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName,
 bool NativeModuleManager::GetNativeModulePath(
     const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX], int32_t pathLength) const
 {
+#ifdef WINDOWS_PLATFORM
+    const char* soPostfix = ".dll";
+    const char* sysPrefix = "./module";
+    const char* zfix = "";
+#elif defined(MAC_PLATFORM)
+    const char* soPostfix = ".dylib";
+    const char* sysPrefix = "./module";
+    const char* zfix = "";
+#elif defined(_ARM64_)
     const char* soPostfix = ".so";
-#ifdef _ARM64_
     const char* sysPrefix = "/system/lib64/module";
+    const char* zfix = "z.";
 #else
+    const char* soPostfix = ".so";
     const char* sysPrefix = "/system/lib/module";
+    const char* zfix = ".z";
 #endif
     const char* prefix = nullptr;
     if (isAppModule && appLibPath_) {
@@ -173,14 +186,17 @@ bool NativeModuleManager::GetNativeModulePath(
     char* lastDot = strrchr(dupModuleName, '.');
     if (lastDot == nullptr) {
         if (strcmp(prefix, sysPrefix) == 0) {
-            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s.z.so", prefix, dupModuleName) == -1) {
+            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s%s%s",
+                prefix, dupModuleName, zfix, soPostfix) == -1) {
                 return false;
             }
-            if (sprintf_s(nativeModulePath[1], pathLength, "%s/lib%s_napi.z.so", prefix, dupModuleName) == -1) {
+            if (sprintf_s(nativeModulePath[1], pathLength, "%s/lib%s_napi%s%s",
+                prefix, dupModuleName, zfix, soPostfix) == -1) {
                 return false;
             }
         } else {
-            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s.so", prefix, dupModuleName) == -1) {
+            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s",
+                prefix, dupModuleName, soPostfix) == -1) {
                 return false;
             }
         }
@@ -197,16 +213,17 @@ bool NativeModuleManager::GetNativeModulePath(
             }
         }
         if (strcmp(prefix, sysPrefix) == 0) {
-            if (sprintf_s(nativeModulePath[0], pathLength, "%s/%s/lib%s.z.so",
-                prefix, dupModuleName, afterDot) == -1) {
+            if (sprintf_s(nativeModulePath[0], pathLength, "%s/%s/lib%s%s%s",
+                prefix, dupModuleName, afterDot, zfix, soPostfix) == -1) {
                 return false;
             }
-            if (sprintf_s(nativeModulePath[1], pathLength, "%s/%s/lib%s_napi.z.so",
-                prefix, dupModuleName, afterDot) == -1) {
+            if (sprintf_s(nativeModulePath[1], pathLength, "%s/%s/lib%s_napi%s%s",
+                prefix, dupModuleName, afterDot, zfix, soPostfix) == -1) {
                 return false;
             }
         } else {
-            if (sprintf_s(nativeModulePath[0], pathLength, "%s/%s/lib%s.so", prefix, dupModuleName, afterDot) == -1) {
+            if (sprintf_s(nativeModulePath[0], pathLength, "%s/%s/lib%s%s",
+                prefix, dupModuleName, afterDot, soPostfix) == -1) {
                 return false;
             }
         }
@@ -214,16 +231,24 @@ bool NativeModuleManager::GetNativeModulePath(
     return true;
 }
 
-void* NativeModuleManager::LoadLibrary(const char* path) const
+LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path) const
 {
     if (strlen(path) == 0) {
         HILOG_ERROR("primary module path is empty");
         return nullptr;
     }
-    void* lib = dlopen(path, RTLD_LAZY);
+    LIBHANDLE lib = nullptr;
+#ifdef WINDOWS_PLATFORM
+    lib = LoadLibrary(path);
+    if (lib == nullptr) {
+        HILOG_ERROR("LoadLibrary failed, error: %{public}d", GetLastError());
+    }
+#else
+    lib = dlopen(path, RTLD_LAZY);
     if (lib == nullptr) {
         HILOG_ERROR("dlopen failed: %{public}s", dlerror());
     }
+#endif
     return lib;
 }
 
@@ -240,11 +265,11 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
     // load primary module path first
     char* loadPath = nativeModulePath[0];
     HILOG_INFO("get primary module path: %{public}s", loadPath);
-    void* lib = LoadLibrary(loadPath);
+    LIBHANDLE lib = LoadModuleLibrary(loadPath);
     if (lib == nullptr) {
         loadPath = nativeModulePath[1];
         HILOG_WARN("primary module path load failed, try to load secondary module path: %{public}s", loadPath);
-        lib = LoadLibrary(loadPath);
+        lib = LoadModuleLibrary(loadPath);
         if (lib == nullptr) {
             HILOG_ERROR("secondary module path load failed, load native module failed");
             return nullptr;
@@ -255,12 +280,12 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
         char symbol[NAPI_PATH_MAX] = { 0 };
         if (!isArk) {
             if (sprintf_s(symbol, sizeof(symbol), "NAPI_%s_GetJSCode", moduleName) == -1) {
-                dlclose(lib);
+                LIBFREE(lib);
                 return nullptr;
             }
         } else {
             if (sprintf_s(symbol, sizeof(symbol), "NAPI_%s_GetABCCode", moduleName) == -1) {
-                dlclose(lib);
+                LIBFREE(lib);
                 return nullptr;
             }
         }
@@ -270,7 +295,8 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
             *p = '_';
         }
 
-        auto getJSCode = reinterpret_cast<NAPIGetJSCode>(dlsym(lib, symbol));
+
+        auto getJSCode = reinterpret_cast<NAPIGetJSCode>(LIBSYM(lib, symbol));
         if (getJSCode != nullptr) {
             const char* buf = nullptr;
             int bufLen = 0;

@@ -16,10 +16,11 @@
 #ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H
 
+#include <functional>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <functional>
+
 #include "callback_scope_manager/native_callback_scope_manager.h"
 #include "module_manager/native_module_manager.h"
 #include "native_engine/native_async_work.h"
@@ -30,6 +31,7 @@
 #include "native_property.h"
 #include "reference_manager/native_reference_manager.h"
 #include "scope_manager/native_scope_manager.h"
+#include "utils/macros.h"
 
 typedef struct uv_loop_s uv_loop_t;
 
@@ -87,8 +89,11 @@ private:
 
 using PostTask = std::function<void(bool needSync)>;
 using CleanEnv = std::function<void()>;
+using InitWorkerFunc = std::function<void(NativeEngine* engine)>;
+using GetAssetFunc = std::function<void(const std::string& uri, std::vector<uint8_t>& content)>;
+using OffWorkerFunc = std::function<void(NativeEngine* engine)>;
 
-class NativeEngine {
+class NAPI_EXPORT NativeEngine {
 public:
     NativeEngine(void* jsEngine);
     virtual ~NativeEngine();
@@ -103,8 +108,10 @@ public:
     virtual void Loop(LoopMode mode, bool needSync = false);
     virtual void SetPostTask(PostTask postTask);
     virtual void TriggerPostTask();
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
     virtual void CheckUVLoop();
     virtual void CancelCheckUVLoop();
+#endif
     virtual void* GetJsEngine();
 
     virtual NativeValue* GetGlobal() = 0;
@@ -139,6 +146,7 @@ public:
                                           size_t offset) = 0;
     virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) = 0;
     virtual NativeValue* CreatePromise(NativeDeferred** deferred) = 0;
+    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef) = 0;
     virtual NativeValue* CreateError(NativeValue* code, NativeValue* message) = 0;
 
     virtual NativeValue* CallFunction(NativeValue* thisVar,
@@ -170,6 +178,9 @@ public:
     virtual NativeSafeAsyncWork* CreateSafeAsyncWork(NativeValue* func, NativeValue* asyncResource,
         NativeValue* asyncResourceName, size_t maxQueueSize, size_t threadCount, void* finalizeData,
         NativeFinalize finalizeCallback, void* context, NativeThreadSafeFunctionCallJs callJsCallback);
+    virtual void InitAsyncWork(NativeAsyncExecuteCallback execute, NativeAsyncCompleteCallback complete, void* data);
+    virtual bool SendAsyncWork(void* data);
+    virtual void CloseAsyncWork();
 
     virtual bool Throw(NativeValue* error) = 0;
     virtual bool Throw(NativeErrorType type, const char* code, const char* message) = 0;
@@ -180,6 +191,9 @@ public:
     virtual ExceptionInfo* GetExceptionForWorker() const = 0;
     virtual void DeleteSerializationData(NativeValue* value) const = 0;
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) = 0;
+
+    virtual void StartCpuProfiler() = 0;
+    virtual void StopCpuProfiler() = 0;
 
     NativeErrorExtendedInfo* GetLastError();
     void SetLastError(int errorCode, uint32_t engineErrorCode = 0, void* engineReserved = nullptr);
@@ -209,6 +223,18 @@ public:
         cleanEnv_ = cleanEnv;
     }
 
+    // register init worker func
+    virtual void SetInitWorkerFunc(InitWorkerFunc func);
+    virtual void SetGetAssetFunc(GetAssetFunc func);
+    virtual void SetOffWorkerFunc(OffWorkerFunc func);
+    virtual void SetWorkerAsyncWorkFunc(NativeAsyncExecuteCallback executeCallback,
+                                NativeAsyncCompleteCallback completeCallback);
+    // call init worker func
+    virtual bool CallInitWorkerFunc(NativeEngine* engine);
+    virtual bool CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content);
+    virtual bool CallOffWorkerFunc(NativeEngine* engine);
+    virtual bool CallWorkerAsyncWorkFunc(NativeEngine* engine);
+
     virtual NativeValue* CreateDate(double value) = 0;
     virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) = 0;
     using CleanupCallback = CleanupHookCallback::Callback;
@@ -229,6 +255,7 @@ public:
     {
         isStopping_.store(value);
     }
+
 protected:
     void Init();
     void Deinit();
@@ -247,14 +274,17 @@ protected:
 
 private:
     bool isMainThread_ { true };
-    static void UVThreadRunner(void* nativeEngine);
 
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+    static void UVThreadRunner(void* nativeEngine);
     void PostLoopTask();
 
     bool checkUVLoop_ = false;
+    uv_thread_t uvThread_;
+#endif
+
     PostTask postTask_ = nullptr;
     CleanEnv cleanEnv_ = nullptr;
-    uv_thread_t uvThread_;
     uv_sem_t uvSem_;
     uv_async_t uvAsync_;
     std::unordered_set<CleanupHookCallback, CleanupHookCallback::Hash, CleanupHookCallback::Equal> cleanup_hooks_;
@@ -262,6 +292,13 @@ private:
     int request_waiting_ = 0;
     std::atomic_bool isStopping_ { false };
     pthread_t tid_ = 0;
+    std::unique_ptr<NativeAsyncWork> asyncWorker_ {};
+    // register for worker
+    InitWorkerFunc initWorkerFunc_ {nullptr};
+    GetAssetFunc getAssetFunc_ {nullptr};
+    OffWorkerFunc offWorkerFunc_ {nullptr};
+    NativeAsyncExecuteCallback nativeAsyncExecuteCallback_ {nullptr};
+    NativeAsyncCompleteCallback nativeAsyncCompleteCallback_ {nullptr};
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H */

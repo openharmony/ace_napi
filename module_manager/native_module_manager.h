@@ -18,6 +18,20 @@
 
 #include <pthread.h>
 #include <stdint.h>
+#include "utils/macros.h"
+
+#ifdef WINDOWS_PLATFORM
+#include <winsock2.h>
+#include <windows.h>
+using LIBHANDLE = HMODULE;
+#define LIBFREE FreeLibrary
+#define LIBSYM GetProcAddress
+#else
+#include <dlfcn.h>
+using LIBHANDLE = void*;
+#define LIBFREE dlclose
+#define LIBSYM dlsym
+#endif
 
 #define NAPI_PATH_MAX 4096
 
@@ -38,7 +52,7 @@ struct NativeModule {
     int32_t jsCodeLen = 0;
 };
 
-class NativeModuleManager {
+class NAPI_EXPORT NativeModuleManager {
 public:
     static NativeModuleManager* GetInstance();
     static unsigned long Release();
@@ -52,11 +66,11 @@ private:
     NativeModuleManager();
     virtual ~NativeModuleManager();
 
-    bool GetNativeModulePath(
-        const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX], int32_t pathLength) const;
+    bool GetNativeModulePath(const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX],
+        int32_t pathLength) const;
     NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule, bool isArk);
     NativeModule* FindNativeModuleByCache(const char* moduleName) const;
-    void* LoadLibrary(const char* path) const;
+    LIBHANDLE LoadModuleLibrary(const char* path) const;
 
     NativeModule* firstNativeModule_;
     NativeModule* lastNativeModule_;
