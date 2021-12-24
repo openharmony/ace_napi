@@ -30,6 +30,13 @@ NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
 
 NativeAsyncWork::~NativeAsyncWork() = default;
 
+void NativeAsyncWork::Close()
+{
+    if (uv_is_active((uv_handle_t*)&workAsyncHandler_)) {
+        uv_close((uv_handle_t*)&workAsyncHandler_, nullptr);
+    }
+}
+
 bool NativeAsyncWork::Queue()
 {
     uv_loop_t* loop = engine_->GetUVLoop();

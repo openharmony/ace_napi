@@ -40,7 +40,8 @@ int main(int argc, char** argv)
 {
     testing::GTEST_FLAG(output) = "xml:./";
     testing::InitGoogleTest(&argc, argv);
-    jerry_context_t* ctx_p = jerry_create_context(1024*1024*50, context_alloc_fn, NULL);
+    // allocate 50MB space
+    jerry_context_t* ctx_p = jerry_create_context(1024 * 1024 * 50, context_alloc_fn, NULL);
     jerry_port_default_set_current_context(ctx_p);
     jerry_init(jerry_init_flag_t::JERRY_INIT_EMPTY);
     g_nativeEngine = new JerryScriptNativeEngine(0); // default instance id 0

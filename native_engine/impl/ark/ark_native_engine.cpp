@@ -45,6 +45,7 @@ using panda::TypedArrayRef;
 using panda::PromiseCapabilityRef;
 using panda::NativePointerRef;
 using panda::SymbolRef;
+using panda::IntegerRef;
 
 static constexpr auto PANDA_MAIN_FUNCTION = "_GLOBAL::func_main_0";
 
@@ -72,8 +73,13 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 }
                 NativeModule* module =
                     moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, isAppModule, false, true);
-                Global<ObjectRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
+                Global<JSValueRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
+                    auto it = engine->loadedModules_.find(module);
+                    if (it != engine->loadedModules_.end()) {
+                        return scope.Escape(it->second.ToLocal(ecmaVm));
+                    }
+
                     if (module->jsCode != nullptr) {
                         HILOG_INFO("load js code");
                         NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
@@ -90,11 +96,13 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                             return scope.Escape(exports.ToLocal(ecmaVm));
                         } else {
                             exports = *exportObject;
+                            engine->loadedModules_[module] = Global<JSValueRef>(ecmaVm, exports.ToLocal(ecmaVm));
                         }
                     } else if (module->registerCallback != nullptr) {
                         NativeValue* exportObject = engine->CreateObject();
                         module->registerCallback(engine, exportObject);
                         exports = *exportObject;
+                        engine->loadedModules_[module] = Global<JSValueRef>(ecmaVm, exports.ToLocal(ecmaVm));
                     } else {
                         HILOG_ERROR("init module failed");
                         return scope.Escape(exports.ToLocal(ecmaVm));
@@ -115,12 +123,18 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(data);
                 Local<StringRef> moduleName(argv[0]);
                 NativeModule* module = moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, false);
-                Global<ObjectRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
+                Global<JSValueRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
+                    auto it = engine->loadedModules_.find(module);
+                    if (it != engine->loadedModules_.end()) {
+                        return scope.Escape(it->second.ToLocal(ecmaVm));
+                    }
+
                     NativeValue* exportObject = engine->CreateObject();
                     if (exportObject != nullptr) {
                         module->registerCallback(engine, exportObject);
                         exports = *exportObject;
+                        engine->loadedModules_[module] = Global<JSValueRef>(ecmaVm, exports.ToLocal(ecmaVm));
                     } else {
                         HILOG_ERROR("exportObject is nullptr");
                         return scope.Escape(exports.ToLocal(ecmaVm));
@@ -141,6 +155,49 @@ ArkNativeEngine::~ArkNativeEngine()
 {
     // need to call deinit before base class.
     Deinit();
+
+    // Free cached objects
+    for (auto&& [module, exportObj] : loadedModules_) {
+        exportObj.FreeGlobalHandleAddr();
+    }
+    // Free callbackRef
+    if (promiseRejectCallbackRef_ != nullptr) {
+        delete promiseRejectCallbackRef_;
+    }
+    if (checkCallbackRef_ != nullptr) {
+        delete checkCallbackRef_;
+    }
+}
+
+panda::Global<panda::ObjectRef> ArkNativeEngine::LoadModuleByName(
+    const std::string& moduleName, bool isAppModule, const std::string& param,
+    const std::string& instanceName, void* instance)
+{
+    Global<ObjectRef> exports(vm_, JSValueRef::Undefined(vm_));
+    NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
+    NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
+    if (module != nullptr) {
+        NativeValue* exportObject = new ArkNativeObject(this);
+        ArkNativeObject* exportObj = reinterpret_cast<ArkNativeObject*>(exportObject);
+
+        NativePropertyDescriptor paramProperty, instanceProperty;
+
+        NativeValue* paramValue = new ArkNativeString(this, param.c_str(), param.size());
+        paramProperty.utf8name = "param";
+        paramProperty.value = paramValue;
+
+        auto instanceValue = new ArkNativeObject(this);
+        instanceValue->SetNativePointer(instance, nullptr, nullptr);
+        instanceProperty.utf8name = instanceName.c_str();
+        instanceProperty.value = instanceValue;
+
+        exportObj->DefineProperty(paramProperty);
+        exportObj->DefineProperty(instanceProperty);
+
+        module->registerCallback(this, exportObject);
+        exports = *exportObject;
+    }
+    return exports;
 }
 
 void ArkNativeEngine::Loop(LoopMode mode, bool needSync)
@@ -527,6 +584,16 @@ void ArkNativeEngine::DeleteSerializationData(NativeValue* value) const
     panda::JSNApi::DeleteSerializationData(data);
 }
 
+void ArkNativeEngine::StartCpuProfiler()
+{
+    panda::JSNApi::StartCpuProfiler(vm_);
+}
+
+void ArkNativeEngine::StopCpuProfiler()
+{
+    panda::JSNApi::StopCpuProfiler();
+}
+
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
@@ -656,4 +723,53 @@ bool ArkNativeEngine::TriggerFatalException(NativeValue* error)
 bool ArkNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue)
 {
     return true;
+}
+
+void ArkNativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef)
+{
+    if (rejectCallbackRef == nullptr || checkCallbackRef == nullptr) {
+        HILOG_ERROR("rejectCallbackRef or checkCallbackRef is nullptr");
+        return;
+    }
+    promiseRejectCallbackRef_ = rejectCallbackRef;
+    checkCallbackRef_ = checkCallbackRef;
+    JSNApi::SetHostPromiseRejectionTracker(vm_, reinterpret_cast<void*>(PromiseRejectCallback),
+                                           reinterpret_cast<void*>(this));
+}
+
+// values = {type, promise, reason}
+void ArkNativeEngine::PromiseRejectCallback(void* info)
+{
+    panda::PromiseRejectInfo* promiseRejectInfo = reinterpret_cast<panda::PromiseRejectInfo*>(info);
+    ArkNativeEngine* env = reinterpret_cast<ArkNativeEngine*>(promiseRejectInfo->GetData());
+    Local<JSValueRef> promise = promiseRejectInfo->GetPromise();
+    Local<JSValueRef> reason = promiseRejectInfo->GetReason();
+    panda::PromiseRejectInfo::PROMISE_REJECTION_EVENT operation = promiseRejectInfo->GetOperation();
+
+    if (env == nullptr) {
+        HILOG_ERROR("engine is nullptr");
+        return;
+    }
+
+    if (env->promiseRejectCallbackRef_ == nullptr || env->checkCallbackRef_ == nullptr) {
+        HILOG_ERROR("promiseRejectCallbackRef or checkCallbackRef is nullptr");
+        return;
+    }
+
+    const panda::ecmascript::EcmaVM* vm = env->GetEcmaVm();
+    Local<JSValueRef> type(IntegerRef::New(vm, static_cast<int32_t>(operation)));
+
+    Local<JSValueRef> args[] = {type, promise, reason};
+    Global<FunctionRef> promiseRejectCallback = *(env->promiseRejectCallbackRef_->Get());
+    if (!promiseRejectCallback.IsEmpty()) {
+        Global<JSValueRef> thisObj = Global<JSValueRef>(vm, JSValueRef::Undefined(vm));
+        promiseRejectCallback->Call(vm, thisObj.ToLocal(vm), args, 3); // 3 args size
+    }
+
+    if (operation == panda::PromiseRejectInfo::PROMISE_REJECTION_EVENT::REJECT) {
+        Global<JSValueRef> checkCallback = *(env->checkCallbackRef_->Get());
+        if (!checkCallback.IsEmpty()) {
+            JSNApi::SetHostEnqueueJob(vm, checkCallback.ToLocal(vm));
+        }
+    }
 }

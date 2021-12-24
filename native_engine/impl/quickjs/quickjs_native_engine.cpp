@@ -130,7 +130,11 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
         0, 0, 1, &jsNativeEngine);
 
     JS_SetPropertyStr(context_, jsGlobal, "requireInternal", jsRequireInternal);
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
     JS_SetPropertyStr(context_, jsGlobal, "requireNapi", jsRequire);
+#else
+    JS_SetPropertyStr(context_, jsGlobal, "requireNapiPreview", jsRequire);
+#endif
     JS_FreeValue(context_, jsGlobal);
     // need to call init of base class.
     Init();
@@ -178,6 +182,37 @@ JSValue QuickJSNativeEngine::GetModuleFromName(
         }
 
         exports = *exportObject;
+    }
+    return exports;
+}
+
+JSValue QuickJSNativeEngine::LoadModuleByName(
+    const std::string& moduleName, bool isAppModule, const std::string& param,
+    const std::string& instanceName, void* instance)
+{
+    JSValue exports = JS_UNDEFINED;
+    NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
+    NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
+    if (module != nullptr) {
+        NativeValue* exportObject = new QuickJSNativeObject(this);
+        QuickJSNativeObject* exportObj = reinterpret_cast<QuickJSNativeObject*>(exportObject);
+
+        NativePropertyDescriptor paramProperty, instanceProperty;
+
+        NativeValue* paramValue = new QuickJSNativeString(this, param.c_str(), param.size());
+        paramProperty.utf8name = "param";
+        paramProperty.value = paramValue;
+
+        auto instanceValue = new QuickJSNativeObject(this);
+        instanceValue->SetNativePointer(instance, nullptr, nullptr);
+        instanceProperty.utf8name = instanceName.c_str();
+        instanceProperty.value = instanceValue;
+
+        exportObj->DefineProperty(paramProperty);
+        exportObj->DefineProperty(instanceProperty);
+
+        module->registerCallback(this, exportObject);
+        exports = JS_DupValue(GetContext(), *exportObject);
     }
     return exports;
 }
@@ -846,3 +881,6 @@ bool QuickJSNativeEngine::AdjustExternalMemory(int64_t ChangeInBytes, int64_t* A
     HILOG_INFO("L2: napi_adjust_external_memory not supported!");
     return true;
 }
+
+void QuickJSNativeEngine::SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+                                                   NativeReference* checkCallbackRef) {}

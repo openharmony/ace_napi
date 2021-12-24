@@ -16,6 +16,8 @@
 #ifndef FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H
 
+#include <unordered_map>
+
 #include "ark_headers.h"
 #include "ecmascript/napi/include/jsnapi.h"
 #include "native_engine/native_engine.h"
@@ -116,6 +118,8 @@ public:
     NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     // Create native promise value
     NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    void SetPromiseRejectCallback(NativeReference* rejectCallbackRef, NativeReference* checkCallbackRef) override;
+    static void PromiseRejectCallback(void* values);
     // Create native error value
     NativeValue* CreateError(NativeValue* code, NativeValue* message) override;
     // Call function
@@ -158,14 +162,25 @@ public:
     NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 
     bool ExecuteJsBin(const std::string& fileName);
+    panda::Global<panda::ObjectRef> LoadModuleByName(
+        const std::string& moduleName, bool isAppModule, const std::string& param,
+        const std::string& instanceName, void* instance);
+
     virtual bool TriggerFatalException(NativeValue* error) override;
     NativeValue* CreateDate(double value) override;
     NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
     bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
+
+    // Detect performance to obtain cpuprofiler file
+    void StartCpuProfiler() override;
+    void StopCpuProfiler() override;
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;
     panda::LocalScope topScope_;
+    NativeReference* promiseRejectCallbackRef_ { nullptr };
+    NativeReference* checkCallbackRef_ { nullptr };
+    std::unordered_map<NativeModule*, panda::Global<panda::JSValueRef>> loadedModules_;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H */

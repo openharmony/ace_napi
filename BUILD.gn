@@ -58,7 +58,7 @@ if (defined(ohos_lite)) {
       "scope_manager/native_scope_manager.cpp",
     ]
 
-    if (target_cpu == "arm64") {
+    if (current_cpu == "arm64") {
       defines = [ "_ARM64_" ]
     }
 
@@ -132,6 +132,7 @@ if (defined(ohos_lite)) {
   import("//foundation/ace/ace_engine/ace_config.gni")
 
   ohos_shared_library("ace_napi") {
+    defines = []
     public_configs = [ ":ace_napi_config" ]
 
     include_dirs = [
@@ -154,8 +155,16 @@ if (defined(ohos_lite)) {
       "scope_manager/native_scope_manager.cpp",
     ]
 
-    if (target_cpu == "arm64") {
-      defines = [ "_ARM64_" ]
+    if (current_cpu == "arm64") {
+      defines += [ "_ARM64_" ]
+    }
+
+    if (use_mingw_win) {
+      defines += [ "WINDOWS_PLATFORM" ]
+    } else if (use_mac) {
+      defines += [ "MAC_PLATFORM" ]
+    } else {
+      external_deps = hilog_deps
     }
 
     deps = [
@@ -164,8 +173,6 @@ if (defined(ohos_lite)) {
     ]
 
     cflags_cc = [ "-Wno-missing-braces" ]
-
-    external_deps = hilog_deps
 
     subsystem_name = "ace"
     part_name = "napi"
@@ -249,7 +256,7 @@ if (defined(ohos_lite)) {
       "scope_manager/native_scope_manager.cpp",
     ]
 
-    if (target_cpu == "arm64") {
+    if (current_cpu == "arm64") {
       defines = [ "_ARM64_" ]
     }
 
@@ -278,18 +285,20 @@ if (defined(ohos_lite)) {
     deps = [ ":ace_napi_ndk" ]
   }
 
-  group("napi_packages_test") {
-    testonly = true
+  if (!build_ohos_ndk) {
+    group("napi_packages_test") {
+      testonly = true
 
-    deps = [
-      "sample/native_module_demo:demo",
-      "sample/native_module_netserver:netserver",
-      "sample/native_module_storage:storage",
-      "test/unittest:unittest",
-    ]
+      deps = [
+        "sample/native_module_demo:demo",
+        "sample/native_module_netserver:netserver",
+        "sample/native_module_storage:storage",
+        "test/unittest:unittest",
+      ]
 
-    if (is_standard_system) {
-      deps += [ "sample/native_module_ability:ability" ]
+      if (is_standard_system) {
+        deps += [ "sample/native_module_ability:ability" ]
+      }
     }
   }
 }
