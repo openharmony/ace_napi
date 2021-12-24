@@ -107,5 +107,7 @@ void V8NativeReference::FinalizeCallback(const v8::WeakCallbackInfo<V8NativeRefe
 void V8NativeReference::SecondPassCallback(const v8::WeakCallbackInfo<V8NativeReference>& data)
 {
     V8NativeReference* that = data.GetParameter();
-    that->callback_(that->engine_, that->data_, that->hint_);
+    if (that->callback_ != nullptr) {
+        that->callback_(that->engine_, that->data_, that->hint_);
+    }
 }

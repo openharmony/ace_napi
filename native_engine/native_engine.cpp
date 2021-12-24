@@ -14,9 +14,10 @@
  */
 
 #include "native_engine.h"
-#include "utils/log.h"
 
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
 #include <sys/epoll.h>
+#endif
 #include <uv.h>
 
 #include "utils/log.h"
@@ -87,10 +88,7 @@ void NativeEngine::Deinit()
     uv_sem_destroy(&uvSem_);
     uv_close((uv_handle_t*)&uvAsync_, nullptr);
     uv_run(loop_, UV_RUN_ONCE);
-    int err = uv_loop_close(loop_);
-    if (err != 0) {
-        HILOG_ERROR("uv loop close failed. fd or resource may leak.");
-    }
+    uv_loop_delete(loop_);
 }
 
 NativeScopeManager* NativeEngine::GetScopeManager()
@@ -171,6 +169,33 @@ NativeSafeAsyncWork* NativeEngine::CreateSafeAsyncWork(NativeValue* func, Native
         finalizeData, finalizeCallback, context, callJsCallback);
 }
 
+void NativeEngine::InitAsyncWork(NativeAsyncExecuteCallback execute,
+                                 NativeAsyncCompleteCallback complete,
+                                 void* data)
+{
+    asyncWorker_ = std::make_unique<NativeAsyncWork>(this, execute, complete, data);
+    asyncWorker_->Init();
+}
+
+bool NativeEngine::SendAsyncWork(void* data)
+{
+    if (!asyncWorker_) {
+        HILOG_ERROR("asyncWorker_ is nullptr");
+        return false;
+    }
+    asyncWorker_->Send(data);
+    return true;
+}
+
+void NativeEngine::CloseAsyncWork()
+{
+    if (!asyncWorker_) {
+        HILOG_ERROR("asyncWorker_ is nullptr");
+        return;
+    }
+    asyncWorker_->Close();
+}
+
 NativeErrorExtendedInfo* NativeEngine::GetLastError()
 {
     return &lastError_;
@@ -224,6 +249,7 @@ void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
     *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
 }
 
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
 void NativeEngine::CheckUVLoop()
 {
     checkUVLoop_ = true;
@@ -258,7 +284,7 @@ void NativeEngine::UVThreadRunner(void* nativeEngine)
             HILOG_INFO("break thread after epoll wait");
             break;
         }
-        if (result != -1 && errno != EINTR) {
+        if (result >= 0) {
             engine->PostLoopTask();
         } else {
             HILOG_ERROR("epoll wait fail: result: %{public}d, errno: %{public}d", result, errno);
@@ -269,6 +295,7 @@ void NativeEngine::UVThreadRunner(void* nativeEngine)
         }
     }
 }
+#endif
 
 void NativeEngine::SetPostTask(PostTask postTask)
 {
@@ -288,6 +315,60 @@ void NativeEngine::TriggerPostTask()
 void* NativeEngine::GetJsEngine()
 {
     return jsEngine_;
+}
+
+// register init worker func
+void NativeEngine::SetInitWorkerFunc(InitWorkerFunc func)
+{
+    initWorkerFunc_ = func;
+}
+void NativeEngine::SetGetAssetFunc(GetAssetFunc func)
+{
+    getAssetFunc_ = func;
+}
+void NativeEngine::SetOffWorkerFunc(OffWorkerFunc func)
+{
+    offWorkerFunc_ = func;
+}
+void NativeEngine::SetWorkerAsyncWorkFunc(NativeAsyncExecuteCallback executeCallback,
+                                          NativeAsyncCompleteCallback completeCallback)
+{
+    nativeAsyncExecuteCallback_ = executeCallback;
+    nativeAsyncCompleteCallback_ = completeCallback;
+}
+// call init worker func
+bool NativeEngine::CallInitWorkerFunc(NativeEngine* engine)
+{
+    if (initWorkerFunc_ != nullptr) {
+        initWorkerFunc_(engine);
+        return true;
+    }
+    return false;
+}
+bool NativeEngine::CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content)
+{
+    if (getAssetFunc_ != nullptr) {
+        getAssetFunc_(uri, content);
+        return true;
+    }
+    return false;
+}
+bool NativeEngine::CallOffWorkerFunc(NativeEngine* engine)
+{
+    if (offWorkerFunc_ != nullptr) {
+        offWorkerFunc_(engine);
+        return true;
+    }
+    return false;
+}
+
+bool NativeEngine::CallWorkerAsyncWorkFunc(NativeEngine* engine)
+{
+    if (nativeAsyncExecuteCallback_ != nullptr && nativeAsyncCompleteCallback_ != nullptr) {
+        engine->InitAsyncWork(nativeAsyncExecuteCallback_, nativeAsyncCompleteCallback_, nullptr);
+        return true;
+    }
+    return false;
 }
 
 void NativeEngine::AddCleanupHook(CleanupCallback fun, void* arg)

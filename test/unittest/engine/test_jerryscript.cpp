@@ -38,8 +38,8 @@ int main(int argc, char** argv)
 {
     testing::GTEST_FLAG(output) = "xml:./";
     testing::InitGoogleTest(&argc, argv);
-
-    jerry_context_t* ctx_p = jerry_create_context(1024*1024*50, context_alloc_fn, NULL);
+    // allocate 50MB space
+    jerry_context_t* ctx_p = jerry_create_context(1024 * 1024 * 50, context_alloc_fn, NULL);
 
     jerry_port_default_set_current_context(ctx_p);
 
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     g_nativeEngine->Loop(LOOP_DEFAULT);
 
     uv_thread_join(&tid);
-    
+  
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
     jerry_cleanup();
