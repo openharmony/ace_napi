@@ -22,10 +22,6 @@ class NativeEngineTest : public testing::Test {
 public:
     NativeEngineTest();
     virtual ~NativeEngineTest();
-    void SetUp() override
-    {}
-    void TearDown() override
-    {}
 
 protected:
     NativeEngine* engine_;
