@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define NAPI_VERSION 7
+#define NAPI_VERSION 8
 #ifndef NAPI_EXPERIMENTAL
 #define NAPI_EXPERIMENTAL
 #endif

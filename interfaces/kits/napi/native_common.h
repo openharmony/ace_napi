@@ -19,7 +19,7 @@
 #define DEPRECATED __attribute__((__deprecated__))
 
 #ifndef NAPI_VERSION
-#define NAPI_VERSION 7
+#define NAPI_VERSION 8
 #endif
 
 #ifndef NAPI_EXPERIMENTAL
