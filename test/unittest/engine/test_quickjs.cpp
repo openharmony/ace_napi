@@ -46,12 +46,9 @@ int main(int argc, char** argv)
     }
 
     js_std_add_helpers(ctx, 0, nullptr);
-
     g_nativeEngine = new QuickJSNativeEngine(rt, ctx, 0);  // default instance id 0
 
     int ret = RUN_ALL_TESTS();
-
-    g_nativeEngine->Loop(LOOP_DEFAULT);
 
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
