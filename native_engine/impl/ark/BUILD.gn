@@ -39,6 +39,7 @@ template("ace_napi_impl") {
       "native_value/ark_native_array_buffer.cpp",
       "native_value/ark_native_boolean.cpp",
       "native_value/ark_native_data_view.cpp",
+      "native_value/ark_native_date.cpp",
       "native_value/ark_native_external.cpp",
       "native_value/ark_native_function.cpp",
       "native_value/ark_native_number.cpp",
