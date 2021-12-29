@@ -2281,7 +2281,11 @@ NAPI_EXTERN napi_status napi_get_date_value(napi_env env, napi_value value, doub
     auto IsDate_result = nativeValue->IsDate();
     if (IsDate_result) {
         auto nativeDate = reinterpret_cast<NativeDate*>(nativeValue->GetInterface(NativeDate::INTERFACE_ID));
-        *result = nativeDate->GetTime();
+        if (nativeDate) {
+            *result = nativeDate->GetTime();
+        } else {
+            return napi_set_last_error(env, napi_date_expected);
+        }
     } else {
         return napi_set_last_error(env, napi_date_expected);
     }
