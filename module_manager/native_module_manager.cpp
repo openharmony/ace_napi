@@ -195,7 +195,7 @@ bool NativeModuleManager::GetNativeModulePath(
                 return false;
             }
         } else {
-            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s",
+            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s%s",
                 prefix, dupModuleName, soPostfix) == -1) {
                 return false;
             }
