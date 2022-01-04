@@ -83,7 +83,6 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
 
                     if (module->jsCode != nullptr) {
                         HILOG_INFO("load js code");
-                        NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
                         char fileName[NAPI_PATH_MAX] = { 0 };
                         const char* name = module->name;
                         if (sprintf_s(fileName, sizeof(fileName), "lib%s.z.so/%s.js", name, name) == -1) {
@@ -91,6 +90,7 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                             return scope.Escape(exports.ToLocal(ecmaVm));
                         }
                         HILOG_DEBUG("load js code from %{public}s", fileName);
+                        NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
                         NativeValue* exportObject = engine->LoadModule(script, fileName);
                         if (exportObject == nullptr) {
                             HILOG_ERROR("load module failed");
@@ -539,7 +539,22 @@ void* ArkNativeEngine::CreateRuntime()
     }
 
     ArkNativeEngine* arkEngine = new ArkNativeEngine(vm, this);
-    return reinterpret_cast<void*>(arkEngine);
+
+    // init callback
+    arkEngine->SetInitWorkerFunc(initWorkerFunc_);
+    arkEngine->SetGetAssetFunc(getAssetFunc_);
+    arkEngine->SetOffWorkerFunc(offWorkerFunc_);
+    arkEngine->SetWorkerAsyncWorkFunc(nativeAsyncExecuteCallback_, nativeAsyncCompleteCallback_);
+
+    auto cleanEnv = [vm]() {
+        if (vm != nullptr) {
+            HILOG_INFO("cleanEnv is called");
+            panda::JSNApi::DestroyJSVM(vm);
+        }
+    };
+    arkEngine->SetCleanEnv(cleanEnv);
+
+    return static_cast<void*>(arkEngine);
 }
 
 NativeValue* ArkNativeEngine::Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer)
@@ -597,8 +612,9 @@ void ArkNativeEngine::StopCpuProfiler()
 
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
-    Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
     panda::JSExecutionScope executionScope(vm_);
+    LocalScope scope(vm_);
+    Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
     bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), entryPoint);
 
     Local<ObjectRef> excep = panda::JSNApi::GetUncaughtException(vm_);

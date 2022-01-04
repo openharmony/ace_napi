@@ -228,7 +228,7 @@ public:
     virtual void SetGetAssetFunc(GetAssetFunc func);
     virtual void SetOffWorkerFunc(OffWorkerFunc func);
     virtual void SetWorkerAsyncWorkFunc(NativeAsyncExecuteCallback executeCallback,
-                                NativeAsyncCompleteCallback completeCallback);
+                                        NativeAsyncCompleteCallback completeCallback);
     // call init worker func
     virtual bool CallInitWorkerFunc(NativeEngine* engine);
     virtual bool CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content);
@@ -272,6 +272,13 @@ protected:
 
     void *jsEngine_;
 
+    // register for worker
+    InitWorkerFunc initWorkerFunc_ {nullptr};
+    GetAssetFunc getAssetFunc_ {nullptr};
+    OffWorkerFunc offWorkerFunc_ {nullptr};
+    NativeAsyncExecuteCallback nativeAsyncExecuteCallback_ {nullptr};
+    NativeAsyncCompleteCallback nativeAsyncCompleteCallback_ {nullptr};
+
 private:
     bool isMainThread_ { true };
 
@@ -293,12 +300,6 @@ private:
     std::atomic_bool isStopping_ { false };
     pthread_t tid_ = 0;
     std::unique_ptr<NativeAsyncWork> asyncWorker_ {};
-    // register for worker
-    InitWorkerFunc initWorkerFunc_ {nullptr};
-    GetAssetFunc getAssetFunc_ {nullptr};
-    OffWorkerFunc offWorkerFunc_ {nullptr};
-    NativeAsyncExecuteCallback nativeAsyncExecuteCallback_ {nullptr};
-    NativeAsyncCompleteCallback nativeAsyncCompleteCallback_ {nullptr};
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H */
