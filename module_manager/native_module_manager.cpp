@@ -151,7 +151,7 @@ bool NativeModuleManager::GetNativeModulePath(
 #elif defined(_ARM64_)
     const char* soPostfix = ".so";
     const char* sysPrefix = "/system/lib64/module";
-    const char* zfix = "z.";
+    const char* zfix = ".z";
 #else
     const char* soPostfix = ".so";
     const char* sysPrefix = "/system/lib/module";
