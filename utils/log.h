@@ -43,6 +43,7 @@ static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, LOG_DOMAIN,
 #else
 #include <stdarg.h>
 #include <stdio.h>
+#include <securec.h>
 
 constexpr uint32_t MAX_BUFFER_SIZE = 4096;
 
