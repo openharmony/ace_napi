@@ -133,7 +133,7 @@ if (defined(ohos_lite)) {
       ]
 
       deps = quickjs_deps
-  
+
       if (is_standard_system) {
         external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
       }
