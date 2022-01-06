@@ -43,6 +43,7 @@ static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, LOG_DOMAIN,
 #else
 #include <stdarg.h>
 #include <stdio.h>
+#include <securec.h>
 
 constexpr uint32_t MAX_BUFFER_SIZE = 4096;
 
@@ -62,8 +63,8 @@ static void PrintLog(const char* fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    char buf[MAX_BUFFER_SIZE] = { "\0" };
-    int ret = vsnprintf(buf, sizeof(buf) - 1, newFmt.c_str(), args);
+    char buf[MAX_BUFFER_SIZE] = { '\0' };
+    int ret = vsnprintf_s(buf, sizeof(buf), sizeof(buf) - 1, newFmt.c_str(), args);
     if (ret < 0) {
         return;
     }

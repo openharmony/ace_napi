@@ -30,6 +30,7 @@
 #include "native_value/ark_native_object.h"
 #include "native_value/ark_native_string.h"
 #include "native_value/ark_native_typed_array.h"
+#include "native_value/ark_native_date.h"
 
 #include "securec.h"
 #include "utils/log.h"
@@ -46,7 +47,7 @@ using panda::PromiseCapabilityRef;
 using panda::NativePointerRef;
 using panda::SymbolRef;
 using panda::IntegerRef;
-
+using panda::DateRef;
 static constexpr auto PANDA_MAIN_FUNCTION = "_GLOBAL::func_main_0";
 
 ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEngine), vm_(vm), topScope_(vm)
@@ -567,7 +568,7 @@ ExceptionInfo* ArkNativeEngine::GetExceptionForWorker() const
     ExceptionInfo* exceptionInfo = new ExceptionInfo();
     int msgLength = exceptionStr_.length();
     char* exceptionMessage = new char[msgLength + 1] { 0 };
-    if (memcpy_s(exceptionMessage, msgLength, exceptionStr_.c_str(), msgLength) != EOK) {
+    if (memcpy_s(exceptionMessage, msgLength + 1, exceptionStr_.c_str(), msgLength) != EOK) {
         HILOG_ERROR("worker:: memcpy_s error");
         delete exceptionInfo;
         delete[] exceptionMessage;
@@ -666,6 +667,8 @@ NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Loc
         result = new ArkNativeTypedArray(engine, value);
     } else if (value->IsNativePointer()) {
         result = new ArkNativeExternal(engine, value);
+    } else if (value->IsDate()) {
+        result = new ArkNativeDate(engine, value);
     } else if (value->IsObject()) {
         result = new ArkNativeObject(engine, value);
     } else if (value->IsBoolean()) {
@@ -707,7 +710,7 @@ NativeValue* ArkNativeEngine::CreateBufferExternal(void* value, size_t length, N
 
 NativeValue* ArkNativeEngine::CreateDate(double value)
 {
-    return nullptr;
+    return ArkValueToNativeValue(this, DateRef::New(vm_, value));
 }
 
 NativeValue* ArkNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)

@@ -195,7 +195,7 @@ bool NativeModuleManager::GetNativeModulePath(
                 return false;
             }
         } else {
-            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s",
+            if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s%s",
                 prefix, dupModuleName, soPostfix) == -1) {
                 return false;
             }
@@ -294,6 +294,7 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
         for (char* p = strchr(symbol, '.'); p != nullptr; p = strchr(p + 1, '.')) {
             *p = '_';
         }
+
 
         auto getJSCode = reinterpret_cast<NAPIGetJSCode>(LIBSYM(lib, symbol));
         if (getJSCode != nullptr) {
