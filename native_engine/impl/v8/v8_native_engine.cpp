@@ -82,7 +82,7 @@ V8NativeEngine::V8NativeEngine(v8::Platform* platform, v8::Isolate* isolate,
 
                 if (module->jsCode != nullptr) {
                     HILOG_INFO("load js code");
-                    NativeValue* script = engine->CreateString(module->jsCode, strlen(module->jsCode));
+                    NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
                     NativeValue* exportObject = engine->LoadModule(script, "testjsnapi.js");
                     if (exportObject == nullptr) {
                         HILOG_ERROR("load module failed");

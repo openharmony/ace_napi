@@ -24,14 +24,30 @@
 #include "jerryscript-core.h"
 #endif
 
+static constexpr int32_t NAPI_UT_BUFFER_SIZE = 64;
+
+class NapiExtTest : public NativeEngineTest {
+public:
+    static void SetUpTestCase()
+    {
+        GTEST_LOG_(INFO) << "NapiExtTest SetUpTestCase";
+    }
+
+    static void TearDownTestCase()
+    {
+        GTEST_LOG_(INFO) << "NapiExtTest TearDownTestCase";
+    }
+
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
 /**
  * @tc.name: UndefinedTest
  * @tc.desc: Test undefined type.
  * @tc.type: FUNC
  */
-static constexpr int32_t NAPI_UT_BUFFER_SIZE = 64;
-
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0100, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, CreateBufferTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -47,7 +63,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0100, testing::ext::TestSize.L
     ASSERT_EQ(BufferSize, BufferLength);
 }
 
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0200, testing::ext::TestSize.Level2)
+HWTEST_F(NapiExtTest, CreateBufferTest002, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -60,7 +76,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_0200, testing::ext::TestSize.L
     ASSERT_EQ(BufferPtr, nullptr);
 }
 
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0100, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, CreateBufferTest003, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -80,7 +96,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0100, testing::ext::TestS
     ASSERT_EQ(0, memcmp(bufferdata, BufferPtr, BufferSize));
 }
 
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0200, testing::ext::TestSize.Level2)
+HWTEST_F(NapiExtTest, CreateBufferTest004, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -94,7 +110,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Copy_0200, testing::ext::TestS
     ASSERT_EQ(BufferPtr, nullptr);
 }
 
-HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Extern_0100, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, CreateBufferTest005, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -115,7 +131,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Buffer_Extern_0100, testing::ext::Tes
     ASSERT_EQ(BufferSize, BufferLength);
 }
 
-HWTEST_F(NativeEngineTest, ACE_Napi_is_Buffer_0100, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, IsBufferTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -134,7 +150,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_is_Buffer_0100, testing::ext::TestSize.Level
     ASSERT_TRUE(isBuffer);
 }
 
-HWTEST_F(NativeEngineTest, ACE_Napi_is_Buffer_0200, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, IsBufferTest002, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -158,7 +174,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_is_Buffer_0200, testing::ext::TestSize.Level
  * @tc.desc: Test string type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, StringTestAce, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, StringTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     const char16_t testStr[] = u"中文,English,123456,!@#$%$#^%&12345";
@@ -196,7 +212,7 @@ HWTEST_F(NativeEngineTest, StringTestAce, testing::ext::TestSize.Level0)
     bufferShort = nullptr;
 }
 
-HWTEST_F(NativeEngineTest, Is_detached_ArrayBuffer_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, IsDetachedArrayBufferTest001, testing::ext::TestSize.Level1)
 {
     static constexpr size_t arrayBufferSize = 1024;
     napi_env env = (napi_env)engine_;
@@ -230,7 +246,7 @@ static constexpr size_t NAPI_UT_STR_LENGTH = 30;
  * @tc.desc: Test number type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, BigIntTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, BigIntTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     // uint64
@@ -270,7 +286,7 @@ HWTEST_F(NativeEngineTest, BigIntTest, testing::ext::TestSize.Level0)
     }
 }
 
-HWTEST_F(NativeEngineTest, BigIntTestTwo, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, BigIntTest002, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     // int64
@@ -310,7 +326,7 @@ HWTEST_F(NativeEngineTest, BigIntTestTwo, testing::ext::TestSize.Level0)
     }
 }
 
-HWTEST_F(NativeEngineTest, BigInt_Words_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, BigIntWordsTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     int signBit = 0;
@@ -330,7 +346,7 @@ HWTEST_F(NativeEngineTest, BigInt_Words_Test, testing::ext::TestSize.Level0)
     ASSERT_EQ(words[3], wordsOut[3]);
 }
 
-HWTEST_F(NativeEngineTest, BigInt_Words_Test_Normal, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, BigIntWordsTest002, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     int signBit = 0;
@@ -349,7 +365,7 @@ HWTEST_F(NativeEngineTest, BigInt_Words_Test_Normal, testing::ext::TestSize.Leve
     }
 }
 
-HWTEST_F(NativeEngineTest, BigInt_Words_Test_Minus, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, BigIntWordsTest003, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     int signBit = 1;
@@ -369,7 +385,7 @@ HWTEST_F(NativeEngineTest, BigInt_Words_Test_Minus, testing::ext::TestSize.Level
     ASSERT_EQ(words[3], wordsOut[3]);
 }
 
-HWTEST_F(NativeEngineTest, BigInt_Words_Test_Minus_Normal, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, BigIntWordsTest004, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     int signBit = 1;
@@ -388,7 +404,7 @@ HWTEST_F(NativeEngineTest, BigInt_Words_Test_Minus_Normal, testing::ext::TestSiz
     }
 }
 
-HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, FreezeObjectTest001, testing::ext::TestSize.Level1)
 {
     constexpr int DataSize = 60;
     napi_env env = (napi_env)engine_;
@@ -447,7 +463,7 @@ HWTEST_F(NativeEngineTest, freeze_object_Test, testing::ext::TestSize.Level0)
     }
 }
 
-HWTEST_F(NativeEngineTest, seal_object_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, SealObjectTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value object = nullptr;
@@ -507,7 +523,7 @@ HWTEST_F(NativeEngineTest, seal_object_Test, testing::ext::TestSize.Level0)
     }
 }
 
-HWTEST_F(NativeEngineTest, all_property_names_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, AllPropertyNamesTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_key_collection_mode keyMode = napi_key_own_only;
@@ -565,7 +581,7 @@ HWTEST_F(NativeEngineTest, all_property_names_Test, testing::ext::TestSize.Level
     }
 }
 
-HWTEST_F(NativeEngineTest, tag_object_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, TagObjectTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value object = nullptr;
@@ -582,7 +598,7 @@ HWTEST_F(NativeEngineTest, tag_object_Test, testing::ext::TestSize.Level0)
 }
 #endif
 
-HWTEST_F(NativeEngineTest, get_date_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, GetDateTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value createResult = nullptr;
@@ -600,7 +616,7 @@ HWTEST_F(NativeEngineTest, get_date_Test, testing::ext::TestSize.Level0)
     ASSERT_TRUE(result);
 }
 
-HWTEST_F(NativeEngineTest, is_date_Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, IsDateTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value createResult = nullptr;
@@ -620,7 +636,7 @@ HWTEST_F(NativeEngineTest, is_date_Test, testing::ext::TestSize.Level0)
  * @tc.desc: Test napi_adjust_external_memory.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ACE_napi_adjust_external_memory_test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, AdjustExternalMemoryTest001, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("%{public}s", "ACE_napi_adjust_external_memory_test start");
     napi_env env = (napi_env)engine_;
@@ -636,7 +652,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_adjust_external_memory_test, testing::ext::T
  * @tc.desc: Test napi_async_init, napi_async_destroy.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ACE_napi_async_init_Test_001, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, AsyncInitTest001, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("ACE_napi_async_init_Test_001 start");
 
@@ -662,7 +678,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_async_init_Test_001, testing::ext::TestSize.
  * @tc.desc: Test napi_open_callback_scope, napi_close_callback_scope.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_001, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, OpenCallbackScopeTest001, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("ACE_napi_open_callback_scope_Test_001 start");
 
@@ -708,7 +724,7 @@ HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_001, testing::ext::
  * @tc.desc: Test napi_open_callback_scope, napi_close_callback_scope.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ACE_napi_open_callback_scope_Test_002, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, OpenCallbackScopeTest002, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("ACE_napi_open_callback_scope_Test_002 start");
 
@@ -779,13 +795,13 @@ static napi_value TestFatalException(napi_env env, napi_callback_info info)
  * @tc.desc: Test FatalException Func.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, FatalExceptionTest_001, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, FatalExceptionTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     ASSERT_EQ(TestFatalException(env, nullptr), nullptr);
 }
 
-HWTEST_F(NativeEngineTest, add_finalizer_test_0100, testing::ext::TestSize.Level0)
+HWTEST_F(NapiExtTest, AddFinalizerTest001, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("add_finalizer_test_0100 start");
     napi_env env = (napi_env)engine_;

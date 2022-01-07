@@ -13,18 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef FOUNDATION_ACE_NAPI_TEST_UNITTEST_TEST_H
-#define FOUNDATION_ACE_NAPI_TEST_UNITTEST_TEST_H
-#include "native_engine.h"
-#include "test_common.h"
+const calc = requireInternal('calc');
 
-class NativeEngineTest : public testing::Test {
-public:
-    NativeEngineTest();
-    virtual ~NativeEngineTest();
+const number = requireNapi('number');
 
-protected:
-    NativeEngine* engine_;
-};
+function sub(x, y)
+{
+    return x - y;
+}
 
-#endif /* FOUNDATION_ACE_NAPI_TEST_UNITTEST_TEST_H */
+export default {
+    add: calc.add,
+    sub: sub,
+    ValueConstant: {
+        TYPE_VALUE_0: 0,
+        TYPE_VALUE_1: number.Number.ONE,
+    }
+}
