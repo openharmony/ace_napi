@@ -355,12 +355,28 @@ static void TsFuncThreadInternal(napi_env env,
     HILOG_INFO("TsFuncThreadInternal end");
 }
 
+class NapiThreadsafeTest : public NativeEngineTest {
+public:
+    static void SetUpTestCase()
+    {
+        GTEST_LOG_(INFO) << "NapiThreadsafeTest SetUpTestCase";
+    }
+
+    static void TearDownTestCase()
+    {
+        GTEST_LOG_(INFO) << "NapiThreadsafeTest TearDownTestCase";
+    }
+
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
 /**
  * @tc.name: ThreadsafeTest
  * @tc.desc: Test LoadModule Func.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0100, testing::ext::TestSize.Level0)
+HWTEST_F(NapiThreadsafeTest, ThreadsafeTest001, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("Threadsafe_Test_0100 start");
     napi_env env = (napi_env)engine_;
@@ -397,7 +413,7 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0100, testing::ext::TestSize.Level0)
  * @tc.desc: Test LoadModule Func.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0200, testing::ext::TestSize.Level0)
+HWTEST_F(NapiThreadsafeTest, ThreadsafeTest002, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("Threadsafe_Test_0200 start");
 
@@ -412,7 +428,7 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0200, testing::ext::TestSize.Level0)
  * @tc.desc: Test threadsafe Func, no js.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0300, testing::ext::TestSize.Level0)
+HWTEST_F(NapiThreadsafeTest, ThreadsafeTest003, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("Threadsafe_Test_0300 start");
 
@@ -427,7 +443,7 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0300, testing::ext::TestSize.Level0)
  * @tc.desc: Test napi_release_threadsafe_function, napi_tsfn_abort.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0400, testing::ext::TestSize.Level0)
+HWTEST_F(NapiThreadsafeTest, ThreadsafeTest004, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("Threadsafe_Test_0400 start");
     napi_env env = (napi_env)engine_;
@@ -465,7 +481,7 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0400, testing::ext::TestSize.Level0)
  * @tc.desc: Test initial_thread_count not enough.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0500, testing::ext::TestSize.Level0)
+HWTEST_F(NapiThreadsafeTest, ThreadsafeTest005, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("Threadsafe_Test_0500 start");
     napi_env env = (napi_env)engine_;
@@ -505,10 +521,10 @@ HWTEST_F(NativeEngineTest, Threadsafe_Test_0500, testing::ext::TestSize.Level0)
 }
 /**
  * @tc.name: ThreadsafeTest
- * @tc.desc: Test initial_thread_count not enough，but acquire.
+ * @tc.desc: Test initial_thread_count not enough but acquire.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, Threadsafe_Test_0600, testing::ext::TestSize.Level0)
+HWTEST_F(NapiThreadsafeTest, ThreadsafeTest006, testing::ext::TestSize.Level1)
 {
     HILOG_INFO("Threadsafe_Test_0600 start");
     napi_env env = (napi_env)engine_;

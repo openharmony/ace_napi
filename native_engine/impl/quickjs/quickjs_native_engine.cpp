@@ -107,7 +107,7 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
             if (module != nullptr) {
                 if (module->jsCode != nullptr) {
                     HILOG_INFO("load js code");
-                    NativeValue* script = that->CreateString(module->jsCode, strlen(module->jsCode));
+                    NativeValue* script = that->CreateString(module->jsCode, module->jsCodeLen);
                     NativeValue* exportObject = that->LoadModule(script, "testjsnapi.js");
                     if (exportObject == nullptr) {
                         HILOG_ERROR("load module failed");

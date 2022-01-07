@@ -14,17 +14,34 @@
  */
 
 #include "test.h"
+#include "gtest/gtest.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "securec.h"
 #include "utils/log.h"
 
+class NapiBasicTest : public NativeEngineTest {
+public:
+    static void SetUpTestCase()
+    {
+        GTEST_LOG_(INFO) << "NapiBasicTest SetUpTestCase";
+    }
+
+    static void TearDownTestCase()
+    {
+        GTEST_LOG_(INFO) << "NapiBasicTest TearDownTestCase";
+    }
+
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
 /**
- * @tc.name: UndefinedTest
+ * @tc.name: UndefinedTest001
  * @tc.desc: Test undefined type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, UndefinedTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, UndefinedTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value result = nullptr;
@@ -33,11 +50,11 @@ HWTEST_F(NativeEngineTest, UndefinedTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: NullTest
+ * @tc.name: NullTest001
  * @tc.desc: Test null type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, NullTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, NullTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value result = nullptr;
@@ -46,11 +63,11 @@ HWTEST_F(NativeEngineTest, NullTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: BooleanTest
+ * @tc.name: BooleanTest001
  * @tc.desc: Test boolean type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, BooleanTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, BooleanTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     napi_value result = nullptr;
@@ -63,11 +80,11 @@ HWTEST_F(NativeEngineTest, BooleanTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: NumberTest
+ * @tc.name: NumberTest001
  * @tc.desc: Test number type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, NumberTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, NumberTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     {
@@ -113,11 +130,11 @@ HWTEST_F(NativeEngineTest, NumberTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: StringTest
+ * @tc.name: StringTest001
  * @tc.desc: Test string type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, StringTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, StringTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     const char testStr[] = "中文,English,123456,!@#$%$#^%&";
@@ -140,11 +157,11 @@ HWTEST_F(NativeEngineTest, StringTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: SymbolTest
+ * @tc.name: SymbolTest001
  * @tc.desc: Test symbol type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, SymbolTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, SymbolTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -160,11 +177,11 @@ HWTEST_F(NativeEngineTest, SymbolTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: ExternalTest
+ * @tc.name: ExternalTest001
  * @tc.desc: Test external type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ExternalTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, ExternalTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     const char testStr[] = "test";
@@ -182,11 +199,11 @@ HWTEST_F(NativeEngineTest, ExternalTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: ObjectTest
+ * @tc.name: ObjectTest001
  * @tc.desc: Test object type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ObjectTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, ObjectTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -246,11 +263,11 @@ HWTEST_F(NativeEngineTest, ObjectTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: FunctionTest
+ * @tc.name: FunctionTest001
  * @tc.desc: Test function type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, FunctionTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, FunctionTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -313,11 +330,11 @@ HWTEST_F(NativeEngineTest, FunctionTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: ArrayTest
+ * @tc.name: ArrayTest001
  * @tc.desc: Test array type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ArrayTest, testing::ext::TestSize.Level0) {
+HWTEST_F(NapiBasicTest, ArrayTest001, testing::ext::TestSize.Level1) {
     napi_env env = (napi_env) engine_;
 
     napi_value array = nullptr;
@@ -352,11 +369,11 @@ HWTEST_F(NativeEngineTest, ArrayTest, testing::ext::TestSize.Level0) {
 }
 
 /**
- * @tc.name: ArrayBufferTest
+ * @tc.name: ArrayBufferTest001
  * @tc.desc: Test array buffer type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ArrayBufferTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, ArrayBufferTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -374,11 +391,11 @@ HWTEST_F(NativeEngineTest, ArrayBufferTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: TypedArrayTest
+ * @tc.name: TypedArrayTest001
  * @tc.desc: Test typed array type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, TypedArrayTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, TypedArrayTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -417,11 +434,11 @@ HWTEST_F(NativeEngineTest, TypedArrayTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: DataViewTest
+ * @tc.name: DataViewTest001
  * @tc.desc: Test data view type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, DataViewTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, DataViewTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -456,11 +473,11 @@ HWTEST_F(NativeEngineTest, DataViewTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: PromiseTest
+ * @tc.name: PromiseTest001
  * @tc.desc: Test promise type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, PromiseTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, PromiseTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     {
@@ -496,11 +513,11 @@ HWTEST_F(NativeEngineTest, PromiseTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: ErrorTest
+ * @tc.name: ErrorTest001
  * @tc.desc: Test error type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ErrorTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, ErrorTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -555,11 +572,11 @@ HWTEST_F(NativeEngineTest, ErrorTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: ReferenceTest
+ * @tc.name: ReferenceTest001
  * @tc.desc: Test reference type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ReferenceTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, ReferenceTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -586,11 +603,11 @@ HWTEST_F(NativeEngineTest, ReferenceTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: CustomClassTest
+ * @tc.name: CustomClassTest001
  * @tc.desc: Test define class.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, CustomClassTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, CustomClassTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -652,11 +669,11 @@ HWTEST_F(NativeEngineTest, CustomClassTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: AsyncWorkTest
+ * @tc.name: AsyncWorkTest001
  * @tc.desc: Test async work.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, AsyncWorkTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, AsyncWorkTest001, testing::ext::TestSize.Level1)
 {
     struct AsyncWorkContext {
         napi_async_work work = nullptr;
@@ -694,11 +711,11 @@ HWTEST_F(NativeEngineTest, AsyncWorkTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: ObjectWrapperTest
+ * @tc.name: ObjectWrapperTest001
  * @tc.desc: Test object wrapper.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, ObjectWrapperTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, ObjectWrapperTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -730,11 +747,11 @@ HWTEST_F(NativeEngineTest, ObjectWrapperTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: RunScriptTest
+ * @tc.name: RunScriptTest001
  * @tc.desc: Test script running.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, RunScriptTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, RunScriptTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -753,7 +770,7 @@ HWTEST_F(NativeEngineTest, RunScriptTest, testing::ext::TestSize.Level0)
  * @tc.desc: Test date type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, DateTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, DateTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -780,11 +797,11 @@ HWTEST_F(NativeEngineTest, DateTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: StrictEqualsTest
+ * @tc.name: StrictEqualsTest001
  * @tc.desc: Test date type.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, StrictEqualsTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, StrictEqualsTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -803,11 +820,11 @@ HWTEST_F(NativeEngineTest, StrictEqualsTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: CreateRuntimeTest
+ * @tc.name: CreateRuntimeTest001
  * @tc.desc: Test create runtime.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, CreateRuntimeTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, CreateRuntimeTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -821,11 +838,11 @@ HWTEST_F(NativeEngineTest, CreateRuntimeTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: SerializeDeSerializeTest
+ * @tc.name: SerializeDeSerializeTest001
  * @tc.desc: Test serialize & deserialize.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, SerializeDeSerializeTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, SerializeDeSerializeTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -851,11 +868,11 @@ HWTEST_F(NativeEngineTest, SerializeDeSerializeTest, testing::ext::TestSize.Leve
 }
 
 /**
- * @tc.name: IsCallableTest
+ * @tc.name: IsCallableTest001
  * @tc.desc: Test is callable.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, IsCallableTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, IsCallableTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
@@ -898,11 +915,11 @@ HWTEST_F(NativeEngineTest, IsCallableTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: LoadModuleTest
+ * @tc.name: LoadModuleTest001
  * @tc.desc: Test LoadModule Func.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, LoadModuleTest, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, LoadModuleTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
     std::string sourceText = "var a = 1; let b = 2;"
@@ -930,11 +947,11 @@ HWTEST_F(NativeEngineTest, LoadModuleTest, testing::ext::TestSize.Level0)
 }
 
 /**
- * @tc.name: EncodeToUtf8Test
+ * @tc.name: EncodeToUtf8Test001
  * @tc.desc: Test EncodeToUtf8 Func.
  * @tc.type: FUNC
  */
-HWTEST_F(NativeEngineTest, EncodeToUtf8Test, testing::ext::TestSize.Level0)
+HWTEST_F(NapiBasicTest, EncodeToUtf8Test001, testing::ext::TestSize.Level1)
 {
     std::string str = "encode";
     auto testStr = engine_->CreateString(str.c_str(), str.length());
