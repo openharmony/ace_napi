@@ -585,9 +585,9 @@ void ArkNativeEngine::DeleteSerializationData(NativeValue* value) const
     panda::JSNApi::DeleteSerializationData(data);
 }
 
-void ArkNativeEngine::StartCpuProfiler()
+void ArkNativeEngine::StartCpuProfiler(const std::string fileName)
 {
-    panda::JSNApi::StartCpuProfiler(vm_);
+    panda::JSNApi::StartCpuProfiler(vm_, fileName);
 }
 
 void ArkNativeEngine::StopCpuProfiler()

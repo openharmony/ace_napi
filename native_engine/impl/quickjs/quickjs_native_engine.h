@@ -130,7 +130,7 @@ public:
     virtual bool TriggerFatalException(NativeValue* error) override;
     virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
 
-    void StartCpuProfiler() override {}
+    void StartCpuProfiler(const std::string fileName = "") override {}
     void StopCpuProfiler() override {}
 private:
     JSRuntime* runtime_;
