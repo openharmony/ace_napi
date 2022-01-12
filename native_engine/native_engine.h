@@ -192,7 +192,7 @@ public:
     virtual void DeleteSerializationData(NativeValue* value) const = 0;
     virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) = 0;
 
-    virtual void StartCpuProfiler() = 0;
+    virtual void StartCpuProfiler(const std::string fileName = "") = 0;
     virtual void StopCpuProfiler() = 0;
 
     NativeErrorExtendedInfo* GetLastError();
