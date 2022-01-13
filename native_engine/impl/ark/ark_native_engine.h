@@ -172,7 +172,7 @@ public:
     bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
 
     // Detect performance to obtain cpuprofiler file
-    void StartCpuProfiler() override;
+    void StartCpuProfiler(const std::string fileName = "") override;
     void StopCpuProfiler() override;
 private:
     EcmaVM* vm_ = nullptr;

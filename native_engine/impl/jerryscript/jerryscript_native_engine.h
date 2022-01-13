@@ -98,7 +98,7 @@ public:
     virtual NativeValue* CreateDate(double time) override;
     virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
 
-    void StartCpuProfiler() override {}
+    void StartCpuProfiler(const std::string fileName = "") override {}
     void StopCpuProfiler() override {}
 };
 
