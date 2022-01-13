@@ -724,6 +724,13 @@ void* V8NativeEngine::CreateRuntime()
     }
 
     V8NativeEngine* v8Engine = new V8NativeEngine(platform_, isolate, persistContext, jsEngine_);
+
+    // init callback
+    v8Engine->SetInitWorkerFunc(initWorkerFunc_);
+    v8Engine->SetGetAssetFunc(getAssetFunc_);
+    v8Engine->SetOffWorkerFunc(offWorkerFunc_);
+    v8Engine->SetWorkerAsyncWorkFunc(nativeAsyncExecuteCallback_, nativeAsyncCompleteCallback_);
+
     v8Engine->MarkAutoDispose();
     auto cleanEnv = [isolate]() {
         if (isolate != nullptr) {
@@ -732,7 +739,7 @@ void* V8NativeEngine::CreateRuntime()
         }
     };
     v8Engine->SetCleanEnv(cleanEnv);
-    return reinterpret_cast<void*>(v8Engine);
+    return static_cast<void*>(v8Engine);
 }
 
 class Serializer {
