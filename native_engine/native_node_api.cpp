@@ -49,7 +49,7 @@ NAPI_EXTERN NAPI_NO_RETURN void napi_fatal_error(const char* location,
     abort();
 }
 
-NAPI_EXTERN napi_status napi_fatal_exception(napi_env env, napi_value err)
+NAPI_INNER_EXTERN napi_status napi_fatal_exception(napi_env env, napi_value err)
 {
     HILOG_INFO("%{public}s, start.", __func__);
     CHECK_ENV(env);
@@ -148,7 +148,7 @@ NAPI_EXTERN napi_status napi_get_uv_event_loop(napi_env env, struct uv_loop_s** 
     return napi_status::napi_ok;
 }
 
-NAPI_EXTERN napi_status napi_add_env_cleanup_hook(napi_env env, void (*fun)(void* arg), void* arg)
+NAPI_INNER_EXTERN napi_status napi_add_env_cleanup_hook(napi_env env, void (*fun)(void* arg), void* arg)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, fun);
@@ -159,7 +159,7 @@ NAPI_EXTERN napi_status napi_add_env_cleanup_hook(napi_env env, void (*fun)(void
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_remove_env_cleanup_hook(napi_env env, void (*fun)(void* arg), void* arg)
+NAPI_INNER_EXTERN napi_status napi_remove_env_cleanup_hook(napi_env env, void (*fun)(void* arg), void* arg)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, fun);
@@ -283,7 +283,7 @@ struct napi_async_cleanup_hook_handle__ {
     void* done_data_ = nullptr;
 };
 
-NAPI_EXTERN napi_status napi_add_async_cleanup_hook(
+NAPI_INNER_EXTERN napi_status napi_add_async_cleanup_hook(
     napi_env env, napi_async_cleanup_hook hook, void* arg, napi_async_cleanup_hook_handle* remove_handle)
 {
     CHECK_ENV(env);
@@ -297,7 +297,7 @@ NAPI_EXTERN napi_status napi_add_async_cleanup_hook(
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_remove_async_cleanup_hook(napi_async_cleanup_hook_handle remove_handle)
+NAPI_INNER_EXTERN napi_status napi_remove_async_cleanup_hook(napi_async_cleanup_hook_handle remove_handle)
 {
     if (remove_handle == nullptr) {
         return napi_invalid_arg;
@@ -308,7 +308,7 @@ NAPI_EXTERN napi_status napi_remove_async_cleanup_hook(napi_async_cleanup_hook_h
 }
 
 // Methods to manager threadsafe
-NAPI_EXTERN napi_status napi_create_threadsafe_function(napi_env env, napi_value func, napi_value async_resource,
+NAPI_INNER_EXTERN napi_status napi_create_threadsafe_function(napi_env env, napi_value func, napi_value async_resource,
     napi_value async_resource_name, size_t max_queue_size, size_t initial_thread_count, void* thread_finalize_data,
     napi_finalize thread_finalize_cb, void* context, napi_threadsafe_function_call_js call_js_cb,
     napi_threadsafe_function* result)
@@ -343,7 +343,7 @@ NAPI_EXTERN napi_status napi_create_threadsafe_function(napi_env env, napi_value
     return napi_status::napi_ok;
 }
 
-NAPI_EXTERN napi_status napi_call_threadsafe_function(
+NAPI_INNER_EXTERN napi_status napi_call_threadsafe_function(
     napi_threadsafe_function func, void* data, napi_threadsafe_function_call_mode is_blocking)
 {
     CHECK_ENV(func);
@@ -374,7 +374,7 @@ NAPI_EXTERN napi_status napi_call_threadsafe_function(
     return status;
 }
 
-NAPI_EXTERN napi_status napi_acquire_threadsafe_function(napi_threadsafe_function func)
+NAPI_INNER_EXTERN napi_status napi_acquire_threadsafe_function(napi_threadsafe_function func)
 {
     CHECK_ENV(func);
 
@@ -388,7 +388,7 @@ NAPI_EXTERN napi_status napi_acquire_threadsafe_function(napi_threadsafe_functio
     return napi_status::napi_ok;
 }
 
-NAPI_EXTERN napi_status napi_release_threadsafe_function(
+NAPI_INNER_EXTERN napi_status napi_release_threadsafe_function(
     napi_threadsafe_function func, napi_threadsafe_function_release_mode mode)
 {
     CHECK_ENV(func);
@@ -404,7 +404,7 @@ NAPI_EXTERN napi_status napi_release_threadsafe_function(
     return napi_status::napi_ok;
 }
 
-NAPI_EXTERN napi_status napi_get_threadsafe_function_context(napi_threadsafe_function func, void** result)
+NAPI_INNER_EXTERN napi_status napi_get_threadsafe_function_context(napi_threadsafe_function func, void** result)
 {
     CHECK_ENV(func);
     CHECK_ENV(result);
@@ -415,7 +415,7 @@ NAPI_EXTERN napi_status napi_get_threadsafe_function_context(napi_threadsafe_fun
     return napi_status::napi_ok;
 }
 
-NAPI_EXTERN napi_status napi_ref_threadsafe_function(napi_env env, napi_threadsafe_function func)
+NAPI_INNER_EXTERN napi_status napi_ref_threadsafe_function(napi_env env, napi_threadsafe_function func)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, func);
@@ -429,7 +429,7 @@ NAPI_EXTERN napi_status napi_ref_threadsafe_function(napi_env env, napi_threadsa
     return napi_status::napi_ok;
 }
 
-NAPI_EXTERN napi_status napi_unref_threadsafe_function(napi_env env, napi_threadsafe_function func)
+NAPI_INNER_EXTERN napi_status napi_unref_threadsafe_function(napi_env env, napi_threadsafe_function func)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, func);
@@ -443,7 +443,7 @@ NAPI_EXTERN napi_status napi_unref_threadsafe_function(napi_env env, napi_thread
     return napi_status::napi_ok;
 }
 
-napi_status napi_async_init(
+NAPI_INNER_EXTERN napi_status napi_async_init(
     napi_env env, napi_value async_resource, napi_value async_resource_name, napi_async_context* result)
 {
     CHECK_ENV(env);
@@ -462,7 +462,7 @@ napi_status napi_async_init(
     return napi_clear_last_error(env);
 }
 
-napi_status napi_async_destroy(napi_env env, napi_async_context async_context)
+NAPI_INNER_EXTERN napi_status napi_async_destroy(napi_env env, napi_async_context async_context)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, async_context);
@@ -474,7 +474,7 @@ napi_status napi_async_destroy(napi_env env, napi_async_context async_context)
     return napi_clear_last_error(env);
 }
 
-napi_status napi_open_callback_scope(
+NAPI_INNER_EXTERN napi_status napi_open_callback_scope(
     napi_env env, napi_value, napi_async_context async_context_handle, napi_callback_scope* result)
 {
     CHECK_ENV(env);
@@ -492,7 +492,7 @@ napi_status napi_open_callback_scope(
     return napi_clear_last_error(env);
 }
 
-napi_status napi_close_callback_scope(napi_env env, napi_callback_scope scope)
+NAPI_INNER_EXTERN napi_status napi_close_callback_scope(napi_env env, napi_callback_scope scope)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, scope);

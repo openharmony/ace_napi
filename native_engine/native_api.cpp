@@ -194,7 +194,8 @@ NAPI_EXTERN napi_status napi_create_string_utf8(napi_env env, const char* str, s
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_string_utf16(napi_env env, const char16_t* str, size_t length, napi_value* result)
+NAPI_INNER_EXTERN napi_status napi_create_string_utf16(
+    napi_env env, const char16_t* str, size_t length, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, str);
@@ -429,7 +430,7 @@ NAPI_EXTERN napi_status napi_get_value_string_utf8(
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_value_string_utf16(
+NAPI_INNER_EXTERN napi_status napi_get_value_string_utf16(
     napi_env env, napi_value value, char16_t* buf, size_t bufsize, size_t* result)
 {
     CHECK_ENV(env);
@@ -1438,7 +1439,7 @@ NAPI_EXTERN napi_status napi_is_typedarray(napi_env env, napi_value value, bool*
 }
 
 EXTERN_C_START
-NAPI_EXTERN napi_status napi_is_buffer(napi_env env, napi_value value, bool* result)
+NAPI_INNER_EXTERN napi_status napi_is_buffer(napi_env env, napi_value value, bool* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -1449,7 +1450,7 @@ NAPI_EXTERN napi_status napi_is_buffer(napi_env env, napi_value value, bool* res
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_buffer(napi_env env, size_t size, void** data, napi_value* result)
+NAPI_INNER_EXTERN napi_status napi_create_buffer(napi_env env, size_t size, void** data, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, data);
@@ -1472,7 +1473,7 @@ NAPI_EXTERN napi_status napi_create_buffer(napi_env env, size_t size, void** dat
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_buffer_copy(
+NAPI_INNER_EXTERN napi_status napi_create_buffer_copy(
     napi_env env, size_t length, const void* data, void** result_data, napi_value* result)
 {
     CHECK_ENV(env);
@@ -1496,7 +1497,7 @@ NAPI_EXTERN napi_status napi_create_buffer_copy(
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_external_buffer(
+NAPI_INNER_EXTERN napi_status napi_create_external_buffer(
     napi_env env, size_t length, void* data, napi_finalize finalize_cb, void* finalize_hint, napi_value* result)
 {
     CHECK_ENV(env);
@@ -1517,7 +1518,7 @@ NAPI_EXTERN napi_status napi_create_external_buffer(
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_buffer_info(napi_env env, napi_value value, void** data, size_t* length)
+NAPI_INNER_EXTERN napi_status napi_get_buffer_info(napi_env env, napi_value value, void** data, size_t* length)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -1549,7 +1550,7 @@ NAPI_EXTERN napi_status napi_object_freeze(napi_env env, napi_value object)
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_object_seal(napi_env env, napi_value object)
+NAPI_INNER_EXTERN napi_status napi_object_seal(napi_env env, napi_value object)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, object);
@@ -1782,7 +1783,8 @@ NAPI_EXTERN napi_status napi_run_buffer_script(napi_env env, std::vector<uint8_t
 }
 
 // Memory management
-NAPI_EXTERN napi_status napi_adjust_external_memory(napi_env env, int64_t change_in_bytes, int64_t* adjusted_value)
+NAPI_INNER_EXTERN napi_status napi_adjust_external_memory(
+    napi_env env, int64_t change_in_bytes, int64_t* adjusted_value)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, adjusted_value);
@@ -2096,7 +2098,7 @@ NAPI_EXTERN napi_status napi_get_exception_info_for_worker(napi_env env, napi_va
     return napi_clear_last_error(env);
 }
 
-napi_status napi_get_jsEngine(napi_env env, void** pEngine)
+NAPI_EXTERN napi_status napi_get_jsEngine(napi_env env, void** pEngine)
 {
     CHECK_ENV(env);
     auto engine = reinterpret_cast<NativeEngine*>(env);
@@ -2104,7 +2106,7 @@ napi_status napi_get_jsEngine(napi_env env, void** pEngine)
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_bigint_int64(napi_env env, int64_t value, napi_value* result)
+NAPI_INNER_EXTERN napi_status napi_create_bigint_int64(napi_env env, int64_t value, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, result);
@@ -2128,7 +2130,8 @@ NAPI_EXTERN napi_status napi_create_bigint_uint64(napi_env env, uint64_t value, 
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_value_bigint_int64(napi_env env, napi_value value, int64_t* result, bool* lossless)
+NAPI_INNER_EXTERN napi_status napi_get_value_bigint_int64(
+    napi_env env, napi_value value, int64_t* result, bool* lossless)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -2143,7 +2146,8 @@ NAPI_EXTERN napi_status napi_get_value_bigint_int64(napi_env env, napi_value val
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_value_bigint_uint64(napi_env env, napi_value value, uint64_t* result, bool* lossless)
+NAPI_EXTERN napi_status napi_get_value_bigint_uint64(
+    napi_env env, napi_value value, uint64_t* result, bool* lossless)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -2169,7 +2173,7 @@ NAPI_EXTERN napi_status napi_is_date(napi_env env, napi_value value, bool* resul
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_is_detached_arraybuffer(napi_env env, napi_value arraybuffer, bool* result)
+NAPI_INNER_EXTERN napi_status napi_is_detached_arraybuffer(napi_env env, napi_value arraybuffer, bool* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, arraybuffer);
@@ -2188,7 +2192,8 @@ NAPI_EXTERN napi_status napi_is_detached_arraybuffer(napi_env env, napi_value ar
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_all_property_names(napi_env env, napi_value object, napi_key_collection_mode key_mode,
+NAPI_INNER_EXTERN napi_status napi_get_all_property_names(
+    napi_env env, napi_value object, napi_key_collection_mode key_mode,
     napi_key_filter key_filter, napi_key_conversion key_conversion, napi_value* result)
 {
     CHECK_ENV(env);
@@ -2207,7 +2212,7 @@ NAPI_EXTERN napi_status napi_get_all_property_names(napi_env env, napi_value obj
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_detach_arraybuffer(napi_env env, napi_value arraybuffer)
+NAPI_INNER_EXTERN napi_status napi_detach_arraybuffer(napi_env env, napi_value arraybuffer)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, arraybuffer);
@@ -2230,7 +2235,7 @@ NAPI_EXTERN napi_status napi_detach_arraybuffer(napi_env env, napi_value arraybu
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_type_tag_object(napi_env env, napi_value js_object, const napi_type_tag* type_tag)
+NAPI_INNER_EXTERN napi_status napi_type_tag_object(napi_env env, napi_value js_object, const napi_type_tag* type_tag)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, js_object);
@@ -2252,7 +2257,7 @@ NAPI_EXTERN napi_status napi_type_tag_object(napi_env env, napi_value js_object,
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_check_object_type_tag(
+NAPI_INNER_EXTERN napi_status napi_check_object_type_tag(
     napi_env env, napi_value js_object, const napi_type_tag* type_tag, bool* result)
 {
     CHECK_ENV(env);
@@ -2270,7 +2275,7 @@ NAPI_EXTERN napi_status napi_check_object_type_tag(
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_date(napi_env env, double time, napi_value* result)
+NAPI_INNER_EXTERN napi_status napi_create_date(napi_env env, double time, napi_value* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, result);
@@ -2281,7 +2286,7 @@ NAPI_EXTERN napi_status napi_create_date(napi_env env, double time, napi_value* 
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_date_value(napi_env env, napi_value value, double* result)
+NAPI_INNER_EXTERN napi_status napi_get_date_value(napi_env env, napi_value value, double* result)
 {
     CHECK_ENV(env);
     CHECK_ARG(env, value);
@@ -2299,7 +2304,7 @@ NAPI_EXTERN napi_status napi_get_date_value(napi_env env, napi_value value, doub
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_add_finalizer(napi_env env, napi_value js_object, void* native_object,
+NAPI_INNER_EXTERN napi_status napi_add_finalizer(napi_env env, napi_value js_object, void* native_object,
     napi_finalize finalize_cb, void* finalize_hint, napi_ref* result)
 {
     CHECK_ENV(env);
@@ -2319,7 +2324,7 @@ NAPI_EXTERN napi_status napi_add_finalizer(napi_env env, napi_value js_object, v
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_create_bigint_words(
+NAPI_INNER_EXTERN napi_status napi_create_bigint_words(
     napi_env env, int sign_bit, size_t word_count, const uint64_t* words, napi_value* result)
 {
     CHECK_ENV(env);
@@ -2333,7 +2338,7 @@ NAPI_EXTERN napi_status napi_create_bigint_words(
     return napi_clear_last_error(env);
 }
 
-NAPI_EXTERN napi_status napi_get_value_bigint_words(
+NAPI_INNER_EXTERN napi_status napi_get_value_bigint_words(
     napi_env env, napi_value value, int* sign_bit, size_t* word_count, uint64_t* words)
 {
     CHECK_ENV(env);

@@ -15,7 +15,8 @@ common_include = [
   "./common",
   "./engine",
   "//foundation/ace/napi",
-  "//foundation/ace/napi/interfaces/kits/napi",
+  "//foundation/ace/napi/interfaces/innerkits",
+  "//foundation/ace/napi/interfaces/kits",
   "//foundation/ace/napi/native_engine",
   "//third_party/googletest/include",
   "//third_party/node/src",
@@ -39,7 +40,6 @@ jerryscript_include += [
 ]
 
 common_deps = [
-  "//foundation/ace/napi:ace_napi",
   "//third_party/googletest:gtest",
   "//third_party/googletest:gtest_main",
   "//third_party/libuv:uv_static",
