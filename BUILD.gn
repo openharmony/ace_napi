@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//foundation/ace/napi/napi.gni")
+
 config("ace_napi_config") {
   include_dirs = [
     "//foundation/ace/napi",
+    "//foundation/ace/napi/interfaces/innerkits",
     "//foundation/ace/napi/interfaces/kits",
     "//third_party/libuv/include",
     "//third_party/node/src",
@@ -40,23 +43,15 @@ if (defined(ohos_lite)) {
     public_configs = [ ":ace_napi_config" ]
 
     include_dirs = [
-      "//third_party/libuv/include",
       "//foundation/ace/napi",
+      "//foundation/ace/napi/interfaces/innerkits",
       "//foundation/ace/napi/interfaces/kits",
+      "//third_party/libuv/include",
       "//third_party/node/src",
       "//third_party/bounds_checking_function/include",
     ]
 
-    sources = [
-      "callback_scope_manager/native_callback_scope_manager.cpp",
-      "module_manager/native_module_manager.cpp",
-      "native_engine/native_api.cpp",
-      "native_engine/native_async_work.cpp",
-      "native_engine/native_engine.cpp",
-      "native_engine/native_node_api.cpp",
-      "native_engine/native_safe_async_work.cpp",
-      "scope_manager/native_scope_manager.cpp",
-    ]
+    sources = napi_sources
 
     if (current_cpu == "arm64") {
       defines = [ "_ARM64_" ]
@@ -137,23 +132,14 @@ if (defined(ohos_lite)) {
 
     include_dirs = [
       "//foundation/ace/napi",
+      "//foundation/ace/napi/interfaces/innerkits",
       "//foundation/ace/napi/interfaces/kits",
       "//third_party/libuv/include",
       "//third_party/node/src",
       "//utils/native/base/include",
     ]
 
-    sources = [
-      "callback_scope_manager/native_callback_scope_manager.cpp",
-      "module_manager/native_module_manager.cpp",
-      "native_engine/native_api.cpp",
-      "native_engine/native_async_work.cpp",
-      "native_engine/native_engine.cpp",
-      "native_engine/native_node_api.cpp",
-      "native_engine/native_safe_async_work.cpp",
-      "reference_manager/native_reference_manager.cpp",
-      "scope_manager/native_scope_manager.cpp",
-    ]
+    sources = napi_sources
 
     if (current_cpu == "arm64") {
       defines += [ "_ARM64_" ]
@@ -227,7 +213,6 @@ if (defined(ohos_lite)) {
     dest_dir = "$ndk_headers_out_dir/napi"
     sources = [
       "//foundation/ace/napi/interfaces/kits/napi/native_api.h",
-      "//foundation/ace/napi/interfaces/kits/napi/native_common.h",
       "//third_party/node/src/js_native_api.h",
       "//third_party/node/src/js_native_api_types.h",
       "//third_party/node/src/node_api.h",
@@ -235,54 +220,8 @@ if (defined(ohos_lite)) {
     ]
   }
 
-  ohos_shared_library("ace_napi_ndk") {
-    public_configs = [ ":ace_napi_config" ]
-
-    include_dirs = [
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/interfaces/kits",
-      "//third_party/libuv/include",
-      "//third_party/node/src",
-      "//utils/native/base/include",
-    ]
-    sources = [
-      "callback_scope_manager/native_callback_scope_manager.cpp",
-      "module_manager/native_module_manager.cpp",
-      "native_engine/native_api.cpp",
-      "native_engine/native_async_work.cpp",
-      "native_engine/native_engine.cpp",
-      "native_engine/native_node_api.cpp",
-      "native_engine/native_safe_async_work.cpp",
-      "scope_manager/native_scope_manager.cpp",
-    ]
-
-    if (current_cpu == "arm64") {
-      defines = [ "_ARM64_" ]
-    }
-
-    deps = [
-      ":libnapi_ndk",
-      "//third_party/libuv:uv_static",
-      "//utils/native/base:utilsecurec",
-    ]
-
-    cflags_cc = [ "-Wno-missing-braces" ]
-
-    if (is_standard_system) {
-      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
-    } else {
-      external_deps = [ "hilog:libhilog" ]
-    }
-
-    version_script =
-        get_label_info(":libnapi_ndk", "target_gen_dir") + "/" +
-        get_label_info(":libnapi_ndk", "name") + version_script_suffix
-    subsystem_name = "ace"
-    part_name = "napi"
-  }
-
   group("napi_packages_ndk") {
-    deps = [ ":ace_napi_ndk" ]
+    deps = [ ":libnapi_ndk" ]
   }
 
   if (!build_ohos_ndk) {
