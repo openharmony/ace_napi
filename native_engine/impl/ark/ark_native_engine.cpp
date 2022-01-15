@@ -792,3 +792,41 @@ void ArkNativeEngine::PromiseRejectCallback(void* info)
         }
     }
 }
+
+void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, DumpFormat dumpFormat)
+{
+    if (dumpFormat == DumpFormat::JSON) {
+        DFXJSNApi::DumpHeapSnapShot(vm_, 0, path, isVmMode);
+    }
+    if (dumpFormat == DumpFormat::BINARY) {
+        DFXJSNApi::DumpHeapSnapShot(vm_, 1, path, isVmMode);
+    }
+    if (dumpFormat == DumpFormat::OTHER) {
+        DFXJSNApi::DumpHeapSnapShot(vm_, 2, path, isVmMode); // 2:enum is 2
+    }
+}
+
+std::string ArkNativeEngine::BuildNativeAndJsBackStackTrace()
+{
+    std::string stackTraceStr = DFXJSNApi::BuildNativeAndJsBackStackTrace(vm_);
+    return stackTraceStr;
+}
+
+bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
+{
+    return DFXJSNApi::StartHeapTracking(vm_, timeInterval, isVmMode);
+}
+
+bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat)
+{
+    if (dumpFormat == DumpFormat::JSON) {
+        return DFXJSNApi::StopHeapTracking(vm_, 0, filePath);
+    }
+    if (dumpFormat == DumpFormat::BINARY) {
+        return DFXJSNApi::StopHeapTracking(vm_, 1, filePath);
+    }
+    if (dumpFormat == DumpFormat::OTHER) {
+        return DFXJSNApi::StopHeapTracking(vm_, 2, filePath); // 2:enum is 2
+    }
+    return false;
+}
