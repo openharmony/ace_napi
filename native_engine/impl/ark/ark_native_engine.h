@@ -20,6 +20,7 @@
 
 #include "ark_headers.h"
 #include "ecmascript/napi/include/jsnapi.h"
+#include "ecmascript/napi/include/dfx_jsnapi.h"
 #include "native_engine/native_engine.h"
 
 using panda::ecmascript::EcmaVM;
@@ -27,6 +28,7 @@ using panda::Local;
 using panda::LocalScope;
 using panda::JSValueRef;
 using panda::JSNApi;
+using panda::DFXJSNApi;
 
 class SerializationData {
 public:
@@ -174,6 +176,12 @@ public:
     // Detect performance to obtain cpuprofiler file
     void StartCpuProfiler(const std::string fileName = "") override;
     void StopCpuProfiler() override;
+
+    void DumpHeapSnapShot(const std::string &path, bool isVmMode = true,
+        DumpFormat dumpFormat = DumpFormat::JSON) override;
+    std::string BuildNativeAndJsBackStackTrace() override;
+    bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
+    bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override;
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;

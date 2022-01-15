@@ -202,6 +202,21 @@ public:
         const std::string& instanceName, void* instance);
     void StartCpuProfiler(const std::string fileName = "") override {}
     void StopCpuProfiler() override {}
+
+    void DumpHeapSnapShot(const std::string &path, bool isVmMode = true,
+        DumpFormat dumpFormat = DumpFormat::JSON) override {}
+    std::string BuildNativeAndJsBackStackTrace() override
+    {
+        return nullptr;
+    }
+    bool StartHeapTracking(double timeInterval, bool isVmMode = true) override
+    {
+        return false;
+    }
+    bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override
+    {
+        return false;
+    }
 private:
     static void ExecuteWrap(NativeEngine* engine, void* data);
     static void CompleteWrap(NativeEngine* engine, int status, void* data);
