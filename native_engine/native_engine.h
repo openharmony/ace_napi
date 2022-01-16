@@ -265,6 +265,14 @@ public:
     {
         isStopping_.store(value);
     }
+    
+    virtual void TriggerGC(int gcType) = 0;
+    virtual void PrintStatisticResult() = 0;
+    virtual void StartRuntimeStat() = 0;
+    virtual void StopRuntimeStat() = 0;
+    virtual size_t GetArrayBufferSize() = 0;
+    virtual size_t GetHeapTotalSize() = 0;
+    virtual size_t GetHeapUsedSize() = 0;
 
 protected:
     void Init();

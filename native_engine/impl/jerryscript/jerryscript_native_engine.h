@@ -115,6 +115,23 @@ public:
     {
         return false;
     }
+    
+    void TriggerGC(int gcType) override {}
+    void PrintStatisticResult() override {}
+    void StartRuntimeStat() override {}
+    void StopRuntimeStat() override {}
+    size_t GetArrayBufferSize() override
+    {
+        return 0;
+    }
+    size_t GetHeapTotalSize() override
+    {
+        return 0;
+    }
+    size_t GetHeapUsedSize() override
+    {
+        return 0;
+    }
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_JERRYSCRIPT_NATIVE_ENGINE_H_ */
