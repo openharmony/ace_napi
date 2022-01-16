@@ -30,7 +30,7 @@ using panda::JSValueRef;
 using panda::JSNApi;
 using panda::DFXJSNApi;
 
-enum TriggerGCType {
+enum class TriggerGCType {
     SEMI_GC,
     OLD_GC,
     COMPRESS_FULL_GC

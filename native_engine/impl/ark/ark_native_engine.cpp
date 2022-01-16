@@ -834,7 +834,7 @@ bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat d
 void ArkNativeEngine::TriggerGC(int gcType)
 {
     TriggerGCType Type = TriggerGCType(gcType);
-    switch(Type) {
+    switch (Type) {
         case TriggerGCType::SEMI_GC:
             JSNApi::TriggerGC(vm_, JSNApi::TRIGGER_GC_TYPE::SEMI_GC);
             break;
