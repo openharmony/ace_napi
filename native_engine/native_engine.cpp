@@ -441,3 +441,14 @@ void NativeEngine::DecreaseWaitingRequestCounter()
     request_waiting_--;
     HILOG_INFO("%{public}s, request waiting:%{public}d.", __func__, request_waiting_);
 }
+
+void NativeEngine::RegisterWorkerFunction(const NativeEngine* engine)
+{
+    if (engine == nullptr) {
+        return;
+    }
+    SetInitWorkerFunc(engine->initWorkerFunc_);
+    SetGetAssetFunc(engine->getAssetFunc_);
+    SetOffWorkerFunc(engine->offWorkerFunc_);
+    SetWorkerAsyncWorkFunc(engine->nativeAsyncExecuteCallback_, engine->nativeAsyncCompleteCallback_);
+}
