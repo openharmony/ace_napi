@@ -525,7 +525,7 @@ bool ArkNativeEngine::Throw(NativeErrorType type, const char* code, const char* 
     return true;
 }
 
-void* ArkNativeEngine::CreateRuntime()
+NativeEngine* ArkNativeEngine::CreateRuntimeFunc(NativeEngine* engine, void* jsEngine)
 {
     panda::RuntimeOption option;
     option.SetGcType(panda::RuntimeOption::GC_TYPE::GEN_GC);
@@ -538,13 +538,10 @@ void* ArkNativeEngine::CreateRuntime()
         return nullptr;
     }
 
-    ArkNativeEngine* arkEngine = new ArkNativeEngine(vm, this);
+    ArkNativeEngine* arkEngine = new ArkNativeEngine(vm, jsEngine);
 
     // init callback
-    arkEngine->SetInitWorkerFunc(initWorkerFunc_);
-    arkEngine->SetGetAssetFunc(getAssetFunc_);
-    arkEngine->SetOffWorkerFunc(offWorkerFunc_);
-    arkEngine->SetWorkerAsyncWorkFunc(nativeAsyncExecuteCallback_, nativeAsyncCompleteCallback_);
+    arkEngine->RegisterWorkerFunction(engine);
 
     auto cleanEnv = [vm]() {
         if (vm != nullptr) {
@@ -554,7 +551,12 @@ void* ArkNativeEngine::CreateRuntime()
     };
     arkEngine->SetCleanEnv(cleanEnv);
 
-    return static_cast<void*>(arkEngine);
+    return arkEngine;
+}
+
+void* ArkNativeEngine::CreateRuntime()
+{
+    return ArkNativeEngine::CreateRuntimeFunc(this, jsEngine_);
 }
 
 NativeValue* ArkNativeEngine::Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer)

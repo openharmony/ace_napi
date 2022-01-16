@@ -266,6 +266,8 @@ public:
         isStopping_.store(value);
     }
 
+    void RegisterWorkerFunction(const NativeEngine* engine);
+
 protected:
     void Init();
     void Deinit();
