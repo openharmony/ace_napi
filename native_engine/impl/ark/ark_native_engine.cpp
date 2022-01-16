@@ -830,3 +830,51 @@ bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat d
     }
     return false;
 }
+
+void ArkNativeEngine::TriggerGC(int gcType)
+{
+    TriggerGCType Type = TriggerGCType(gcType);
+    switch(Type) {
+        case TriggerGCType::SEMI_GC:
+            JSNApi::TriggerGC(vm_, JSNApi::TRIGGER_GC_TYPE::SEMI_GC);
+            break;
+        case TriggerGCType::OLD_GC:
+            JSNApi::TriggerGC(vm_, JSNApi::TRIGGER_GC_TYPE::OLD_GC);
+            break;
+        case TriggerGCType::COMPRESS_FULL_GC:
+            JSNApi::TriggerGC(vm_, JSNApi::TRIGGER_GC_TYPE::COMPRESS_FULL_GC);
+            break;
+        default:
+            break;
+    }
+}
+
+void ArkNativeEngine::PrintStatisticResult()
+{
+    DFXJSNApi::PrintStatisticResult(vm_);
+}
+
+void ArkNativeEngine::StartRuntimeStat()
+{
+    DFXJSNApi::StartRuntimeStat(vm_);
+}
+
+void ArkNativeEngine::StopRuntimeStat()
+{
+    DFXJSNApi::StopRuntimeStat(vm_);
+}
+
+size_t ArkNativeEngine::GetArrayBufferSize()
+{
+    return DFXJSNApi::GetArrayBufferSize(vm_);
+}
+
+size_t ArkNativeEngine::GetHeapTotalSize()
+{
+    return DFXJSNApi::GetHeapTotalSize(vm_);
+}
+
+size_t ArkNativeEngine::GetHeapUsedSize()
+{
+    return DFXJSNApi::GetHeapUsedSize(vm_);
+}

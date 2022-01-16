@@ -30,6 +30,12 @@ using panda::JSValueRef;
 using panda::JSNApi;
 using panda::DFXJSNApi;
 
+enum TriggerGCType {
+    SEMI_GC,
+    OLD_GC,
+    COMPRESS_FULL_GC
+};
+
 class SerializationData {
 public:
     SerializationData() : data_(nullptr), size_(0) {}
@@ -182,6 +188,14 @@ public:
     std::string BuildNativeAndJsBackStackTrace() override;
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
     bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override;
+    
+    void TriggerGC(int gcType) override;
+    void PrintStatisticResult() override;
+    void StartRuntimeStat() override;
+    void StopRuntimeStat() override;
+    size_t GetArrayBufferSize() override;
+    size_t GetHeapTotalSize() override;
+    size_t GetHeapUsedSize() override;
 private:
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;
