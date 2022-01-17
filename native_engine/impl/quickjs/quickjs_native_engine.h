@@ -148,7 +148,6 @@ public:
         return false;
     }
     
-    void TriggerGC(int gcType) override {}
     void PrintStatisticResult() override {}
     void StartRuntimeStat() override {}
     void StopRuntimeStat() override {}

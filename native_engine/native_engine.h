@@ -266,7 +266,6 @@ public:
         isStopping_.store(value);
     }
     
-    virtual void TriggerGC(int gcType) = 0;
     virtual void PrintStatisticResult() = 0;
     virtual void StartRuntimeStat() = 0;
     virtual void StopRuntimeStat() = 0;
