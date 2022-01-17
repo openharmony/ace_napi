@@ -265,6 +265,13 @@ public:
     {
         isStopping_.store(value);
     }
+    
+    virtual void PrintStatisticResult() = 0;
+    virtual void StartRuntimeStat() = 0;
+    virtual void StopRuntimeStat() = 0;
+    virtual size_t GetArrayBufferSize() = 0;
+    virtual size_t GetHeapTotalSize() = 0;
+    virtual size_t GetHeapUsedSize() = 0;
 
     void RegisterWorkerFunction(const NativeEngine* engine);
 

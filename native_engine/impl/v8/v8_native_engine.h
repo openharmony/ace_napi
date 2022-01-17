@@ -217,6 +217,22 @@ public:
     {
         return false;
     }
+    
+    void PrintStatisticResult() override {}
+    void StartRuntimeStat() override {}
+    void StopRuntimeStat() override {}
+    size_t GetArrayBufferSize() override
+    {
+        return 0;
+    }
+    size_t GetHeapTotalSize() override
+    {
+        return 0;
+    }
+    size_t GetHeapUsedSize() override
+    {
+        return 0;
+    }
 private:
     static void ExecuteWrap(NativeEngine* engine, void* data);
     static void CompleteWrap(NativeEngine* engine, int status, void* data);
