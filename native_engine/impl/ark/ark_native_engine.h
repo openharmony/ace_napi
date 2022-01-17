@@ -183,6 +183,8 @@ public:
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
     bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override;
 private:
+    static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
+
     EcmaVM* vm_ = nullptr;
     std::string exceptionStr_;
     panda::LocalScope topScope_;
