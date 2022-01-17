@@ -832,3 +832,33 @@ bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat d
     }
     return false;
 }
+
+void ArkNativeEngine::PrintStatisticResult()
+{
+    DFXJSNApi::PrintStatisticResult(vm_);
+}
+
+void ArkNativeEngine::StartRuntimeStat()
+{
+    DFXJSNApi::StartRuntimeStat(vm_);
+}
+
+void ArkNativeEngine::StopRuntimeStat()
+{
+    DFXJSNApi::StopRuntimeStat(vm_);
+}
+
+size_t ArkNativeEngine::GetArrayBufferSize()
+{
+    return DFXJSNApi::GetArrayBufferSize(vm_);
+}
+
+size_t ArkNativeEngine::GetHeapTotalSize()
+{
+    return DFXJSNApi::GetHeapTotalSize(vm_);
+}
+
+size_t ArkNativeEngine::GetHeapUsedSize()
+{
+    return DFXJSNApi::GetHeapUsedSize(vm_);
+}

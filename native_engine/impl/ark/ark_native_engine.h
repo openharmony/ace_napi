@@ -182,6 +182,13 @@ public:
     std::string BuildNativeAndJsBackStackTrace() override;
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
     bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override;
+    
+    void PrintStatisticResult() override;
+    void StartRuntimeStat() override;
+    void StopRuntimeStat() override;
+    size_t GetArrayBufferSize() override;
+    size_t GetHeapTotalSize() override;
+    size_t GetHeapUsedSize() override;
 private:
     static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
 
