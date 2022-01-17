@@ -725,18 +725,15 @@ NativeValue* QuickJSNativeEngine::JSValueToNativeValue(QuickJSNativeEngine* engi
     return result;
 }
 
-void* QuickJSNativeEngine::CreateRuntime()
+NativeEngine* QuickJSNativeEngine::CreateRuntimeFunc(NativeEngine* engine, void* jsEngine)
 {
     JSRuntime* runtime = JS_NewRuntime();
     JSContext* context = JS_NewContext(runtime);
 
-    QuickJSNativeEngine *qjsEngine = new QuickJSNativeEngine(runtime, context, this);
+    QuickJSNativeEngine *qjsEngine = new QuickJSNativeEngine(runtime, context, jsEngine);
 
     // init callback
-    qjsEngine->SetInitWorkerFunc(initWorkerFunc_);
-    qjsEngine->SetGetAssetFunc(getAssetFunc_);
-    qjsEngine->SetOffWorkerFunc(offWorkerFunc_);
-    qjsEngine->SetWorkerAsyncWorkFunc(nativeAsyncExecuteCallback_, nativeAsyncCompleteCallback_);
+    qjsEngine->RegisterWorkerFunction(engine);
 
     auto cleanEnv = [runtime, context]() {
         if (context) {
@@ -748,7 +745,12 @@ void* QuickJSNativeEngine::CreateRuntime()
     };
     qjsEngine->SetCleanEnv(cleanEnv);
 
-    return static_cast<void*>(qjsEngine);
+    return qjsEngine;
+}
+
+void* QuickJSNativeEngine::CreateRuntime()
+{
+    return QuickJSNativeEngine::CreateRuntimeFunc(this, jsEngine_);
 }
 
 bool QuickJSNativeEngine::CheckTransferList(JSValue transferList)

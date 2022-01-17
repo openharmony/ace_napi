@@ -148,6 +148,8 @@ public:
         return false;
     }
 private:
+    static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
+
     JSRuntime* runtime_;
     JSContext* context_;
 };
