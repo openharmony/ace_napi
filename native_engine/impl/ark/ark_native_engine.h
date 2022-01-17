@@ -30,12 +30,6 @@ using panda::JSValueRef;
 using panda::JSNApi;
 using panda::DFXJSNApi;
 
-enum class TriggerGCType {
-    SEMI_GC,
-    OLD_GC,
-    COMPRESS_FULL_GC
-};
-
 class SerializationData {
 public:
     SerializationData() : data_(nullptr), size_(0) {}
