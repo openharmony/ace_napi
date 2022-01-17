@@ -183,7 +183,6 @@ public:
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
     bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override;
     
-    void TriggerGC(int gcType) override;
     void PrintStatisticResult() override;
     void StartRuntimeStat() override;
     void StopRuntimeStat() override;
