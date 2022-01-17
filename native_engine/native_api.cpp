@@ -531,7 +531,8 @@ NAPI_EXTERN napi_status napi_get_property_names(napi_env env, napi_value object,
 
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -552,7 +553,8 @@ NAPI_EXTERN napi_status napi_set_property(napi_env env, napi_value object, napi_
     auto propKey = reinterpret_cast<NativeValue*>(key);
     auto propValue = reinterpret_cast<NativeValue*>(value);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -570,7 +572,8 @@ NAPI_EXTERN napi_status napi_has_property(napi_env env, napi_value object, napi_
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
     auto propKey = reinterpret_cast<NativeValue*>(key);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -587,7 +590,8 @@ NAPI_EXTERN napi_status napi_get_property(napi_env env, napi_value object, napi_
 
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -607,7 +611,8 @@ NAPI_EXTERN napi_status napi_delete_property(napi_env env, napi_value object, na
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
     auto propKey = reinterpret_cast<NativeValue*>(key);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -625,7 +630,8 @@ NAPI_EXTERN napi_status napi_has_own_property(napi_env env, napi_value object, n
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
     auto propKey = reinterpret_cast<NativeValue*>(key);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -643,7 +649,8 @@ NAPI_EXTERN napi_status napi_set_named_property(napi_env env, napi_value object,
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
     auto propValue = reinterpret_cast<NativeValue*>(value);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -660,7 +667,8 @@ NAPI_EXTERN napi_status napi_has_named_property(napi_env env, napi_value object,
 
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -680,7 +688,8 @@ NAPI_EXTERN napi_status napi_get_named_property(napi_env env,
 
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
@@ -2188,7 +2197,8 @@ NAPI_EXTERN napi_status napi_get_all_property_names(napi_env env, napi_value obj
 
     auto nativeValue = reinterpret_cast<NativeValue*>(object);
 
-    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT, napi_object_expected);
+    RETURN_STATUS_IF_FALSE(env, nativeValue->TypeOf() == NATIVE_OBJECT || nativeValue->TypeOf() == NATIVE_FUNCTION,
+        napi_object_expected);
 
     auto nativeObject = reinterpret_cast<NativeObject*>(nativeValue->GetInterface(NativeObject::INTERFACE_ID));
 
