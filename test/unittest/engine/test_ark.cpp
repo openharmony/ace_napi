@@ -29,6 +29,18 @@ NativeEngineTest::NativeEngineTest()
 NativeEngineTest::~NativeEngineTest()
 {}
 
+void *NativeEngineTest::Run(void *arg)
+{
+    NativeEngine* engine = reinterpret_cast<NativeEngine*>(arg);
+    bool falgThread = engine->IsVMSuspended();
+    engine->SuspendVM();
+    bool falgThread2 = engine->IsVMSuspended();
+    engine->ResumeVM();
+    sleep(10);
+    bool falgThread3 = engine->IsVMSuspended();
+    return nullptr;
+}
+
 int main(int argc, char** argv)
 {
     testing::GTEST_FLAG(output) = "xml:./";
@@ -58,4 +70,25 @@ int main(int argc, char** argv)
     vm = nullptr;
 
     return ret;
+}
+
+HWTEST_F(NativeEngineTest, suppend002, testing::ext::TestSize.Level0)
+{
+    std::cout << "NativeEngineTest is start"<<std::endl;
+    pthread_t tids;
+    int res = pthread_create(&tids, NULL, Run, (void*)engine_);
+    if (res != 0) {
+        std::cout << "thread create failed";
+        return;
+    }
+    std::cout << "NativeEngineTest is start2"<<std::endl;
+    for(int i = 0; i < 10; ++i) {
+        sleep(10);
+        bool supportFlag = engine_->CheckSafepoint();
+        std::cout << "supportFlag "<< supportFlag ;
+        if(supportFlag) {
+            std::cout << "CheckSafepoint is ture";
+        }
+    }
+    pthread_exit(NULL);
 }
