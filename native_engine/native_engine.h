@@ -199,6 +199,11 @@ public:
     virtual void StartCpuProfiler(const std::string fileName = "") = 0;
     virtual void StopCpuProfiler() = 0;
 
+    virtual void ResumeVM() = 0;
+    virtual bool SuspendVM() = 0;
+    virtual bool IsVMSuspended() = 0;
+    virtual bool CheckSafepoint() = 0;
+
     virtual void DumpHeapSnapShot(const std::string &path, bool isVmMode = true,
         DumpFormat dumpFormat = DumpFormat::JSON) = 0;
     virtual std::string BuildNativeAndJsBackStackTrace() = 0;
