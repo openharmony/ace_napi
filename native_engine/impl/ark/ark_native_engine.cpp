@@ -612,6 +612,26 @@ void ArkNativeEngine::StopCpuProfiler()
     panda::JSNApi::StopCpuProfiler();
 }
 
+void ArkNativeEngine::ResumeVM()
+{
+    panda::JSNApi::ResumeVM(vm_);
+}
+
+bool ArkNativeEngine::SuspendVM()
+{
+    return panda::JSNApi::SuspendVM(vm_);
+}
+
+bool ArkNativeEngine::IsVMSuspended()
+{
+    return panda::JSNApi::IsVMSuspended(vm_);
+}
+
+bool ArkNativeEngine::CheckSafepoint()
+{
+    return panda::JSNApi::CheckSafepoint(vm_);
+}
+
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     panda::JSExecutionScope executionScope(vm_);
