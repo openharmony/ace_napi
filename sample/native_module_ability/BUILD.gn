@@ -27,8 +27,9 @@ ohos_shared_library("ability") {
   ]
 
   external_deps = [
-    "aafwk_standard:ability_manager",
-    "aafwk_standard:want",
+    "ability_runtime:ability_manager",
+    "ability_runtime:app_manager",
+    "ability_runtime:want",
     "appexecfwk_standard:appexecfwk_base",
     "appexecfwk_standard:appexecfwk_core",
     "appexecfwk_standard:libeventhandler",
