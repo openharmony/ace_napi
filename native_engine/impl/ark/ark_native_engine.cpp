@@ -616,8 +616,7 @@ NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     panda::JSExecutionScope executionScope(vm_);
     LocalScope scope(vm_);
-    Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
-    bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), entryPoint);
+    bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), PANDA_MAIN_FUNCTION);
 
     Local<ObjectRef> excep = panda::JSNApi::GetUncaughtException(vm_);
     if (!excep.IsNull()) {
@@ -705,9 +704,7 @@ bool ArkNativeEngine::ExecuteJsBin(const std::string& fileName)
 {
     panda::JSExecutionScope executionScope(vm_);
     LocalScope scope(vm_);
-    Local<StringRef> file = StringRef::NewFromUtf8(vm_, fileName.c_str());
-    Local<StringRef> entryPoint = StringRef::NewFromUtf8(vm_, PANDA_MAIN_FUNCTION);
-    bool ret = JSNApi::Execute(vm_, file, entryPoint);
+    bool ret = JSNApi::Execute(vm_, fileName, PANDA_MAIN_FUNCTION);
     return ret;
 }
 
