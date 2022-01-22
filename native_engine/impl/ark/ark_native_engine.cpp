@@ -90,8 +90,7 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                             return scope.Escape(exports.ToLocal(ecmaVm));
                         }
                         HILOG_DEBUG("load js code from %{public}s", fileName);
-                        NativeValue* script = engine->CreateString(module->jsCode, module->jsCodeLen);
-                        NativeValue* exportObject = engine->LoadModule(script, fileName);
+                        NativeValue* exportObject = engine->LoadArkModule(module->jsCode, module->jsCodeLen, fileName);
                         if (exportObject == nullptr) {
                             HILOG_ERROR("load module failed");
                             return scope.Escape(exports.ToLocal(ecmaVm));
@@ -630,37 +629,33 @@ NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
     return CreateUndefined();
 }
 
-NativeValue* ArkNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
+NativeValue* ArkNativeEngine::LoadArkModule(const char* str, int32_t len, const std::string& fileName)
 {
-    HILOG_DEBUG("ArkNativeEngine::LoadModule start");
-    if (str == nullptr || fileName.empty()) {
+    HILOG_DEBUG("ArkNativeEngine::LoadModule start, buffer = %{public}s", str);
+    if (str == nullptr || len <= 0 || fileName.empty()) {
         HILOG_ERROR("fileName is nullptr or source code is nullptr");
         return nullptr;
     }
 
-    Local<StringRef> source = *str;
-    int32_t len = source->Length();
-    char* buffer = new char[len];
-    source->WriteUtf8(buffer, len);
-    HILOG_DEBUG("Ark::LoadModule buffer = %{public}s", buffer);
-
-    bool res = JSNApi::ExecuteModuleFromBuffer(vm_, buffer, len, fileName);
+    bool res = JSNApi::ExecuteModuleFromBuffer(vm_, str, len, fileName);
     if (!res) {
         HILOG_ERROR("Execute module failed");
-        delete[] buffer;
         return nullptr;
     }
 
     Local<ObjectRef> exportObj = JSNApi::GetExportObject(vm_, fileName, "default");
     if (exportObj->IsNull()) {
         HILOG_ERROR("Get export object failed");
-        delete[] buffer;
         return nullptr;
     }
 
-    delete[] buffer;
     HILOG_DEBUG("ArkNativeEngine::LoadModule end");
     return ArkValueToNativeValue(this, exportObj);
+}
+
+NativeValue* ArkNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
+{
+    return nullptr;
 }
 
 NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Local<JSValueRef> value)

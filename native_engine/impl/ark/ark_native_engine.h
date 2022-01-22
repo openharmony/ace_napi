@@ -158,6 +158,7 @@ public:
     void DeleteSerializationData(NativeValue* value) const override;
     ExceptionInfo* GetExceptionForWorker() const override;
     NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
+    NativeValue* LoadArkModule(const char* str, int32_t len, const std::string& fileName);
 
     static NativeValue* ArkValueToNativeValue(ArkNativeEngine* engine, Local<JSValueRef> value);
 
