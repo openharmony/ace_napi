@@ -83,7 +83,7 @@ private:
     std::mutex workAsyncMutex_;
     std::queue<NativeAsyncWorkDataPointer> asyncWorkRecvData_;
 #ifdef ENABLE_HITRACE
-    std::shared_ptr<OHOS::HiviewDFX::HiTraceId> traceId_;
+    std::unique_ptr<OHOS::HiviewDFX::HiTraceId> traceId_;
 #endif
 };
 
