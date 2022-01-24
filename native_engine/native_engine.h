@@ -275,6 +275,9 @@ public:
 
     void RegisterWorkerFunction(const NativeEngine* engine);
 
+    // run script by path
+    NativeValue* RunScript(const char* path);
+
 protected:
     void Init();
     void Deinit();
