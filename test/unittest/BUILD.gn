@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//foundation/ace/napi/napi.gni")
+
 if (defined(ohos_lite)) {
   import("//build/lite/config/component/lite_component.gni")
   import("//build/lite/config/subsystem/aafwk/config.gni")
@@ -26,6 +28,7 @@ if (defined(ohos_lite)) {
       "//utils/native/base/include",
       "//third_party/node/src",
       "//foundation/ace/napi",
+      "//foundation/ace/napi/interfaces/innerkits",
       "//foundation/ace/napi/interfaces/kits",
       "//third_party/googletest/include",
       "//foundation/ace/napi/native_engine",
@@ -38,10 +41,12 @@ if (defined(ohos_lite)) {
       "test_jerryscript.cpp",
       "test_napi.cpp",
     ]
+    sources += napi_sources
+
+    defines = [ "NAPI_TEST" ]
 
     deps = [
       "//base//hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//foundation/ace/napi/:ace_napi",
       "//foundation/ace/napi/:ace_napi_jerryscript",
       "//test/developertest/third_party/lib/cpp:gtest_main",
       "//third_party/jerryscript/jerry-core:jerry-core_shared",
@@ -93,6 +98,9 @@ if (defined(ohos_lite)) {
         "engine/test_quickjs.cpp",
         "test_napi.cpp",
       ]
+      sources += napi_sources
+
+      defines = [ "NAPI_TEST" ]
 
       deps = quickjs_deps
 
@@ -112,6 +120,9 @@ if (defined(ohos_lite)) {
         "./engine/test_quickjs.cpp",
         "test_napi_ext.cpp",
       ]
+      sources += napi_sources
+
+      defines = [ "NAPI_TEST" ]
 
       deps = quickjs_deps
 
@@ -131,6 +142,9 @@ if (defined(ohos_lite)) {
         "engine/test_quickjs.cpp",
         "test_napi_threadsafe.cpp",
       ]
+      sources += napi_sources
+
+      defines = [ "NAPI_TEST" ]
 
       deps = quickjs_deps
 
@@ -150,6 +164,9 @@ if (defined(ohos_lite)) {
         "engine/test_quickjs.cpp",
         "test_instance_data.cpp",
       ]
+      sources += napi_sources
+
+      defines = [ "NAPI_TEST" ]
 
       deps = quickjs_deps
 
@@ -173,6 +190,9 @@ if (defined(ohos_lite)) {
         "engine/test_ark.cpp",
         "test_napi.cpp",
       ]
+      sources += napi_sources
+
+      defines = [ "NAPI_TEST" ]
 
       deps = ark_deps
 

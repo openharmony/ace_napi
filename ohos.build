@@ -17,7 +17,15 @@
           "header": {
             "header_base": "//foundation/ace/napi/interfaces/kits",
             "header_files": [
-              "napi/native_api.h",
+              "napi/native_api.h"
+            ]
+          },
+          "name": "//foundation/ace/napi:ace_napi"
+        },
+        {
+          "header": {
+            "header_base": "//foundation/ace/napi/interfaces/innerkits",
+            "header_files": [
               "napi/native_common.h",
               "napi/native_node_api.h"
             ]
