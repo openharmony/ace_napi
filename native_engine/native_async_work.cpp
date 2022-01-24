@@ -15,6 +15,10 @@
 
 #include "native_async_work.h"
 
+#ifdef ENABLE_HITRACE
+#include "hitrace/trace.h"
+#endif
+
 #include "napi/native_api.h"
 #include "native_engine.h"
 #include "utils/log.h"
@@ -26,6 +30,9 @@ NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
     : work_({ 0 }), engine_(engine), execute_(execute), complete_(complete), data_(data)
 {
     work_.data = this;
+#ifdef ENABLE_HITRACE
+    traceId_ = std::make_shared<OHOS::HiviewDFX::HiTraceId>(OHOS::HiviewDFX::HiTrace::GetId());
+#endif
 }
 
 NativeAsyncWork::~NativeAsyncWork() = default;
@@ -118,6 +125,14 @@ void NativeAsyncWork::AsyncWorkCallback(uv_work_t* req)
     }
 
     auto that = reinterpret_cast<NativeAsyncWork*>(req->data);
+#ifdef ENABLE_HITRACE
+    if (that->traceId_ && that->traceId_->IsValid()) {
+        OHOS::HiviewDFX::HiTrace::SetId(*(that->traceId_.get()));
+        that->execute_(that->engine_, that->data_);
+        OHOS::HiviewDFX::HiTrace::ClearId();
+        return;
+    }
+#endif
     that->execute_(that->engine_, that->data_);
 }
 
@@ -157,7 +172,15 @@ void NativeAsyncWork::AsyncAfterWorkCallback(uv_work_t* req, int status)
         default:
             nstatus = napi_generic_failure;
     }
-
+#ifdef ENABLE_HITRACE
+    if (that->traceId_ && that->traceId_->IsValid()) {
+        OHOS::HiviewDFX::HiTrace::SetId(*(that->traceId_.get()));
+        that->complete_(that->engine_, nstatus, that->data_);
+        OHOS::HiviewDFX::HiTrace::ClearId();
+        scopeManager->Close(scope);
+        return;
+    }
+#endif
     that->complete_(that->engine_, nstatus, that->data_);
     scopeManager->Close(scope);
 }
