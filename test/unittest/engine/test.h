@@ -22,7 +22,7 @@ class NativeEngineTest : public testing::Test {
 public:
     NativeEngineTest();
     virtual ~NativeEngineTest();
-
+    static void *Run(void *arg);
 protected:
     NativeEngine* engine_;
 };
