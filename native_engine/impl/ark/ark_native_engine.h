@@ -178,6 +178,11 @@ public:
     void StartCpuProfiler(const std::string fileName = "") override;
     void StopCpuProfiler() override;
 
+    void ResumeVM() override;
+    bool SuspendVM() override;
+    bool IsSuspended() override;
+    bool CheckSafepoint() override;
+
     void DumpHeapSnapShot(const std::string &path, bool isVmMode = true,
         DumpFormat dumpFormat = DumpFormat::JSON) override;
     std::string BuildNativeAndJsBackStackTrace() override;
