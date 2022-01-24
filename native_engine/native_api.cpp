@@ -2359,3 +2359,13 @@ NAPI_INNER_EXTERN napi_status napi_get_value_bigint_words(
 
     return napi_clear_last_error(env);
 }
+
+NAPI_EXTERN napi_status napi_run_script_path(napi_env env, const char* path, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->RunScript(path);
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}

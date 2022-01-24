@@ -452,3 +452,15 @@ void NativeEngine::RegisterWorkerFunction(const NativeEngine* engine)
     SetOffWorkerFunc(engine->offWorkerFunc_);
     SetWorkerAsyncWorkFunc(engine->nativeAsyncExecuteCallback_, engine->nativeAsyncCompleteCallback_);
 }
+
+NativeValue* NativeEngine::RunScript(const char* path)
+{
+    std::vector<uint8_t> scriptContent;
+    std::string pathStr(path);
+    if (!CallGetAssetFunc(pathStr, scriptContent)) {
+        HILOG_ERROR("Get asset error");
+        return nullptr;
+    }
+    HILOG_INFO("asset size is %{public}zu", scriptContent.size());
+    return RunBufferScript(scriptContent);
+}
