@@ -408,7 +408,7 @@ NativeValue* ArkNativeEngine::CallFunction(NativeValue* thisVar,
     }
 
     Local<JSValueRef> value = funcObj->Call(vm_, thisObj.ToLocal(vm_), args.data(), argc);
-    Local<ObjectRef> excep = panda::JSNApi::GetUncaughtException(vm_);
+    Local<ObjectRef> excep = panda::JSNApi::GetAndClearUncaughtException(vm_);
     if (!excep.IsNull()) {
         Local<StringRef> exceptionMsg = excep->ToString(vm_);
         exceptionStr_ = exceptionMsg->ToString();
@@ -611,13 +611,33 @@ void ArkNativeEngine::StopCpuProfiler()
     panda::JSNApi::StopCpuProfiler();
 }
 
+void ArkNativeEngine::ResumeVM()
+{
+    panda::JSNApi::ResumeVM(vm_);
+}
+
+bool ArkNativeEngine::SuspendVM()
+{
+    return panda::JSNApi::SuspendVM(vm_);
+}
+
+bool ArkNativeEngine::IsSuspended()
+{
+    return panda::JSNApi::IsSuspended(vm_);
+}
+
+bool ArkNativeEngine::CheckSafepoint()
+{
+    return panda::JSNApi::CheckSafepoint(vm_);
+}
+
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     panda::JSExecutionScope executionScope(vm_);
     LocalScope scope(vm_);
     bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), PANDA_MAIN_FUNCTION);
 
-    Local<ObjectRef> excep = panda::JSNApi::GetUncaughtException(vm_);
+    Local<ObjectRef> excep = panda::JSNApi::GetAndClearUncaughtException(vm_);
     if (!excep.IsNull()) {
         Local<StringRef> exceptionMsg = excep->ToString(vm_);
         exceptionStr_ = exceptionMsg->ToString();
