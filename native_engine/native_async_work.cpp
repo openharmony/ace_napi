@@ -31,7 +31,7 @@ NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
 {
     work_.data = this;
 #ifdef ENABLE_HITRACE
-    traceId_ = std::make_shared<OHOS::HiviewDFX::HiTraceId>(OHOS::HiviewDFX::HiTrace::GetId());
+    traceId_ = std::make_unique<OHOS::HiviewDFX::HiTraceId>(OHOS::HiviewDFX::HiTrace::GetId());
 #endif
 }
 
