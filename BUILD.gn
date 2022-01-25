@@ -150,7 +150,15 @@ if (defined(ohos_lite)) {
     } else if (use_mac) {
       defines += [ "MAC_PLATFORM" ]
     } else {
-      external_deps = hilog_deps
+      if (is_standard_system) {
+        external_deps = [
+          "hitrace_native:libhitrace",
+          "hiviewdfx_hilog_native:libhilog",
+        ]
+        defines += [ "ENABLE_HITRACE" ]
+      } else {
+        external_deps = [ "hilog:libhilog" ]
+      }
     }
 
     deps = [
