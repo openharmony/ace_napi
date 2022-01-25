@@ -35,6 +35,14 @@ struct NativeAsyncWorkDataPointer {
     void* data_ { nullptr };
 };
 
+#ifdef ENABLE_HITRACE
+namespace OHOS {
+namespace HiviewDFX {
+class HiTraceId;
+}
+} // namespace OHOS
+#endif
+
 class NativeAsyncWork {
 public:
     NativeAsyncWork(NativeEngine* engine,
@@ -74,6 +82,9 @@ private:
     void* data_;
     std::mutex workAsyncMutex_;
     std::queue<NativeAsyncWorkDataPointer> asyncWorkRecvData_;
+#ifdef ENABLE_HITRACE
+    std::unique_ptr<OHOS::HiviewDFX::HiTraceId> traceId_;
+#endif
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ASYNC_WORK_H */
