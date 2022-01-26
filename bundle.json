@@ -1,0 +1,69 @@
+{
+    "name": "@ohos/napi",
+    "description": "Node-API (formerly N-API) is an API for build native Addons",
+    "version": "3.1",
+    "license": "Apache 2.0",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "foundation/ace/napi"
+    },
+    "dirs": {},
+    "scripts": {},
+    "component": {
+        "name": "napi",
+        "subsystem": "ace",
+        "syscap": [],
+        "features": [],
+        "adapted_system_type": [
+            "standard"
+        ],
+        "rom": "5120KB",
+        "ram": "10240KB",
+        "deps": {
+            "components": [
+                "hiviewdfx_hilog_native",
+                "hilog"
+            ],
+            "third_party": [
+                "jerryscript",
+                "libuv",
+                "node",
+                "bounds_checking_function",
+                "quickjs",
+                "v8"
+            ]
+        },
+        "build": {
+            "sub_component": [
+                "//foundation/ace/napi:napi_packages",
+                "//foundation/ace/napi:napi_packages_ndk"
+            ],
+            "inner_kits": [
+                {
+                    "header": {
+                      "header_base": "//foundation/ace/napi/interfaces/kits",
+                      "header_files": [
+                          "napi/native_api.h"
+                      ]
+                    },
+                    "name": "//foundation/ace/napi:ace_napi"
+                  },
+                  {
+                    "header": {
+                      "header_base": "//foundation/ace/napi/interfaces/innerkits",
+                      "header_files": [
+                          "napi/native_common.h",
+                          "napi/native_node_api.h"
+                      ]
+                    },
+                    "name": "//foundation/ace/napi:ace_napi"
+                  }
+            ],
+            "test": [
+                "//foundation/ace/napi:napi_packages_test",
+                "//foundation/ace/napi/sample/native_module_systemtest:systemtest",
+                "//foundation/ace/napi/test/unittest:unittest"
+            ]
+        }
+    }
+}
