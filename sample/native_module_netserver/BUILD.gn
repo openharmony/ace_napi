@@ -30,7 +30,7 @@ ohos_shared_library("netserver") {
 
   deps = [
     "//foundation/ace/napi:ace_napi",
-    "//third_party/libuv:uv_static",
+    "//third_party/libuv:uv",
     "//utils/native/base:utilsecurec",
   ]
 
