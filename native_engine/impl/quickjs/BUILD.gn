@@ -28,6 +28,7 @@ template("ace_napi_impl") {
   ohos_source_set(target_name) {
     public_configs = [ ":ace_napi_quickjs_config" ]
     defines = invoker.engine_defines
+    defines += invoker.defines
 
     include_dirs = [ "//foundation/ace/napi/native_engine/impl/quickjs" ]
 
@@ -71,13 +72,15 @@ template("ace_napi_impl") {
 }
 
 foreach(item, ace_platforms) {
-  if (item.name == "ohos") {
+  if (item.name == "ohos" || item.name == "android") {
     engine_config = item.config
     support_engines = engine_config.js_engines
     foreach(engine, support_engines) {
       if (engine.engine_name == "qjs") {
         ace_napi_impl("ace_napi_impl_quickjs") {
+          defines = []
           engine_defines = engine.engine_defines
+          defines = engine_config.defines
         }
       }
     }
