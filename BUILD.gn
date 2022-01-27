@@ -149,6 +149,8 @@ if (defined(ohos_lite)) {
       defines += [ "WINDOWS_PLATFORM" ]
     } else if (use_mac) {
       defines += [ "MAC_PLATFORM" ]
+    } else if (is_cross_platform_build && defined(is_android) && is_android) {
+      defines += [ "ANDROID_PLATFORM" ]
     } else {
       if (is_standard_system) {
         external_deps = [
@@ -187,7 +189,7 @@ if (defined(ohos_lite)) {
   napi_libs = []
 
   foreach(item, ace_platforms) {
-    if (item.name == "ohos") {
+    if (item.name == "ohos" || item.name == "android") {
       engine_config = item.config
       support_engines = engine_config.js_engines
       foreach(engine, support_engines) {
@@ -232,7 +234,7 @@ if (defined(ohos_lite)) {
     deps = [ ":libnapi_ndk" ]
   }
 
-  if (!build_ohos_ndk) {
+  if (!build_ohos_ndk && !is_cross_platform_build) {
     group("napi_packages_test") {
       testonly = true
 
