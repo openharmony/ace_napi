@@ -129,6 +129,7 @@ if (defined(ohos_lite)) {
   ohos_shared_library("ace_napi") {
     defines = []
     public_configs = [ ":ace_napi_config" ]
+    public_deps = [ "//third_party/libuv:uv" ]
 
     include_dirs = [
       "//foundation/ace/napi",
@@ -164,7 +165,7 @@ if (defined(ohos_lite)) {
     }
 
     deps = [
-      "//third_party/libuv:uv_static",
+      "//third_party/libuv:uv",
       "//utils/native/base:utilsecurec",
     ]
 
@@ -221,13 +222,7 @@ if (defined(ohos_lite)) {
 
   ohos_ndk_headers("napi_header") {
     dest_dir = "$ndk_headers_out_dir/napi"
-    sources = [
-      "//foundation/ace/napi/interfaces/kits/napi/native_api.h",
-      "//third_party/node/src/js_native_api.h",
-      "//third_party/node/src/js_native_api_types.h",
-      "//third_party/node/src/node_api.h",
-      "//third_party/node/src/node_api_types.h",
-    ]
+    sources = [ "//foundation/ace/napi/interfaces/kits/napi/native_api.h" ]
   }
 
   group("napi_packages_ndk") {

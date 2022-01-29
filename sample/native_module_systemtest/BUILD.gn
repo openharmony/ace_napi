@@ -50,7 +50,7 @@ ohos_unittest("test_quickjs_systemtest") {
     "//foundation/ace/napi/:ace_napi_quickjs",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",
-    "//third_party/libuv:uv_static",
+    "//third_party/libuv:uv",
     "//third_party/quickjs:qjs",
     "//utils/native/base:utils",
   ]
