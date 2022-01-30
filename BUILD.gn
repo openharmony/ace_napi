@@ -169,6 +169,13 @@ if (defined(ohos_lite)) {
       "//utils/native/base:utilsecurec",
     ]
 
+    # Use static libuv for cross build
+    if (is_cross_platform_build) {
+      public_deps -= [ "//third_party/libuv:uv" ]
+      deps -= [ "//third_party/libuv:uv" ]
+      deps += [ "//third_party/libuv:uv_static" ]
+    }
+
     cflags_cc = [ "-Wno-missing-braces" ]
 
     subsystem_name = "ace"
