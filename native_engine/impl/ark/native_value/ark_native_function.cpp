@@ -46,7 +46,7 @@ ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine,
     funcInfo->data = value;
 
     Local<FunctionRef> fn = FunctionRef::New(vm, NativeFunctionCallBack,
-                                             [](void* data, void* hint) {
+                                             [](void* externalPointer, void* data) {
                                                 auto info = reinterpret_cast<NativeFunctionInfo*>(data);
                                                 if (info != nullptr) {
                                                     delete info;
@@ -81,7 +81,7 @@ ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine,
     funcInfo->data = value;
 
     Local<FunctionRef> fn = FunctionRef::NewClassFunction(vm, NativeClassFunctionCallBack,
-                                                          [](void* data, void* hint) {
+                                                          [](void* externalPointer, void* data) {
                                                               auto info = reinterpret_cast<NativeFunctionInfo*>(data);
                                                               if (info != nullptr) {
                                                                  delete info;
