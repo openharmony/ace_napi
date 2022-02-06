@@ -160,6 +160,7 @@ public:
     virtual NativeValue* RunScript(NativeValue* script) override;
     // Run buffer script
     virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
+    virtual NativeValue* RunActor(std::vector<uint8_t>& buffer, const char *descriptor) override;
     // Define native class
     virtual NativeValue* DefineClass(const char* name,
                                      NativeCallback callback,

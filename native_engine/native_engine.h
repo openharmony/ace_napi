@@ -94,7 +94,7 @@ private:
 using PostTask = std::function<void(bool needSync)>;
 using CleanEnv = std::function<void()>;
 using InitWorkerFunc = std::function<void(NativeEngine* engine)>;
-using GetAssetFunc = std::function<void(const std::string& uri, std::vector<uint8_t>& content)>;
+using GetAssetFunc = std::function<void(const std::string& uri, std::vector<uint8_t>& content, std::string& ami)>;
 using OffWorkerFunc = std::function<void(NativeEngine* engine)>;
 
 class NAPI_EXPORT NativeEngine {
@@ -159,6 +159,7 @@ public:
                                       size_t argc) = 0;
     virtual NativeValue* RunScript(NativeValue* script) = 0;
     virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) = 0;
+    virtual NativeValue* RunActor(std::vector<uint8_t>& buffer, const char* descriptor) = 0;
     virtual NativeValue* DefineClass(const char* name,
                                      NativeCallback callback,
                                      void* data,
@@ -246,7 +247,7 @@ public:
                                         NativeAsyncCompleteCallback completeCallback);
     // call init worker func
     virtual bool CallInitWorkerFunc(NativeEngine* engine);
-    virtual bool CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content);
+    virtual bool CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content, std::string& ami);
     virtual bool CallOffWorkerFunc(NativeEngine* engine);
     virtual bool CallWorkerAsyncWorkFunc(NativeEngine* engine);
 
