@@ -496,6 +496,11 @@ NativeValue* V8NativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
     return RunScript(script);
 }
 
+NativeValue* V8NativeEngine::RunActor(std::vector<uint8_t>& buffer, const char *descriptor)
+{
+    return RunBufferScript(buffer);
+}
+
 namespace {
 v8::MaybeLocal<v8::String> ReadFile(v8::Isolate* isolate, const char* path)
 {
