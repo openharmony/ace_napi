@@ -635,15 +635,28 @@ NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
     panda::JSExecutionScope executionScope(vm_);
     LocalScope scope(vm_);
-    bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), PANDA_MAIN_FUNCTION);
+    [[maybe_unused]] bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), PANDA_MAIN_FUNCTION);
 
     Local<ObjectRef> excep = panda::JSNApi::GetAndClearUncaughtException(vm_);
     if (!excep.IsNull()) {
         Local<StringRef> exceptionMsg = excep->ToString(vm_);
         exceptionStr_ = exceptionMsg->ToString();
+        return nullptr;
     }
+    return CreateUndefined();
+}
 
-    if (!ret) {
+NativeValue* ArkNativeEngine::RunActor(std::vector<uint8_t>& buffer, const char* descriptor)
+{
+    panda::JSExecutionScope executionScope(vm_);
+    LocalScope scope(vm_);
+    std::string desc(descriptor);
+    [[maybe_unused]] bool ret = panda::JSNApi::ExecuteBufferWithDescriptor(vm_, buffer.data(), buffer.size(),
+                                                                           PANDA_MAIN_FUNCTION, desc);
+    Local<ObjectRef> excep = panda::JSNApi::GetAndClearUncaughtException(vm_);
+    if (!excep.IsNull()) {
+        Local<StringRef> exceptionMsg = excep->ToString(vm_);
+        exceptionStr_ = exceptionMsg->ToString();
         return nullptr;
     }
     return CreateUndefined();
