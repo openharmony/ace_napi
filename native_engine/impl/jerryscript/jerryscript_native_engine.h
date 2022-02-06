@@ -67,6 +67,7 @@ public:
                                       size_t argc) override;
     virtual NativeValue* RunScript(NativeValue* script) override;
     virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
+    virtual NativeValue* RunActor(std::vector<uint8_t>& buffer, const char *descriptor) override;
     virtual NativeValue* DefineClass(const char* name,
                                      NativeCallback callback,
                                      void* data,

@@ -1782,6 +1782,17 @@ NAPI_EXTERN napi_status napi_run_buffer_script(napi_env env, std::vector<uint8_t
     return napi_clear_last_error(env);
 }
 
+NAPI_EXTERN napi_status napi_run_actor(napi_env env, std::vector<uint8_t>& buffer,
+                                       const char* descriptor, napi_value* result)
+{
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+    auto engine = reinterpret_cast<NativeEngine*>(env);
+    auto resultValue = engine->RunActor(buffer, descriptor);
+    *result = reinterpret_cast<napi_value>(resultValue);
+    return napi_clear_last_error(env);
+}
+
 // Memory management
 NAPI_INNER_EXTERN napi_status napi_adjust_external_memory(
     napi_env env, int64_t change_in_bytes, int64_t* adjusted_value)

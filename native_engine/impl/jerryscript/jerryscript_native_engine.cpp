@@ -282,6 +282,11 @@ NativeValue* JerryScriptNativeEngine::RunBufferScript(std::vector<uint8_t>& buff
     return nullptr;
 }
 
+NativeValue* JerryScriptNativeEngine::RunActor(std::vector<uint8_t>& buffer, const char *descriptor)
+{
+    return RunBufferScript(buffer);
+}
+
 NativeValue* JerryScriptNativeEngine::DefineClass(
     const char* name, NativeCallback callback, void* data, const NativePropertyDescriptor* properties, size_t length)
 {
