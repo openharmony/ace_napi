@@ -30,8 +30,6 @@ ohos_shared_library("ability") {
     "ability_runtime:ability_manager",
     "ability_runtime:app_manager",
     "ability_runtime:want",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "eventhandler:libeventhandler",
     "ipc:ipc_core",
   ]
