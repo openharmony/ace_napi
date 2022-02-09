@@ -247,6 +247,9 @@ public:
     {
         return 0;
     }
+
+    void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) override {}
+    void HandleUncaughtException() override {}
 private:
     static void ExecuteWrap(NativeEngine* engine, void* data);
     static void CompleteWrap(NativeEngine* engine, int status, void* data);
