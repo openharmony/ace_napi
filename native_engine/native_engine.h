@@ -17,6 +17,7 @@
 #define FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ENGINE_H
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -96,6 +97,7 @@ using CleanEnv = std::function<void()>;
 using InitWorkerFunc = std::function<void(NativeEngine* engine)>;
 using GetAssetFunc = std::function<void(const std::string& uri, std::vector<uint8_t>& content)>;
 using OffWorkerFunc = std::function<void(NativeEngine* engine)>;
+using UncaughtExceptionCallback = std::function<void(NativeValue* value)>;
 
 class NAPI_EXPORT NativeEngine {
 public:
@@ -279,6 +281,9 @@ public:
     virtual size_t GetHeapUsedSize() = 0;
 
     void RegisterWorkerFunction(const NativeEngine* engine);
+
+    virtual void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) = 0;
+    virtual void HandleUncaughtException() = 0;
 
     // run script by path
     NativeValue* RunScript(const char* path);

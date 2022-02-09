@@ -408,7 +408,8 @@ NativeValue* ArkNativeEngine::CallFunction(NativeValue* thisVar,
     }
 
     Local<JSValueRef> value = funcObj->Call(vm_, thisObj.ToLocal(vm_), args.data(), argc);
-    Local<ObjectRef> excep = panda::JSNApi::GetAndClearUncaughtException(vm_);
+    Local<ObjectRef> excep = panda::JSNApi::GetUncaughtException(vm_);
+    HandleUncaughtException();
     if (!excep.IsNull()) {
         Local<StringRef> exceptionMsg = excep->ToString(vm_);
         exceptionStr_ = exceptionMsg->ToString();
@@ -637,7 +638,8 @@ NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
     LocalScope scope(vm_);
     bool ret = panda::JSNApi::Execute(vm_, buffer.data(), buffer.size(), PANDA_MAIN_FUNCTION);
 
-    Local<ObjectRef> excep = panda::JSNApi::GetAndClearUncaughtException(vm_);
+    Local<ObjectRef> excep = panda::JSNApi::GetUncaughtException(vm_);
+    HandleUncaughtException();
     if (!excep.IsNull()) {
         Local<StringRef> exceptionMsg = excep->ToString(vm_);
         exceptionStr_ = exceptionMsg->ToString();
@@ -873,4 +875,18 @@ size_t ArkNativeEngine::GetHeapTotalSize()
 size_t ArkNativeEngine::GetHeapUsedSize()
 {
     return DFXJSNApi::GetHeapUsedSize(vm_);
+}
+
+void ArkNativeEngine::RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback)
+{
+    JSNApi::EnableUserUncaughtErrorHandler(vm_);
+    uncaughtExceptionCallback_ = callback;
+}
+
+void ArkNativeEngine::HandleUncaughtException()
+{
+    Local<ObjectRef> exception = JSNApi::GetAndClearUncaughtException(vm_);
+    if (!exception.IsEmpty() && !exception->IsHole() && uncaughtExceptionCallback_ != nullptr) {
+        uncaughtExceptionCallback_(ArkValueToNativeValue(this, exception));
+    }
 }
