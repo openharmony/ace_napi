@@ -27,9 +27,8 @@ ohos_shared_library("ability") {
   ]
 
   external_deps = [
+    "ability_base:want",
     "ability_runtime:ability_manager",
-    "ability_runtime:app_manager",
-    "ability_runtime:want",
     "eventhandler:libeventhandler",
     "ipc:ipc_core",
   ]
