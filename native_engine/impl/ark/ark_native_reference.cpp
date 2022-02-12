@@ -19,42 +19,48 @@
 
 #include "utils/log.h"
 
-ArkNativeReference::ArkNativeReference(ArkNativeEngine* engine, NativeValue* value, uint32_t initialRefcount)
+ArkNativeReference::ArkNativeReference(ArkNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
+    NativeFinalize callback, void* data, void* hint)
     : engine_(engine),
       value_(Global<JSValueRef>(engine->GetEcmaVm(), JSValueRef::Undefined(engine->GetEcmaVm()))),
-      refCount_(initialRefcount)
+      refCount_(initialRefcount), callback_(callback), data_(data), hint_(hint)
 {
-    ASSERT(initialRefcount != 0);
     Global<JSValueRef> oldValue = *value;
     auto vm = engine->GetEcmaVm();
     Global<JSValueRef> newValue(vm, oldValue.ToLocal(vm));
     value_ = newValue;
+    if (initialRefcount == 0) {
+        value_.SetWeak();
+    }
 }
 
 ArkNativeReference::~ArkNativeReference()
 {
-    if (refCount_ != 0) {
-        // Addr of Global stored in ArkNativeReference should be released.
-        refCount_ = 0;
-        value_.FreeGlobalHandleAddr();
+    if (!value_.IsWeak()) {
+        value_.SetWeak();
     }
+    refCount_ = 0;
+    FinalizeCallback();
 }
 
 uint32_t ArkNativeReference::Ref()
 {
-    if (refCount_ != 0) {
-        ++refCount_;
+    ++refCount_;
+    if (refCount_ == 1) {
+        value_.ClearWeak();
     }
     return refCount_;
 }
 
 uint32_t ArkNativeReference::Unref()
 {
-    if (refCount_ == 1) {
-        refCount_ = 0;
-        value_.FreeGlobalHandleAddr();
-    } else if (refCount_ > 0) {
-        --refCount_;
+    if (refCount_ == 0) {
+        return refCount_;
+    }
+    --refCount_;
+    if (refCount_ == 0) {
+        value_.SetWeak();
+        FinalizeCallback();
     }
     return refCount_;
 }
@@ -73,4 +79,14 @@ NativeValue* ArkNativeReference::Get()
 ArkNativeReference::operator NativeValue*()
 {
     return Get();
+}
+
+void ArkNativeReference::FinalizeCallback()
+{
+    if (callback_ != nullptr) {
+        callback_(engine_, data_, hint_);
+    }
+    callback_ = nullptr;
+    data_ = nullptr;
+    hint_ = nullptr;
 }
