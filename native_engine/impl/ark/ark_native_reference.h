@@ -28,7 +28,8 @@ using panda::Local;
 
 class ArkNativeReference : public NativeReference {
 public:
-    ArkNativeReference(ArkNativeEngine* engine, NativeValue* value, uint32_t initialRefcount);
+    ArkNativeReference(ArkNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
+        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr);
     ~ArkNativeReference() override;
 
     uint32_t Ref() override;
@@ -40,6 +41,12 @@ private:
     ArkNativeEngine* engine_;
     Global<JSValueRef> value_;
     uint32_t refCount_;
+
+    NativeFinalize callback_ = nullptr;
+    void* data_ = nullptr;
+    void* hint_ = nullptr;
+
+    void FinalizeCallback();
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_ARK_NATIVE_REFERENCE_H */
