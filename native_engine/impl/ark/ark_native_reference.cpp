@@ -67,9 +67,6 @@ uint32_t ArkNativeReference::Unref()
 
 NativeValue* ArkNativeReference::Get()
 {
-    if (refCount_ == 0) {
-        return nullptr;
-    }
     auto vm = engine_->GetEcmaVm();
     LocalScope scope(vm);
     Local<JSValueRef> value = value_.ToLocal(vm);
