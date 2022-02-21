@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -2095,14 +2095,6 @@ NAPI_EXTERN napi_status napi_get_exception_info_for_worker(napi_env env, napi_va
     }
 
     delete exceptionInfo;
-    return napi_clear_last_error(env);
-}
-
-NAPI_EXTERN napi_status napi_get_jsEngine(napi_env env, void** pEngine)
-{
-    CHECK_ENV(env);
-    auto engine = reinterpret_cast<NativeEngine*>(env);
-    *pEngine = engine->GetJsEngine();
     return napi_clear_last_error(env);
 }
 
