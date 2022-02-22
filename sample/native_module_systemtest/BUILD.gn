@@ -62,5 +62,4 @@ ohos_unittest("test_quickjs_systemtest") {
 
 group("systemtest") {
   testonly = true
-  deps = [ ":test_quickjs_systemtest" ]
 }
