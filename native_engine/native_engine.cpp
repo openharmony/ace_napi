@@ -345,10 +345,10 @@ bool NativeEngine::CallInitWorkerFunc(NativeEngine* engine)
     }
     return false;
 }
-bool NativeEngine::CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content)
+bool NativeEngine::CallGetAssetFunc(const std::string& uri, std::vector<uint8_t>& content, std::string& ami)
 {
     if (getAssetFunc_ != nullptr) {
-        getAssetFunc_(uri, content);
+        getAssetFunc_(uri, content, ami);
         return true;
     }
     return false;
@@ -457,10 +457,11 @@ NativeValue* NativeEngine::RunScript(const char* path)
 {
     std::vector<uint8_t> scriptContent;
     std::string pathStr(path);
-    if (!CallGetAssetFunc(pathStr, scriptContent)) {
+    std::string ami;
+    if (!CallGetAssetFunc(pathStr, scriptContent, ami)) {
         HILOG_ERROR("Get asset error");
         return nullptr;
     }
     HILOG_INFO("asset size is %{public}zu", scriptContent.size());
-    return RunBufferScript(scriptContent);
+    return RunActor(scriptContent, ami.c_str());
 }
