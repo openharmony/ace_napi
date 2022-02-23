@@ -577,7 +577,7 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
             NativeValue* value = functionInfo->callback(engine, callbackInfo);
 
             if (callbackInfo != nullptr) {
-                delete callbackInfo->argv;
+                delete []callbackInfo->argv;
             }
 
             JSValue result = JS_UNDEFINED;
