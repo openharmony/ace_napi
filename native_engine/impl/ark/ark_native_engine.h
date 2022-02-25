@@ -195,6 +195,10 @@ public:
     size_t GetArrayBufferSize() override;
     size_t GetHeapTotalSize() override;
     size_t GetHeapUsedSize() override;
+
+    void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) override;
+    void HandleUncaughtException() override;
+
 private:
     static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
 
@@ -204,6 +208,7 @@ private:
     NativeReference* promiseRejectCallbackRef_ { nullptr };
     NativeReference* checkCallbackRef_ { nullptr };
     std::unordered_map<NativeModule*, panda::Global<panda::JSValueRef>> loadedModules_;
+    UncaughtExceptionCallback uncaughtExceptionCallback_ { nullptr };
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_ARK_NATIVE_ENGINE_H */
