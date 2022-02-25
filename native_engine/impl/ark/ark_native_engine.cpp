@@ -426,7 +426,7 @@ NativeValue* ArkNativeEngine::RunScript(NativeValue* script)
 void ArkNativeEngine::SetPackagePath(const std::string& packagePath)
 {
     auto moduleManager = NativeModuleManager::GetInstance();
-    if (moduleManager) {
+    if (moduleManager && !packagePath.empty()) {
         moduleManager->SetAppLibPath(packagePath.c_str());
     }
 }
