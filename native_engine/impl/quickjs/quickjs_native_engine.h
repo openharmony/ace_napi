@@ -177,6 +177,9 @@ public:
     {
         return 0;
     }
+
+    void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) override {}
+    void HandleUncaughtException() override {}
 private:
     static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
 
