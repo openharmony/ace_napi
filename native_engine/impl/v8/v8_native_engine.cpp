@@ -921,7 +921,7 @@ void V8NativeEngine::DeleteSerializationData(NativeValue* value) const
 void V8NativeEngine::SetPackagePath(const std::string& packagePath)
 {
     auto moduleManager = NativeModuleManager::GetInstance();
-    if (moduleManager) {
+    if (moduleManager && !packagePath.empty()) {
         moduleManager->SetAppLibPath(packagePath.c_str());
     }
 }

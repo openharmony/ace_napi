@@ -70,8 +70,11 @@ private:
         int32_t pathLength) const;
     NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule, bool isArk);
     NativeModule* FindNativeModuleByCache(const char* moduleName) const;
-    LIBHANDLE LoadModuleLibrary(const char* path) const;
-
+    LIBHANDLE LoadModuleLibrary(const char* path, const bool isAppModule);
+    void CreateLdNamespace(const char* lib_ld_path);
+#if !defined(WINDOWS_PLATFORM) && !defined(__BIONIC__)
+    Dl_namespace ns_;
+#endif
     NativeModule* firstNativeModule_;
     NativeModule* lastNativeModule_;
     char* appLibPath_;
