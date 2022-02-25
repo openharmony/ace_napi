@@ -62,7 +62,7 @@ size_t ArkNativeString::GetLength()
     auto vm = engine_->GetEcmaVm();
     LocalScope scope(vm);
     Global<StringRef> value = value_;
-    return value->Length();
+    return value->Utf8Length() - 1;
 }
 
 size_t ArkNativeString::EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars)
