@@ -159,6 +159,8 @@ if (defined(ohos_lite)) {
           "hiviewdfx_hilog_native:libhilog",
         ]
         defines += [ "ENABLE_HITRACE" ]
+        public_deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+        defines += [ "ENABLE_CONTAINER_SCOPE" ]
       } else {
         external_deps = [ "hilog:libhilog" ]
       }
