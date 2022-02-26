@@ -467,7 +467,7 @@ NativeValue* QuickJSNativeEngine::RunScript(NativeValue* script)
 void QuickJSNativeEngine::SetPackagePath(const std::string& packagePath)
 {
     auto moduleManager = NativeModuleManager::GetInstance();
-    if (moduleManager) {
+    if (moduleManager && !packagePath.empty()) {
         moduleManager->SetAppLibPath(packagePath.c_str());
     }
 }

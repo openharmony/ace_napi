@@ -24,6 +24,9 @@
 
 namespace {
 constexpr static int32_t NATIVE_PATH_NUMBER = 2;
+#if !defined(WINDOWS_PLATFORM) && !defined(__BIONIC__)
+constexpr static char DL_NAMESPACE[] = "ace";
+#endif
 } // namespace
 
 NativeModuleManager NativeModuleManager::instance_;
@@ -90,8 +93,17 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
     lastNativeModule_->next = nullptr;
 }
 
+void NativeModuleManager::CreateLdNamespace(const char* lib_ld_path)
+{
+#if !defined(WINDOWS_PLATFORM) && !defined(__BIONIC__)
+    dlns_init(&ns_, DL_NAMESPACE);
+    dlns_create(&ns_, lib_ld_path);
+#endif
+}
+
 void NativeModuleManager::SetAppLibPath(const char* appLibPath)
 {
+    HILOG_INFO("create ld namespace, path: %{private}s", appLibPath);
     char* tmp = new char[NAPI_PATH_MAX];
     errno_t err = EOK;
     err = memset_s(tmp, NAPI_PATH_MAX, 0, NAPI_PATH_MAX);
@@ -108,6 +120,7 @@ void NativeModuleManager::SetAppLibPath(const char* appLibPath)
         delete[] appLibPath_;
     }
     appLibPath_ = tmp;
+    CreateLdNamespace(appLibPath_);
 }
 
 NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName,
@@ -231,7 +244,7 @@ bool NativeModuleManager::GetNativeModulePath(
     return true;
 }
 
-LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path) const
+LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path, const bool isAppModule)
 {
     if (strlen(path) == 0) {
         HILOG_ERROR("primary module path is empty");
@@ -243,8 +256,17 @@ LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path) const
     if (lib == nullptr) {
         HILOG_ERROR("LoadLibrary failed, error: %{public}d", GetLastError());
     }
-#else
+#elif __BIONIC__
     lib = dlopen(path, RTLD_LAZY);
+    if (lib == nullptr) {
+        HILOG_ERROR("dlopen failed: %{public}s", dlerror());
+    }
+#else
+    if (isAppModule) {
+        lib = dlopen_ns(&ns_, path, RTLD_LAZY);
+    } else {
+        lib = dlopen(path, RTLD_LAZY);
+    }
     if (lib == nullptr) {
         HILOG_ERROR("dlopen failed: %{public}s", dlerror());
     }
@@ -257,6 +279,8 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
                                                           bool isArk)
 {
     char nativeModulePath[NATIVE_PATH_NUMBER][NAPI_PATH_MAX];
+    nativeModulePath[0][0] = 0;
+    nativeModulePath[1][0] = 0;
     if (!GetNativeModulePath(moduleName, isAppModule, nativeModulePath, NAPI_PATH_MAX)) {
         HILOG_ERROR("get module filed");
         return nullptr;
@@ -265,11 +289,11 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
     // load primary module path first
     char* loadPath = nativeModulePath[0];
     HILOG_INFO("get primary module path: %{public}s", loadPath);
-    LIBHANDLE lib = LoadModuleLibrary(loadPath);
+    LIBHANDLE lib = LoadModuleLibrary(loadPath, isAppModule);
     if (lib == nullptr) {
         loadPath = nativeModulePath[1];
         HILOG_WARN("primary module path load failed, try to load secondary module path: %{public}s", loadPath);
-        lib = LoadModuleLibrary(loadPath);
+        lib = LoadModuleLibrary(loadPath, isAppModule);
         if (lib == nullptr) {
             HILOG_ERROR("secondary module path load failed, load native module failed");
             return nullptr;
