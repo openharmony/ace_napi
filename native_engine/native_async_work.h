@@ -85,6 +85,9 @@ private:
 #ifdef ENABLE_HITRACE
     std::unique_ptr<OHOS::HiviewDFX::HiTraceId> traceId_;
 #endif
+#ifdef ENABLE_CONTAINER_SCOPE
+    int32_t containerScopeId_;
+#endif
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_NATIVE_ASYNC_WORK_H */

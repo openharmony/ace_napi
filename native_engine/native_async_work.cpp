@@ -18,10 +18,17 @@
 #ifdef ENABLE_HITRACE
 #include "hitrace/trace.h"
 #endif
+#ifdef ENABLE_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
 
 #include "napi/native_api.h"
 #include "native_engine.h"
 #include "utils/log.h"
+
+#ifdef ENABLE_CONTAINER_SCOPE
+using OHOS::Ace::ContainerScope;
+#endif
 
 NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
                                  NativeAsyncExecuteCallback execute,
@@ -32,6 +39,9 @@ NativeAsyncWork::NativeAsyncWork(NativeEngine* engine,
     work_.data = this;
 #ifdef ENABLE_HITRACE
     traceId_ = std::make_unique<OHOS::HiviewDFX::HiTraceId>(OHOS::HiviewDFX::HiTrace::GetId());
+#endif
+#ifdef ENABLE_CONTAINER_SCOPE
+    containerScopeId_ = ContainerScope::CurrentId();
 #endif
 }
 
@@ -125,6 +135,10 @@ void NativeAsyncWork::AsyncWorkCallback(uv_work_t* req)
     }
 
     auto that = reinterpret_cast<NativeAsyncWork*>(req->data);
+
+#ifdef ENABLE_CONTAINER_SCOPE
+    ContainerScope containerScope(that->containerScopeId_);
+#endif
 #ifdef ENABLE_HITRACE
     if (that->traceId_ && that->traceId_->IsValid()) {
         OHOS::HiviewDFX::HiTrace::SetId(*(that->traceId_.get()));
@@ -172,6 +186,9 @@ void NativeAsyncWork::AsyncAfterWorkCallback(uv_work_t* req, int status)
         default:
             nstatus = napi_generic_failure;
     }
+#ifdef ENABLE_CONTAINER_SCOPE
+    ContainerScope containerScope(that->containerScopeId_);
+#endif
 #ifdef ENABLE_HITRACE
     if (that->traceId_ && that->traceId_->IsValid()) {
         OHOS::HiviewDFX::HiTrace::SetId(*(that->traceId_.get()));
