@@ -130,6 +130,7 @@ if (defined(ohos_lite)) {
     defines = []
     public_configs = [ ":ace_napi_config" ]
     public_deps = [ "//third_party/libuv:uv" ]
+    deps = []
 
     include_dirs = [
       "//foundation/ace/napi",
@@ -159,12 +160,16 @@ if (defined(ohos_lite)) {
           "hiviewdfx_hilog_native:libhilog",
         ]
         defines += [ "ENABLE_HITRACE" ]
+        if (product_name != "ohos-sdk") {
+          deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+          defines += [ "ENABLE_CONTAINER_SCOPE" ]
+        }
       } else {
         external_deps = [ "hilog:libhilog" ]
       }
     }
 
-    deps = [
+    deps += [
       "//third_party/libuv:uv",
       "//utils/native/base:utilsecurec",
     ]
