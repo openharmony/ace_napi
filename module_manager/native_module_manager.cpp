@@ -256,12 +256,12 @@ LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path, const bool is
     if (lib == nullptr) {
         HILOG_ERROR("LoadLibrary failed, error: %{public}d", GetLastError());
     }
-#elif __BIONIC__
+#elif defined(MAC_PLATFORM) || defined(__BIONIC__)
     lib = dlopen(path, RTLD_LAZY);
     if (lib == nullptr) {
         HILOG_ERROR("dlopen failed: %{public}s", dlerror());
     }
-#elif !defined(MAC_PLATFORM)
+#else
     if (isAppModule) {
         lib = dlopen_ns(&ns_, path, RTLD_LAZY);
     } else {
