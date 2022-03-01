@@ -43,6 +43,7 @@
 #include "securec.h"
 #include "utils/log.h"
 
+using panda::JsiRuntimeCallInfo;
 using panda::BooleanRef;
 using panda::ObjectRef;
 using panda::StringRef;
@@ -57,6 +58,7 @@ using panda::SymbolRef;
 using panda::IntegerRef;
 using panda::DateRef;
 using panda::BigIntRef;
+using panda::JsiRuntimeCallInfo;
 static constexpr auto PANDA_MAIN_FUNCTION = "_GLOBAL::func_main_0";
 
 ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEngine), vm_(vm), topScope_(vm)
@@ -68,17 +70,16 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
     Local<FunctionRef> requireNapi =
         FunctionRef::New(
             vm,
-            [](EcmaVM *ecmaVm, Local<JSValueRef> thisObj,
-               const Local<JSValueRef> argv[],  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-               int32_t length, void *data) -> Local<JSValueRef> {
+            [](JsiRuntimeCallInfo *info) -> Local<JSValueRef> {
+                EcmaVM *ecmaVm = info->GetVM();
                 panda::EscapeLocalScope scope(ecmaVm);
                 NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
-                ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(data);
-                Local<StringRef> moduleName(argv[0]);
+                ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(info->GetData());
+                Local<StringRef> moduleName(info->GetCallArgRef(0));
                 bool isAppModule = false;
-                int32_t lengthMax = 2;
-                if (length == lengthMax) {
-                    Local<BooleanRef> ret(argv[1]);
+                const uint32_t lengthMax = 2;
+                if (info->GetArgsNumber() == lengthMax) {
+                    Local<BooleanRef> ret(info->GetCallArgRef(1));
                     isAppModule = ret->Value();
                 }
                 NativeModule* module =
@@ -119,18 +120,18 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 }
                 return scope.Escape(exports.ToLocal(ecmaVm));
             },
+            nullptr,
             requireData);
 
     Local<FunctionRef> requireInternal =
         FunctionRef::New(
             vm,
-            [](EcmaVM *ecmaVm, Local<JSValueRef> thisObj,
-               const Local<JSValueRef> argv[],  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-               int32_t length, void *data) -> Local<JSValueRef> {
+            [](JsiRuntimeCallInfo *info) -> Local<JSValueRef> {
+                EcmaVM *ecmaVm = info->GetVM();
                 panda::EscapeLocalScope scope(ecmaVm);
                 NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
-                ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(data);
-                Local<StringRef> moduleName(argv[0]);
+                ArkNativeEngine* engine = static_cast<ArkNativeEngine*>(info->GetData());
+                Local<StringRef> moduleName(info->GetCallArgRef(0));
                 NativeModule* module = moduleManager->LoadNativeModule(moduleName->ToString().c_str(), nullptr, false);
                 Global<JSValueRef> exports(ecmaVm, JSValueRef::Undefined(ecmaVm));
                 if (module != nullptr) {
@@ -151,6 +152,7 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 }
                 return scope.Escape(exports.ToLocal(ecmaVm));
             },
+            nullptr,
             requireData);
 
     Local<ObjectRef> global = panda::JSNApi::GetGlobalObject(vm);
@@ -533,9 +535,7 @@ NativeValue* ArkNativeEngine::CreateInstance(NativeValue* constructor, NativeVal
             args.emplace_back(JSValueRef::Undefined(vm_));
         }
     }
-
     Local<JSValueRef> instance = value->Constructor(vm_, args.data(), argc);
-
     return ArkValueToNativeValue(this, instance);
 }
 
@@ -916,7 +916,7 @@ void ArkNativeEngine::PromiseRejectCallback(void* info)
         return;
     }
 
-    const panda::ecmascript::EcmaVM* vm = env->GetEcmaVm();
+    panda::ecmascript::EcmaVM* vm = const_cast<EcmaVM*>(env->GetEcmaVm());
     Local<JSValueRef> type(IntegerRef::New(vm, static_cast<int32_t>(operation)));
 
     Local<JSValueRef> args[] = {type, promise, reason};
