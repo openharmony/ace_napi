@@ -72,7 +72,7 @@ private:
     NativeModule* FindNativeModuleByCache(const char* moduleName) const;
     LIBHANDLE LoadModuleLibrary(const char* path, const bool isAppModule);
     void CreateLdNamespace(const char* lib_ld_path);
-#if !defined(WINDOWS_PLATFORM) && !defined(__BIONIC__)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(__BIONIC__)
     Dl_namespace ns_;
 #endif
     NativeModule* firstNativeModule_;

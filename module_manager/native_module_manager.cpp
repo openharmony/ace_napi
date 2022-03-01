@@ -24,7 +24,7 @@
 
 namespace {
 constexpr static int32_t NATIVE_PATH_NUMBER = 2;
-#if !defined(WINDOWS_PLATFORM) && !defined(__BIONIC__)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(__BIONIC__)
 constexpr static char DL_NAMESPACE[] = "ace";
 #endif
 } // namespace
@@ -95,7 +95,7 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
 
 void NativeModuleManager::CreateLdNamespace(const char* lib_ld_path)
 {
-#if !defined(WINDOWS_PLATFORM) && !defined(__BIONIC__)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(__BIONIC__)
     dlns_init(&ns_, DL_NAMESPACE);
     dlns_create(&ns_, lib_ld_path);
 #endif
@@ -251,7 +251,7 @@ LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path, const bool is
         return nullptr;
     }
     LIBHANDLE lib = nullptr;
-#ifdef WINDOWS_PLATFORM
+#if defined(WINDOWS_PLATFORM)
     lib = LoadLibrary(path);
     if (lib == nullptr) {
         HILOG_ERROR("LoadLibrary failed, error: %{public}d", GetLastError());
@@ -261,7 +261,7 @@ LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path, const bool is
     if (lib == nullptr) {
         HILOG_ERROR("dlopen failed: %{public}s", dlerror());
     }
-#else
+#elif !defined(MAC_PLATFORM)
     if (isAppModule) {
         lib = dlopen_ns(&ns_, path, RTLD_LAZY);
     } else {
