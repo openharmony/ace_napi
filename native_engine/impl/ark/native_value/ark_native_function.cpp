@@ -25,6 +25,7 @@ using panda::ArrayRef;
 using panda::NativePointerRef;
 using panda::FunctionRef;
 using panda::StringRef;
+using panda::JsiRuntimeCallInfo;
 ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine, Local<JSValueRef> value) : ArkNativeObject(engine, value)
 {
 #ifdef ENABLE_CONTAINER_SCOPE
@@ -87,7 +88,7 @@ ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine,
     funcInfo->callback = cb;
     funcInfo->data = value;
 
-    Local<FunctionRef> fn = FunctionRef::NewClassFunction(vm, NativeClassFunctionCallBack,
+    Local<FunctionRef> fn = FunctionRef::NewClassFunction(vm, NativeFunctionCallBack,
                                                           [](void* externalPointer, void* data) {
                                                               auto info = reinterpret_cast<NativeFunctionInfo*>(data);
                                                               if (info != nullptr) {
@@ -112,14 +113,11 @@ void* ArkNativeFunction::GetInterface(int interfaceId)
                                                          : ArkNativeObject::GetInterface(interfaceId);
 }
 
-Local<JSValueRef> ArkNativeFunction::NativeFunctionCallBack(EcmaVM* vm,
-                                                            Local<JSValueRef> thisObj,
-                                                            const Local<JSValueRef> argv[],
-                                                            int32_t length,
-                                                            void* data)
+Local<JSValueRef> ArkNativeFunction::NativeFunctionCallBack(JsiRuntimeCallInfo *runtimeInfo)
 {
+    EcmaVM *vm = runtimeInfo->GetVM();
     panda::EscapeLocalScope scope(vm);
-    auto info = reinterpret_cast<NativeFunctionInfo*>(data);
+    auto info = reinterpret_cast<NativeFunctionInfo*>(runtimeInfo->GetData());
     auto engine = reinterpret_cast<ArkNativeEngine*>(info->engine);
     auto cb = info->callback;
     if (engine == nullptr) {
@@ -134,76 +132,15 @@ Local<JSValueRef> ArkNativeFunction::NativeFunctionCallBack(EcmaVM* vm,
         return JSValueRef::Undefined(vm);
     }
     NativeScope* nativeScope = scopeManager->Open();
-    cbInfo.thisVar = ArkNativeEngine::ArkValueToNativeValue(engine, thisObj);
-    cbInfo.function = nullptr;
-    cbInfo.argc = static_cast<size_t>(length);
+    cbInfo.thisVar = ArkNativeEngine::ArkValueToNativeValue(engine, runtimeInfo->GetThisRef());
+    cbInfo.function = ArkNativeEngine::ArkValueToNativeValue(engine, runtimeInfo->GetNewTargetRef());
+    cbInfo.argc = runtimeInfo->GetArgsNumber();
     cbInfo.argv = nullptr;
     cbInfo.functionInfo = info;
     if (cbInfo.argc > 0) {
         cbInfo.argv = new NativeValue* [cbInfo.argc];
         for (size_t i = 0; i < cbInfo.argc; i++) {
-            cbInfo.argv[i] = ArkNativeEngine::ArkValueToNativeValue(engine, argv[i]);
-        }
-    }
-
-    NativeValue* result = nullptr;
-    if (cb != nullptr) {
-        result = cb(engine, &cbInfo);
-    }
-
-    if (cbInfo.argv != nullptr) {
-        delete[] cbInfo.argv;
-        cbInfo.argv = nullptr;
-    }
-
-    Global<JSValueRef> ret(vm, JSValueRef::Undefined(vm));
-    if (result == nullptr) {
-        if (engine->IsExceptionPending()) {
-            [[maybe_unused]] NativeValue* error = engine->GetAndClearLastException();
-        }
-    } else {
-        ret = *result;
-    }
-    auto localRet = ret.ToLocal(vm);
-    scopeManager->Close(nativeScope);
-    if (localRet.IsEmpty()) {
-        return scope.Escape(JSValueRef::Undefined(vm));
-    }
-    return scope.Escape(localRet);
-}
-
-Local<JSValueRef> ArkNativeFunction::NativeClassFunctionCallBack(EcmaVM* vm,
-                                                                 Local<JSValueRef> function,
-                                                                 Local<JSValueRef> newTarget,
-                                                                 const Local<JSValueRef> argv[],
-                                                                 int32_t length,
-                                                                 void* data)
-{
-    panda::EscapeLocalScope scope(vm);
-    auto info = reinterpret_cast<NativeFunctionInfo*>(data);
-    auto engine = reinterpret_cast<ArkNativeEngine*>(info->engine);
-    auto cb = info->callback;
-    if (engine == nullptr) {
-        HILOG_ERROR("native engine is null");
-        return JSValueRef::Undefined(vm);
-    }
-
-    NativeCallbackInfo cbInfo = { 0 };
-    NativeScopeManager* scopeManager = engine->GetScopeManager();
-    if (scopeManager == nullptr) {
-        HILOG_ERROR("scope manager is null");
-        return JSValueRef::Undefined(vm);
-    }
-    NativeScope* nativeScope = scopeManager->Open();
-    cbInfo.thisVar = ArkNativeEngine::ArkValueToNativeValue(engine, function);
-    cbInfo.function = ArkNativeEngine::ArkValueToNativeValue(engine, newTarget);
-    cbInfo.argc = static_cast<size_t>(length);
-    cbInfo.argv = nullptr;
-    cbInfo.functionInfo = info;
-    if (cbInfo.argc > 0) {
-        cbInfo.argv = new NativeValue* [cbInfo.argc];
-        for (size_t i = 0; i < cbInfo.argc; i++) {
-            cbInfo.argv[i] = ArkNativeEngine::ArkValueToNativeValue(engine, argv[i]);
+            cbInfo.argv[i] = ArkNativeEngine::ArkValueToNativeValue(engine, runtimeInfo->GetCallArgRef(i));
         }
     }
 
