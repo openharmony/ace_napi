@@ -189,12 +189,18 @@ if (defined(ohos_lite)) {
 
   template("ace_napi_lib") {
     forward_variables_from(invoker, "*")
-
+    if (defined(use_js_debug) && use_js_debug) {
+      deps_ = [
+        "native_engine/impl/${engine_path}:ace_napi_impl_${engine_path}_debug",
+      ]
+    } else {
+      deps_ =
+          [ "native_engine/impl/${engine_path}:ace_napi_impl_${engine_path}" ]
+    }
     ohos_shared_library(target_name) {
       public_configs =
           [ "native_engine/impl/${engine_path}:ace_napi_${engine_path}_config" ]
-      deps =
-          [ "native_engine/impl/${engine_path}:ace_napi_impl_${engine_path}" ]
+      deps = deps_
       subsystem_name = "ace"
       part_name = "napi"
     }
@@ -211,6 +217,13 @@ if (defined(ohos_lite)) {
             engine_path = engine.engine_path
           }
           napi_libs += [ ":ace_napi_${engine.engine_path}" ]
+          if (defined(engine.have_debug) && engine.have_debug) {
+            ace_napi_lib("ace_napi_${engine.engine_path}_debug") {
+              engine_path = engine.engine_path
+              use_js_debug = true
+            }
+            napi_libs += [ ":ace_napi_${engine.engine_path}_debug" ]
+          }
         } else if (engine.engine_name == "ark") {
           ace_napi_lib("ace_napi_${engine.engine_name}") {
             engine_path = engine.engine_name
