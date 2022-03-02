@@ -63,9 +63,14 @@ template("ace_napi_impl") {
 
     deps = [
       "//foundation/ace/napi:ace_napi",
-      "//third_party/quickjs:qjs",
       "//utils/native/base:utilsecurec",
     ]
+
+    if (invoker.use_js_debug) {
+      deps += [ "//third_party/quickjs:qjs_debugger" ]
+    } else {
+      deps += [ "//third_party/quickjs:qjs" ]
+    }
 
     cflags_cc = [ "-Wno-missing-braces" ]
   }
@@ -80,7 +85,16 @@ foreach(item, ace_platforms) {
         ace_napi_impl("ace_napi_impl_quickjs") {
           defines = []
           engine_defines = engine.engine_defines
+          use_js_debug = false
           defines = engine_config.defines
+        }
+        if (defined(engine.have_debug) && engine.have_debug) {
+          ace_napi_impl("ace_napi_impl_quickjs_debug") {
+            defines = []
+            engine_defines = engine.engine_defines
+            use_js_debug = true
+            defines = engine_config.defines
+          }
         }
       }
     }
