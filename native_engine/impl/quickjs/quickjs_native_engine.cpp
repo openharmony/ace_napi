@@ -483,6 +483,11 @@ NativeValue* QuickJSNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
     return JSValueToNativeValue(this, result);
 }
 
+NativeValue* QuickJSNativeEngine::RunActor(std::vector<uint8_t>& buffer, const char *descriptor)
+{
+    return RunBufferScript(buffer);
+}
+
 NativeValue* QuickJSNativeEngine::LoadModule(NativeValue* str, const std::string& fileName)
 {
     if (str == nullptr || fileName.empty()) {
