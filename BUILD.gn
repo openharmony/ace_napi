@@ -253,10 +253,6 @@ if (defined(ohos_lite)) {
         "sample/native_module_storage:storage",
         "test/unittest:unittest",
       ]
-
-      if (is_standard_system) {
-        deps += [ "sample/native_module_ability:ability" ]
-      }
     }
   }
 }
