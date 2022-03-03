@@ -834,10 +834,9 @@ void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, D
     }
 }
 
-std::string ArkNativeEngine::BuildNativeAndJsBackStackTrace()
+bool ArkNativeEngine::BuildNativeAndJsBackStackTrace(std::string &stackTraceStr)
 {
-    std::string stackTraceStr = DFXJSNApi::BuildNativeAndJsBackStackTrace(vm_);
-    return stackTraceStr;
+    return DFXJSNApi::BuildNativeAndJsBackStackTrace(vm_, stackTraceStr);
 }
 
 bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
