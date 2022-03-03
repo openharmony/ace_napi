@@ -86,6 +86,9 @@ void NativeAsyncWork::AsyncWorkRecvCallback(const uv_async_t* req)
     if (that == nullptr) {
         return;
     }
+#ifdef ENABLE_CONTAINER_SCOPE
+    ContainerScope containerScope(that->containerScopeId_);
+#endif
     NativeAsyncWorkDataPointer res;
     while (that->PopData(&res)) {
         if (that->execute_ != nullptr) {
