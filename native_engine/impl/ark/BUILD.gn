@@ -60,6 +60,11 @@ template("ace_napi_impl") {
       "//foundation/ace/napi:ace_napi",
     ]
 
+    if (product_name != "ohos-sdk") {
+      deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+      defines += [ "ENABLE_CONTAINER_SCOPE" ]
+    }
+
     cflags_cc = [ "-Wno-missing-braces" ]
     external_deps = hilog_deps
   }
