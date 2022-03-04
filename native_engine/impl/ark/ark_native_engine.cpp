@@ -18,6 +18,10 @@
 #include "ark_native_deferred.h"
 #include "ark_native_reference.h"
 
+#ifdef ENABLE_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
 #include "native_engine/native_property.h"
 
 #include "native_value/ark_native_array.h"
@@ -395,7 +399,11 @@ NativeValue* ArkNativeEngine::CallFunction(NativeValue* thisVar,
     LocalScope scope(vm_);
     Global<JSValueRef> thisObj = (thisVar != nullptr) ? *thisVar : Global<JSValueRef>(vm_, JSValueRef::Undefined(vm_));
     Global<FunctionRef> funcObj = *function;
-
+#ifdef ENABLE_CONTAINER_SCOPE
+    auto nativeFunction = static_cast<NativeFunction*>(function->GetInterface(NativeFunction::INTERFACE_ID));
+    auto arkNativeFunc = static_cast<ArkNativeFunction*>(nativeFunction);
+    OHOS::Ace::ContainerScope containerScope(arkNativeFunc->GetScopeId());
+#endif
     std::vector<Local<JSValueRef>> args;
     args.reserve(argc);
     for (size_t i = 0; i < argc; i++) {
