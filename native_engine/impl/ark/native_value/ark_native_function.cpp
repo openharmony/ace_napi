@@ -15,6 +15,10 @@
 
 #include "ark_native_function.h"
 
+#ifdef ENABLE_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
 #include "utils/log.h"
 
 using panda::ArrayRef;
@@ -23,6 +27,9 @@ using panda::FunctionRef;
 using panda::StringRef;
 ArkNativeFunction::ArkNativeFunction(ArkNativeEngine* engine, Local<JSValueRef> value) : ArkNativeObject(engine, value)
 {
+#ifdef ENABLE_CONTAINER_SCOPE
+    scopeId_ = OHOS::Ace::ContainerScope::CurrentId();
+#endif
 }
 
 // common function

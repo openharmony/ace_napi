@@ -15,6 +15,10 @@
 
 #include "ark_native_engine.h"
 
+#ifdef ENABLE_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
 #include "ark_native_deferred.h"
 
 using panda::Global;
@@ -23,6 +27,9 @@ using panda::JSValueRef;
 ArkNativeDeferred::ArkNativeDeferred(ArkNativeEngine* engine, Local<PromiseCapabilityRef> deferred)
     : engine_(engine), deferred_(engine->GetEcmaVm(), deferred)
 {
+#ifdef ENABLE_CONTAINER_SCOPE
+    scopeId_ = OHOS::Ace::ContainerScope::CurrentId();
+#endif
 }
 
 ArkNativeDeferred::~ArkNativeDeferred()
@@ -33,6 +40,9 @@ ArkNativeDeferred::~ArkNativeDeferred()
 
 void ArkNativeDeferred::Resolve(NativeValue* data)
 {
+#ifdef ENABLE_CONTAINER_SCOPE
+    OHOS::Ace::ContainerScope containerScope(scopeId_);
+#endif
     auto vm = engine_->GetEcmaVm();
     LocalScope scope(vm);
     Global<JSValueRef> value = *data;
@@ -41,6 +51,9 @@ void ArkNativeDeferred::Resolve(NativeValue* data)
 
 void ArkNativeDeferred::Reject(NativeValue* reason)
 {
+#ifdef ENABLE_CONTAINER_SCOPE
+    OHOS::Ace::ContainerScope containerScope(scopeId_);
+#endif
     auto vm = engine_->GetEcmaVm();
     LocalScope scope(vm);
     Global<JSValueRef> value = *reason;
