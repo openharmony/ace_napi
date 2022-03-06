@@ -150,9 +150,9 @@ public:
 
     void DumpHeapSnapShot(const std::string &path, bool isVmMode = true,
         DumpFormat dumpFormat = DumpFormat::JSON) override {}
-    std::string BuildNativeAndJsBackStackTrace() override
+    bool BuildNativeAndJsBackStackTrace(std::string &stackTraceStr) override
     {
-        return nullptr;
+        return false;
     }
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override
     {
