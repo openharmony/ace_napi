@@ -199,7 +199,9 @@ public:
 
     void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) override;
     void HandleUncaughtException() override;
-
+    panda::Global<panda::ObjectRef> GetModuleFromName(
+        const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
+        const std::string& instanceName, void** instance);
 private:
     static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
 

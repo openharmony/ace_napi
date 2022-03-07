@@ -173,6 +173,47 @@ ArkNativeEngine::~ArkNativeEngine()
     }
 }
 
+panda::Global<panda::ObjectRef> ArkNativeEngine::GetModuleFromName(
+    const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
+    const std::string& instanceName, void** instance)
+{
+    Global<ObjectRef> exports(vm_, JSValueRef::Undefined(vm_));
+    NativeModuleManager* moduleManager = NativeModuleManager::GetInstance();
+    NativeModule* module = moduleManager->LoadNativeModule(moduleName.c_str(), nullptr, isAppModule);
+    if (module != nullptr) {
+        NativeValue* idValue = new ArkNativeString(this, id.c_str(), id.size());
+        NativeValue* paramValue = new ArkNativeString(this, param.c_str(), param.size());
+        NativeValue* exportObject = new ArkNativeObject(this);
+
+        NativePropertyDescriptor idProperty, paramProperty;
+        idProperty.utf8name = "id";
+        idProperty.value = idValue;
+        paramProperty.utf8name = "param";
+        paramProperty.value = paramValue;
+
+        ArkNativeObject* exportObj = reinterpret_cast<ArkNativeObject*>(exportObject);
+        exportObj->DefineProperty(idProperty);
+        exportObj->DefineProperty(paramProperty);
+        module->registerCallback(this, exportObject);
+
+        napi_value nExport = reinterpret_cast<napi_value>(exportObject);
+        napi_value exportInstance = nullptr;
+        napi_status status = napi_get_named_property(
+            reinterpret_cast<napi_env>(this), nExport, instanceName.c_str(), &exportInstance);
+        if (status != napi_ok) {
+            HILOG_ERROR("GetModuleFromName napi_get_named_property status != napi_ok");
+        }
+
+        status = napi_unwrap(reinterpret_cast<napi_env>(this), exportInstance, reinterpret_cast<void**>(instance));
+        if (status != napi_ok) {
+            HILOG_ERROR("GetModuleFromName napi_unwrap status != napi_ok");
+        }
+
+        exports = *exportObject;
+    }
+    return exports;
+}
+
 panda::Global<panda::ObjectRef> ArkNativeEngine::LoadModuleByName(
     const std::string& moduleName, bool isAppModule, const std::string& param,
     const std::string& instanceName, void* instance)
