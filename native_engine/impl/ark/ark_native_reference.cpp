@@ -17,6 +17,10 @@
 
 #include "ark_native_reference.h"
 
+#ifdef ENABLE_CONTAINER_SCOPE
+#include "core/common/container_scope.h"
+#endif
+
 #include "utils/log.h"
 
 ArkNativeReference::ArkNativeReference(ArkNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
@@ -32,6 +36,10 @@ ArkNativeReference::ArkNativeReference(ArkNativeEngine* engine, NativeValue* val
     if (initialRefcount == 0) {
         value_.SetWeak();
     }
+
+#ifdef ENABLE_CONTAINER_SCOPE
+    scopeId_ = OHOS::Ace::ContainerScope::CurrentId();
+#endif
 }
 
 ArkNativeReference::~ArkNativeReference()
@@ -70,6 +78,9 @@ NativeValue* ArkNativeReference::Get()
     auto vm = engine_->GetEcmaVm();
     LocalScope scope(vm);
     Local<JSValueRef> value = value_.ToLocal(vm);
+#ifdef ENABLE_CONTAINER_SCOPE
+    OHOS::Ace::ContainerScope containerScope(scopeId_);
+#endif
     return ArkNativeEngine::ArkValueToNativeValue(engine_, value);
 }
 
