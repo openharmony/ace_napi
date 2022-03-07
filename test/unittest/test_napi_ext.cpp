@@ -51,101 +51,101 @@ HWTEST_F(NapiExtTest, CreateBufferTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
-    void* BufferPtr = nullptr;
-    size_t BufferSize = NAPI_UT_BUFFER_SIZE;
-    napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
+    napi_value buffer = nullptr;
+    void* bufferPtr = nullptr;
+    size_t bufferSize = NAPI_UT_BUFFER_SIZE;
+    napi_create_buffer(env, bufferSize, &bufferPtr, &buffer);
     void* tmpBufferPtr = nullptr;
-    size_t BufferLength = 0;
-    napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
+    size_t bufferLength = 0;
+    napi_get_buffer_info(env, buffer, &tmpBufferPtr, &bufferLength);
 
-    ASSERT_EQ(BufferPtr, tmpBufferPtr);
-    ASSERT_EQ(BufferSize, BufferLength);
+    ASSERT_EQ(bufferPtr, tmpBufferPtr);
+    ASSERT_EQ(bufferSize, bufferLength);
 }
 
 HWTEST_F(NapiExtTest, CreateBufferTest002, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
-    void* BufferPtr = nullptr;
-    size_t BufferSize = -1;
-    napi_status creatresult = napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
+    napi_value buffer = nullptr;
+    void* bufferPtr = nullptr;
+    size_t bufferSize = -1;
+    napi_status creatresult = napi_create_buffer(env, bufferSize, &bufferPtr, &buffer);
 
     ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(BufferPtr, nullptr);
+    ASSERT_EQ(bufferPtr, nullptr);
 }
 
 HWTEST_F(NapiExtTest, CreateBufferTest003, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
-    void* BufferPtr = nullptr;
+    napi_value buffer = nullptr;
+    void* bufferPtr = nullptr;
     const char bufferdata[] = "for test";
     const char* data = bufferdata;
-    size_t BufferSize = NAPI_UT_BUFFER_SIZE;
-    napi_create_buffer_copy(env, BufferSize, data, &BufferPtr, &Buffer);
+    size_t bufferSize = NAPI_UT_BUFFER_SIZE;
+    napi_create_buffer_copy(env, bufferSize, data, &bufferPtr, &buffer);
 
     void* tmpBufferPtr = nullptr;
-    size_t BufferLength = 0;
-    napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
+    size_t bufferLength = 0;
+    napi_get_buffer_info(env, buffer, &tmpBufferPtr, &bufferLength);
 
-    ASSERT_EQ(BufferPtr, tmpBufferPtr);
-    ASSERT_EQ(BufferSize, BufferLength);
-    ASSERT_EQ(0, memcmp(bufferdata, BufferPtr, BufferSize));
+    ASSERT_EQ(bufferPtr, tmpBufferPtr);
+    ASSERT_EQ(bufferSize, bufferLength);
+    ASSERT_EQ(0, memcmp(bufferdata, bufferPtr, bufferSize));
 }
 
 HWTEST_F(NapiExtTest, CreateBufferTest004, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
-    void* BufferPtr = nullptr;
+    napi_value buffer = nullptr;
+    void* bufferPtr = nullptr;
     const char* data = nullptr;
-    size_t BufferSize = -1;
-    napi_status creatresult = napi_create_buffer_copy(env, BufferSize, data, &BufferPtr, &Buffer);
+    size_t bufferSize = -1;
+    napi_status creatresult = napi_create_buffer_copy(env, bufferSize, data, &bufferPtr, &buffer);
 
     ASSERT_EQ(creatresult, napi_status::napi_invalid_arg);
-    ASSERT_EQ(BufferPtr, nullptr);
+    ASSERT_EQ(bufferPtr, nullptr);
 }
 
 HWTEST_F(NapiExtTest, CreateBufferTest005, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
+    napi_value buffer = nullptr;
     char testStr[] = "test";
-    void* BufferPtr = testStr;
+    void* bufferPtr = testStr;
 
-    size_t BufferSize = NAPI_UT_BUFFER_SIZE;
+    size_t bufferSize = NAPI_UT_BUFFER_SIZE;
     napi_create_external_buffer(
-        env, BufferSize, BufferPtr, [](napi_env env, void* data, void* hint) {}, (void*)testStr, &Buffer);
+        env, bufferSize, bufferPtr, [](napi_env env, void* data, void* hint) {}, (void*)testStr, &buffer);
 
     void* tmpBufferPtr = nullptr;
-    size_t BufferLength = 0;
-    napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
+    size_t bufferLength = 0;
+    napi_get_buffer_info(env, buffer, &tmpBufferPtr, &bufferLength);
     bool isBuffer = false;
-    napi_is_buffer(env, Buffer, &isBuffer);
+    napi_is_buffer(env, buffer, &isBuffer);
 
-    ASSERT_EQ(BufferSize, BufferLength);
+    ASSERT_EQ(bufferSize, bufferLength);
 }
 
 HWTEST_F(NapiExtTest, IsBufferTest001, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
-    void* BufferPtr = nullptr;
-    size_t BufferSize = NAPI_UT_BUFFER_SIZE;
+    napi_value buffer = nullptr;
+    void* bufferPtr = nullptr;
+    size_t bufferSize = NAPI_UT_BUFFER_SIZE;
     bool isBuffer = false;
 
-    napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
+    napi_create_buffer(env, bufferSize, &bufferPtr, &buffer);
 
     void* tmpBufferPtr = nullptr;
-    size_t BufferLength = 0;
-    napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    napi_is_buffer(env, Buffer, &isBuffer);
+    size_t bufferLength = 0;
+    napi_get_buffer_info(env, buffer, &tmpBufferPtr, &bufferLength);
+    napi_is_buffer(env, buffer, &isBuffer);
 
     ASSERT_TRUE(isBuffer);
 }
@@ -154,17 +154,17 @@ HWTEST_F(NapiExtTest, IsBufferTest002, testing::ext::TestSize.Level1)
 {
     napi_env env = (napi_env)engine_;
 
-    napi_value Buffer = nullptr;
-    void* BufferPtr = nullptr;
-    size_t BufferSize = -1;
+    napi_value buffer = nullptr;
+    void* bufferPtr = nullptr;
+    size_t bufferSize = -1;
     bool isBuffer = false;
 
-    napi_create_buffer(env, BufferSize, &BufferPtr, &Buffer);
+    napi_create_buffer(env, bufferSize, &bufferPtr, &buffer);
 
     void* tmpBufferPtr = nullptr;
-    size_t BufferLength = 0;
-    napi_get_buffer_info(env, Buffer, &tmpBufferPtr, &BufferLength);
-    napi_is_buffer(env, Buffer, &isBuffer);
+    size_t bufferLength = 0;
+    napi_get_buffer_info(env, buffer, &tmpBufferPtr, &bufferLength);
+    napi_is_buffer(env, buffer, &isBuffer);
 
     ASSERT_EQ(isBuffer, false);
 }
@@ -406,7 +406,7 @@ HWTEST_F(NapiExtTest, BigIntWordsTest004, testing::ext::TestSize.Level1)
 
 HWTEST_F(NapiExtTest, FreezeObjectTest001, testing::ext::TestSize.Level1)
 {
-    constexpr int DataSize = 60;
+    constexpr int dataSize = 60;
     napi_env env = (napi_env)engine_;
     napi_value object = nullptr;
     napi_create_object(env, &object);
@@ -439,7 +439,7 @@ HWTEST_F(NapiExtTest, FreezeObjectTest001, testing::ext::TestSize.Level1)
     ASSERT_EQ(arrayLength, (uint32_t)2);
 
     char names[2][30];
-    memset_s(names, DataSize, 0, DataSize);
+    memset_s(names, dataSize, 0, dataSize);
     auto ret = memcpy_s(names[0], strlen("strAttribute"), "strAttribute", strlen("strAttribute"));
     ASSERT_EQ(ret, EOK);
     ret = memcpy_s(names[1], strlen("numberAttribute"), "numberAttribute", strlen("numberAttribute"));
@@ -640,9 +640,9 @@ HWTEST_F(NapiExtTest, AdjustExternalMemoryTest001, testing::ext::TestSize.Level1
 {
     HILOG_INFO("%{public}s", "ACE_napi_adjust_external_memory_test start");
     napi_env env = (napi_env)engine_;
-    int64_t change_in_bytes = 32;
-    int64_t adjusted_value = 32;
-    napi_status ret = napi_adjust_external_memory(env, change_in_bytes, &adjusted_value);
+    int64_t changeInBytes = 32;
+    int64_t adjustedValue = 32;
+    napi_status ret = napi_adjust_external_memory(env, changeInBytes, &adjustedValue);
     ASSERT_EQ(ret, napi_ok);
     HILOG_INFO("%{public}s", "ACE_napi_adjust_external_memory_test end");
 }

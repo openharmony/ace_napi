@@ -93,9 +93,7 @@ NAPI_INNER_EXTERN napi_status napi_create_bigint_int64(napi_env env,
                                                        int64_t value,
                                                        napi_value* result);
 
-NAPI_EXTERN napi_status napi_create_bigint_uint64(napi_env env,
-                                                        uint64_t value,
-                                                        napi_value* result);
+NAPI_EXTERN napi_status napi_create_bigint_uint64(napi_env env, uint64_t value, napi_value* result);
 
 NAPI_INNER_EXTERN napi_status napi_create_bigint_words(napi_env env,
                                                        int sign_bit,
@@ -122,10 +120,7 @@ NAPI_INNER_EXTERN napi_status napi_get_value_bigint_int64(napi_env env,
                                                           int64_t* result,
                                                           bool* lossless);
 
-NAPI_EXTERN napi_status napi_get_value_bigint_uint64(napi_env env,
-                                                           napi_value value,
-                                                           uint64_t* result,
-                                                           bool* lossless);
+NAPI_EXTERN napi_status napi_get_value_bigint_uint64(napi_env env, napi_value value, uint64_t* result, bool* lossless);
 
 NAPI_INNER_EXTERN napi_status napi_get_value_bigint_words(napi_env env,
                                                           napi_value value,
