@@ -84,11 +84,11 @@ HWTEST_F(NativeEngineTest, suppend002, testing::ext::TestSize.Level0)
         std::cout << "thread create failed";
         return;
     }
-    std::cout << "NativeEngineTest is start2"<<std::endl;
+    std::cout << "NativeEngineTest is start2" << std::endl;
     for (int i = 0; i < 10; ++i) { // 10:Loop 10 times
-        sleep(10); // 10:sleep 10 second to wait thread checkpoint again
+        sleep(10);                 // 10:sleep 10 second to wait thread checkpoint again
         bool supportFlag = engine_->CheckSafepoint();
-        std::cout << "supportFlag " << supportFlag ;
+        std::cout << "supportFlag " << supportFlag;
         if (supportFlag) {
             std::cout << "CheckSafepoint is ture";
         }
