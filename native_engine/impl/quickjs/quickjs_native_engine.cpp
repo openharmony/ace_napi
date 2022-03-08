@@ -562,6 +562,7 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
             NativeScope* scope = scopeManager->Open();
             if (scope == nullptr) {
                 HILOG_ERROR("scope is nullptr");
+                delete callbackInfo;
                 return JS_UNDEFINED;
             }
 
