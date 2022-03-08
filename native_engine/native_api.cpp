@@ -259,7 +259,7 @@ NAPI_EXTERN napi_status napi_create_error(napi_env env, napi_value code, napi_va
     auto msgValue = reinterpret_cast<NativeValue*>(msg);
 
     if (codeValue != nullptr) {
-        RETURN_STATUS_IF_FALSE(env, codeValue->TypeOf() == NATIVE_NUMBER, napi_invalid_arg);
+        RETURN_STATUS_IF_FALSE(env, codeValue->TypeOf() == NATIVE_STRING, napi_invalid_arg);
     }
     RETURN_STATUS_IF_FALSE(env, msgValue->TypeOf() == NATIVE_STRING, napi_invalid_arg);
 
