@@ -74,7 +74,12 @@ void QuickJSNativeString::GetCString16(char16_t* buffer, size_t size, size_t* le
         return;
     }
     if (length != nullptr) {
-        *length = Utf8ToUtf16Length(str, strlen(str));
+        auto ret = Utf8ToUtf16Length(str, strlen(str));
+        if (ret == -1) {
+            HILOG_ERROR("JS_ToCStringLen length is invalid");
+            return;
+        }
+        *length = ret;
         if (buffer != nullptr) {
             memset_s(buffer, sizeof(char16_t) * size, 0x0, sizeof(char16_t) * size);
             Utf8ToUtf16(str, strlen(str), buffer, size);
@@ -148,7 +153,7 @@ char16_t* QuickJSNativeString::Utf8ToUtf16(const char* utf8Str, size_t u8len, ch
     const char* u8end = utf8Str + u8len;
     const char* u8cur = utf8Str;
     const char16_t* u16end = u16str + u16len - 1;
-    constexpr int  offset = 10;
+    constexpr uint8_t  offset = 10;
     char16_t* u16cur = u16str;
 
     while ((u8cur < u8end) && (u16cur < u16end)) {
@@ -176,21 +181,21 @@ char16_t* QuickJSNativeString::Utf8ToUtf16(const char* utf8Str, size_t u8len, ch
 
 size_t QuickJSNativeString::Utf8CodePointLen(uint8_t ch)
 {
-    constexpr int  offset = 3;
+    constexpr uint8_t offset = 3;
     return ((0xe5000000 >> ((ch >> offset) & 0x1e)) & offset) + 1;
 }
 
 uint32_t QuickJSNativeString::Utf8ToUtf32CodePoint(const char* src, size_t length)
 {
     uint32_t unicode = 0;
-    constexpr int  lengthSizeOne = 1;
-    constexpr int  lengthSizeTwo = 2;
-    constexpr int  lengthSizeThree = 3;
-    constexpr int  lengthSizeFour = 4;
-    constexpr int  offsetZero = 0;
-    constexpr int  offsetOne = 1;
-    constexpr int  offsetTwo = 2;
-    constexpr int  offsetThree = 3;
+    constexpr size_t lengthSizeOne = 1;
+    constexpr size_t lengthSizeTwo = 2;
+    constexpr size_t lengthSizeThree = 3;
+    constexpr size_t lengthSizeFour = 4;
+    constexpr size_t offsetZero = 0;
+    constexpr size_t offsetOne = 1;
+    constexpr size_t offsetTwo = 2;
+    constexpr size_t offsetThree = 3;
     switch (length) {
         case lengthSizeOne:
             return src[offsetZero];
@@ -226,7 +231,7 @@ int QuickJSNativeString::Utf8ToUtf16Length(const char* str8, size_t str8Len)
     int utf16len = 0;
     while (str8 < str8end) {
         utf16len++;
-        int u8charlen = Utf8CodePointLen(*str8);
+        size_t u8charlen = Utf8CodePointLen(*str8);
         if (str8 + u8charlen - 1 >= str8end) {
             HILOG_ERROR("Get str16 length failed because str8 unicode is illegal!");
             return -1;
