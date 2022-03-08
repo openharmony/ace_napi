@@ -401,6 +401,10 @@ NativeValue* ArkNativeEngine::CallFunction(NativeValue* thisVar,
     Global<FunctionRef> funcObj = *function;
 #ifdef ENABLE_CONTAINER_SCOPE
     auto nativeFunction = static_cast<NativeFunction*>(function->GetInterface(NativeFunction::INTERFACE_ID));
+    if (nativeFunction == nullptr) {
+        HILOG_ERROR("nativeFunction is null");
+        return nullptr;
+    }
     auto arkNativeFunc = static_cast<ArkNativeFunction*>(nativeFunction);
     OHOS::Ace::ContainerScope containerScope(arkNativeFunc->GetScopeId());
 #endif
