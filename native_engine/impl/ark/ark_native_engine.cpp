@@ -543,7 +543,9 @@ NativeEngine* ArkNativeEngine::CreateRuntimeFunc(NativeEngine* engine, void* jsE
     option.SetGcType(panda::RuntimeOption::GC_TYPE::GEN_GC);
     const int64_t poolSize = 0x1000000;
     option.SetGcPoolSize(poolSize);
+#ifndef WINDOWS_PLATFORM
     option.SetLogLevel(panda::RuntimeOption::LOG_LEVEL::ERROR);
+#endif
     option.SetDebuggerLibraryPath("");
     EcmaVM* vm = panda::JSNApi::CreateJSVM(option);
     if (vm == nullptr) {
@@ -614,6 +616,7 @@ void ArkNativeEngine::DeleteSerializationData(NativeValue* value) const
     panda::JSNApi::DeleteSerializationData(data);
 }
 
+#if defined(ECMASCRIPT_SUPPORT_CPUPROFILER)
 void ArkNativeEngine::StartCpuProfiler(const std::string fileName)
 {
     DFXJSNApi::StartCpuProfiler(vm_, fileName);
@@ -623,6 +626,17 @@ void ArkNativeEngine::StopCpuProfiler()
 {
     DFXJSNApi::StopCpuProfiler();
 }
+#else
+void ArkNativeEngine::StartCpuProfiler(const std::string fileName)
+{
+    HILOG_ERROR("ARKCpuProfiler is not supported on windows");
+}
+
+void ArkNativeEngine::StopCpuProfiler()
+{
+    HILOG_ERROR("ARKCpuProfiler is not supported on windows");
+}
+#endif
 
 void ArkNativeEngine::ResumeVM()
 {
@@ -833,6 +847,7 @@ void ArkNativeEngine::PromiseRejectCallback(void* info)
     }
 }
 
+#if defined(ECMASCRIPT_SUPPORT_SNAPSHOT)
 void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, DumpFormat dumpFormat)
 {
     if (dumpFormat == DumpFormat::JSON) {
@@ -845,17 +860,39 @@ void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, D
         DFXJSNApi::DumpHeapSnapShot(vm_, 2, path, isVmMode); // 2:enum is 2
     }
 }
+#else
+void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, DumpFormat dumpFormat)
+{
+    HILOG_FATAL("ARK does not support snapshot on windows");
+}
+#endif
 
+#ifndef WINDOWS_PLATFORM
 bool ArkNativeEngine::BuildNativeAndJsBackStackTrace(std::string &stackTraceStr)
 {
     return DFXJSNApi::BuildNativeAndJsBackStackTrace(vm_, stackTraceStr);
 }
+#else
+bool ArkNativeEngine::BuildNativeAndJsBackStackTrace(std::string &stackTraceStr)
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+}
+#endif
 
+#if defined(ECMASCRIPT_SUPPORT_SNAPSHOT)
 bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
 {
     return DFXJSNApi::StartHeapTracking(vm_, timeInterval, isVmMode);
 }
+#else
+bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
+{
+    HILOG_FATAL("ARK does not support snapshot on windows");
+    return false;
+}
+#endif
 
+#if defined(ECMASCRIPT_SUPPORT_SNAPSHOT)
 bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat)
 {
     if (dumpFormat == DumpFormat::JSON) {
@@ -869,7 +906,15 @@ bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat d
     }
     return false;
 }
+#else
+bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat)
+{
+    HILOG_FATAL("ARK does not support snapshot on windows");
+    return false;
+}
+#endif
 
+#ifndef WINDOWS_PLATFORM
 void ArkNativeEngine::PrintStatisticResult()
 {
     DFXJSNApi::PrintStatisticResult(vm_);
@@ -899,6 +944,40 @@ size_t ArkNativeEngine::GetHeapUsedSize()
 {
     return DFXJSNApi::GetHeapUsedSize(vm_);
 }
+#else
+void ArkNativeEngine::PrintStatisticResult()
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+}
+
+void ArkNativeEngine::StartRuntimeStat()
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+}
+
+void ArkNativeEngine::StopRuntimeStat()
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+}
+
+size_t ArkNativeEngine::GetArrayBufferSize()
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+    return 0;
+}
+
+size_t ArkNativeEngine::GetHeapTotalSize()
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+    return 0;
+}
+
+size_t ArkNativeEngine::GetHeapUsedSize()
+{
+    HILOG_FATAL("ARK does not support dfx on windows");
+    return 0;
+}
+#endif
 
 void ArkNativeEngine::RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback)
 {

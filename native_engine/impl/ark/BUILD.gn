@@ -21,6 +21,13 @@ config("ace_napi_ark_config") {
     "//third_party/libuv/include",
     "//utils/native/base/include",
   ]
+
+  defines = []
+  cflags_cc = []
+  if (is_mingw) {
+    defines += [ "WINDOWS_PLATFORM" ]
+    cflags_cc += [ "-std=c++17" ]
+  }
 }
 
 template("ace_napi_impl") {
@@ -66,7 +73,9 @@ template("ace_napi_impl") {
     }
 
     cflags_cc = [ "-Wno-missing-braces" ]
-    external_deps = hilog_deps
+    if (!is_mingw) {
+      external_deps = hilog_deps
+    }
   }
 }
 

@@ -20,7 +20,7 @@
 
 #define __FILENAME__ strrchr(__FILE__, '/') + 1
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(ANDROID_PLATFORM)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(ANDROID_PLATFORM) && !defined(WINDOWS_PLATFORM)
 #include "hilog/log.h"
 
 #undef LOG_DOMAIN
@@ -54,7 +54,7 @@ static void StripFormatString(const std::string& prefix, std::string& str)
     }
 }
 
-static void PrintLog(const char* fmt, ...)
+[[maybe_unused]] static void PrintLog(const char* fmt, ...)
 {
     std::string newFmt(fmt);
     StripFormatString("{public}", newFmt);
