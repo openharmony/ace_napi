@@ -170,12 +170,6 @@ bool NativeModuleManager::GetNativeModulePath(
     const char* sysPrefix = "/system/lib/module";
     const char* zfix = ".z";
 #endif
-    const char* prefix = nullptr;
-    if (isAppModule && appLibPath_) {
-        prefix = appLibPath_;
-    } else {
-        prefix = sysPrefix;
-    }
     int32_t lengthOfModuleName = strlen(moduleName);
     char dupModuleName[NAPI_PATH_MAX] = { 0 };
     if (strcpy_s(dupModuleName, NAPI_PATH_MAX, moduleName) != 0) {
@@ -183,8 +177,14 @@ bool NativeModuleManager::GetNativeModulePath(
         return false;
     }
 
-    for (int32_t i = 0; i < lengthOfModuleName; i++) {
-        dupModuleName[i] = tolower(dupModuleName[i]);
+    const char* prefix = nullptr;
+    if (isAppModule && appLibPath_) {
+        prefix = appLibPath_;
+    } else {
+        prefix = sysPrefix;
+        for (int32_t i = 0; i < lengthOfModuleName; i++) {
+            dupModuleName[i] = tolower(dupModuleName[i]);
+        }
     }
 
     int32_t lengthOfPostfix = strlen(soPostfix);
@@ -198,7 +198,7 @@ bool NativeModuleManager::GetNativeModulePath(
 
     char* lastDot = strrchr(dupModuleName, '.');
     if (lastDot == nullptr) {
-        if (strcmp(prefix, sysPrefix) == 0) {
+        if (!isAppModule || !appLibPath_) {
             if (sprintf_s(nativeModulePath[0], pathLength, "%s/lib%s%s%s",
                 prefix, dupModuleName, zfix, soPostfix) == -1) {
                 return false;
@@ -225,7 +225,7 @@ bool NativeModuleManager::GetNativeModulePath(
                 *(dupModuleName + i) = '/';
             }
         }
-        if (strcmp(prefix, sysPrefix) == 0) {
+        if (!isAppModule || !appLibPath_) {
             if (sprintf_s(nativeModulePath[0], pathLength, "%s/%s/lib%s%s%s",
                 prefix, dupModuleName, afterDot, zfix, soPostfix) == -1) {
                 return false;
@@ -275,8 +275,8 @@ LIBHANDLE NativeModuleManager::LoadModuleLibrary(const char* path, const bool is
 }
 
 using NAPIGetJSCode = void (*)(const char** buf, int* bufLen);
-NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule,
-                                                          bool isArk)
+NativeModule* NativeModuleManager::FindNativeModuleByDisk(
+    const char* moduleName, bool internal, const bool isAppModule, bool isArk)
 {
     char nativeModulePath[NATIVE_PATH_NUMBER][NAPI_PATH_MAX];
     nativeModulePath[0][0] = 0;
@@ -298,6 +298,11 @@ NativeModule* NativeModuleManager::FindNativeModuleByDisk(const char* moduleName
             HILOG_ERROR("secondary module path load failed, load native module failed");
             return nullptr;
         }
+    }
+
+    if (strcmp(lastNativeModule_->name, moduleName)) {
+        HILOG_WARN("moduleName '%{public}s' does not match plugin's name '%{public}s'",
+            moduleName, lastNativeModule_->name);
     }
 
     if (!internal) {
@@ -343,6 +348,10 @@ NativeModule* NativeModuleManager::FindNativeModuleByCache(const char* moduleNam
     NativeModule* result = nullptr;
     for (NativeModule* temp = firstNativeModule_; temp != nullptr; temp = temp->next) {
         if (!strcasecmp(temp->name, moduleName)) {
+            if (strcmp(temp->name, moduleName)) {
+                HILOG_WARN("moduleName '%{public}s' does not match plugin's name '%{public}s'",
+                    moduleName, temp->name);
+            }
             result = temp;
             break;
         }
