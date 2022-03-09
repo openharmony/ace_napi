@@ -108,7 +108,7 @@ struct JSValueWrapper {
         double float64;
         void* ptr;
     } u;
-    int64_t tag;
+    int64_t tag = 0;
 };
 
 struct NapiTypeTag {
