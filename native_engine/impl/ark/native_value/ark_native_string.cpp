@@ -78,7 +78,7 @@ size_t ArkNativeString::EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t
     int32_t length = val->Length();
 
     int32_t pos = 0;
-    int32_t writableSize = bufferSize;
+    int32_t writableSize = static_cast<int32_t>(bufferSize);
     int32_t i = 0;
     Local<ObjectRef> strObj = Local<ObjectRef>(val.ToLocal(vm));
     for (; i < length; i++) {
