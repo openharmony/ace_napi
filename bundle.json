@@ -13,7 +13,7 @@
         "name": "napi",
         "subsystem": "ace",
         "syscap": [],
-        "features": [],
+        "features": ["napi_enable_container_scope"],
         "adapted_system_type": [
             "standard"
         ],
