@@ -22,3 +22,7 @@ napi_sources = [
   "//foundation/ace/napi/reference_manager/native_reference_manager.cpp",
   "//foundation/ace/napi/scope_manager/native_scope_manager.cpp",
 ]
+
+declare_args() {
+  napi_enable_container_scope = true
+}

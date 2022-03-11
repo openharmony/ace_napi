@@ -14,6 +14,7 @@
 import("//ark/js_runtime/js_runtime_config.gni")
 import("//build/ohos.gni")
 import("//foundation/ace/ace_engine/ace_config.gni")
+import("//foundation/ace/napi/napi.gni")
 
 config("ace_napi_ark_config") {
   include_dirs = [
@@ -69,8 +70,10 @@ template("ace_napi_impl") {
     ]
 
     if (product_name != "ohos-sdk") {
-      deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
-      defines += [ "ENABLE_CONTAINER_SCOPE" ]
+      if (napi_enable_container_scope) {
+        deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+        defines += [ "ENABLE_CONTAINER_SCOPE" ]
+      }
     }
 
     cflags_cc = [ "-Wno-missing-braces" ]
