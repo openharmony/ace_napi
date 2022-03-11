@@ -26,6 +26,7 @@
 
 #include "native_value/ark_native_array.h"
 #include "native_value/ark_native_array_buffer.h"
+#include "native_value/ark_native_big_int.h"
 #include "native_value/ark_native_boolean.h"
 #include "native_value/ark_native_data_view.h"
 #include "native_value/ark_native_external.h"
@@ -52,6 +53,7 @@ using panda::NativePointerRef;
 using panda::SymbolRef;
 using panda::IntegerRef;
 using panda::DateRef;
+using panda::BigIntRef;
 static constexpr auto PANDA_MAIN_FUNCTION = "_GLOBAL::func_main_0";
 
 ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEngine), vm_(vm), topScope_(vm)
@@ -256,12 +258,12 @@ NativeValue* ArkNativeEngine::CreateNumber(double value)
 
 NativeValue* ArkNativeEngine::CreateBigInt(int64_t value)
 {
-    return nullptr;
+    return new ArkNativeBigInt(this, value);
 }
 
 NativeValue* ArkNativeEngine::CreateBigInt(uint64_t value)
 {
-    return nullptr;
+    return new ArkNativeBigInt(this, value, true);
 }
 
 NativeValue* ArkNativeEngine::CreateString(const char* value, size_t length)
@@ -727,6 +729,8 @@ NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Loc
         result = new ArkNativeExternal(engine, value);
     } else if (value->IsDate()) {
         result = new ArkNativeDate(engine, value);
+    } else if (value->IsBigInt()) {
+        result = new ArkNativeBigInt(engine, value);
     } else if (value->IsObject()) {
         result = new ArkNativeObject(engine, value);
     } else if (value->IsBoolean()) {
@@ -771,7 +775,16 @@ NativeValue* ArkNativeEngine::CreateDate(double value)
 
 NativeValue* ArkNativeEngine::CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words)
 {
-    return nullptr;
+    constexpr int bigintMod = 2; // 2 : used for even number judgment
+    bool sign = false;
+    if ((sign_bit % bigintMod) == 1) {
+        sign = true;
+    }
+    uint32_t size = (uint32_t)word_count;
+
+    Local<JSValueRef> value = BigIntRef::CreateBigWords(vm_, sign, size, words);
+
+    return new ArkNativeBigInt(this, value);
 }
 
 bool ArkNativeEngine::TriggerFatalException(NativeValue* error)
