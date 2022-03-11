@@ -70,6 +70,8 @@ NativeValueType ArkNativeValue::TypeOf()
         result = NATIVE_UNDEFINED;
     } else if (value->IsSymbol()) {
         result = NATIVE_SYMBOL;
+    } else if (value->IsBigInt()) {
+        result = NATIVE_BIGINT;
     } else if (value->IsObject()) {
         result = NATIVE_OBJECT;
     } else {
