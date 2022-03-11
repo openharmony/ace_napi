@@ -161,8 +161,10 @@ if (defined(ohos_lite)) {
         ]
         defines += [ "ENABLE_HITRACE" ]
         if (product_name != "ohos-sdk") {
-          deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
-          defines += [ "ENABLE_CONTAINER_SCOPE" ]
+          if (napi_enable_container_scope) {
+            deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+            defines += [ "ENABLE_CONTAINER_SCOPE" ]
+          }
         }
       } else {
         external_deps = [ "hilog:libhilog" ]
