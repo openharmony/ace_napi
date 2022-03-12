@@ -603,7 +603,7 @@ ExceptionInfo* ArkNativeEngine::GetExceptionForWorker() const
     }
 
     ExceptionInfo* exceptionInfo = new ExceptionInfo();
-    int msgLength = exceptionStr_.length();
+    size_t msgLength = exceptionStr_.length();
     char* exceptionMessage = new char[msgLength + 1] { 0 };
     if (memcpy_s(exceptionMessage, msgLength + 1, exceptionStr_.c_str(), msgLength) != EOK) {
         HILOG_ERROR("worker:: memcpy_s error");
