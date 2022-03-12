@@ -747,6 +747,8 @@ NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Loc
         result = new ArkNativeExternal(engine, value);
     } else if (value->IsDate()) {
         result = new ArkNativeDate(engine, value);
+    } else if (value->IsBigInt()) {
+        result = new ArkNativeBigInt(engine, value);
     } else if (value->IsObject()) {
         result = new ArkNativeObject(engine, value);
     } else if (value->IsBoolean()) {
