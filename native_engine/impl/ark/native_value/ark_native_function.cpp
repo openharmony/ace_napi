@@ -136,7 +136,7 @@ Local<JSValueRef> ArkNativeFunction::NativeFunctionCallBack(EcmaVM* vm,
     NativeScope* nativeScope = scopeManager->Open();
     cbInfo.thisVar = ArkNativeEngine::ArkValueToNativeValue(engine, thisObj);
     cbInfo.function = nullptr;
-    cbInfo.argc = length;
+    cbInfo.argc = static_cast<size_t>(length);
     cbInfo.argv = nullptr;
     cbInfo.functionInfo = info;
     if (cbInfo.argc > 0) {
@@ -197,7 +197,7 @@ Local<JSValueRef> ArkNativeFunction::NativeClassFunctionCallBack(EcmaVM* vm,
     NativeScope* nativeScope = scopeManager->Open();
     cbInfo.thisVar = ArkNativeEngine::ArkValueToNativeValue(engine, function);
     cbInfo.function = ArkNativeEngine::ArkValueToNativeValue(engine, newTarget);
-    cbInfo.argc = length;
+    cbInfo.argc = static_cast<size_t>(length);
     cbInfo.argv = nullptr;
     cbInfo.functionInfo = info;
     if (cbInfo.argc > 0) {
