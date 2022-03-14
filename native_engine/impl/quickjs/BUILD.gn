@@ -73,6 +73,8 @@ template("ace_napi_impl") {
     }
 
     cflags_cc = [ "-Wno-missing-braces" ]
+    part_name = "napi"
+    subsystem_name = "ace"
   }
 }
 
