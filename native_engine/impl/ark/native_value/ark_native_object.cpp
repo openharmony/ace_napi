@@ -56,33 +56,16 @@ void ArkNativeObject::SetNativePointer(void* pointer, NativeFinalize cb, void* h
     Local<StringRef> key = StringRef::NewFromUtf8(vm, "_napiwrapper");
     if (value->Has(vm, key) && pointer == nullptr) {
         Local<ObjectRef> wrapper = value->Get(vm, key);
-        auto oldInfo = reinterpret_cast<NativeObjectInfo*>(wrapper->GetNativePointerField(0));
+        auto ref = reinterpret_cast<ArkNativeReference*>(wrapper->GetNativePointerField(0));
         // Try to remove native pointer from ArrayDataList
         wrapper->SetNativePointerField(0, nullptr, nullptr, nullptr);
         value->Delete(vm, key);
-        delete oldInfo;
+        delete ref;
     } else {
-        NativeObjectInfo* objInfo = NativeObjectInfo::CreateNewInstance();
-        objInfo->engine = engine_;
-        objInfo->nativeObject = pointer;
-        objInfo->callback = cb;
-        objInfo->hint = hint;
-
         Local<ObjectRef> object = ObjectRef::New(vm);
+        ArkNativeReference* ref = new ArkNativeReference(engine_, this, 1, true, cb, pointer, hint);
         object->SetNativePointerFieldCount(1);
-        object->SetNativePointerField(0, objInfo,
-            [](void* data, void* info) {
-                auto externalInfo = reinterpret_cast<NativeObjectInfo*>(data);
-                auto engine = externalInfo->engine;
-                auto nativeObject = externalInfo->nativeObject;
-                auto callback = externalInfo->callback;
-                auto hint = externalInfo->hint;
-                if (callback != nullptr) {
-                    callback(engine, nativeObject, hint);
-                }
-                delete externalInfo;
-            },
-            nullptr);
+        object->SetNativePointerField(0, ref, nullptr, nullptr);
         value->Set(vm, key, object);
     }
 }
@@ -97,9 +80,10 @@ void* ArkNativeObject::GetNativePointer()
     void* result = nullptr;
     if (val->IsObject()) {
         Local<ObjectRef> ext(val);
-        result = ext->GetNativePointerField(0);
+        auto ref = reinterpret_cast<ArkNativeReference*>(ext->GetNativePointerField(0));
+        result = ref->GetData();
     }
-    return (result != nullptr) ? reinterpret_cast<NativeObjectInfo*>(result)->nativeObject : nullptr;
+    return result;
 }
 
 NativeValue* ArkNativeObject::GetPropertyNames()
