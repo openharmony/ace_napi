@@ -37,7 +37,9 @@
 #include "native_value/ark_native_typed_array.h"
 #include "native_value/ark_native_date.h"
 
+#if defined(ECMASCRIPT_SUPPORT_SNAPSHOT)
 #include "parameters.h"
+#endif
 #include "securec.h"
 #include "utils/log.h"
 
@@ -584,9 +586,11 @@ bool ArkNativeEngine::Throw(NativeErrorType type, const char* code, const char* 
 NativeEngine* ArkNativeEngine::CreateRuntimeFunc(NativeEngine* engine, void* jsEngine)
 {
     panda::RuntimeOption option;
+#ifndef WINDOWS_PLATFORM
     int arkProperties = OHOS::system::GetIntParameter<int>("persist.ark.properties", -1);
     option.SetArkProperties(arkProperties);
     HILOG_INFO("ArkNativeEngine::CreateRuntime ark properties = %{public}d", arkProperties);
+#endif
     option.SetGcType(panda::RuntimeOption::GC_TYPE::GEN_GC);
     const int64_t poolSize = 0x1000000;
     option.SetGcPoolSize(poolSize);
@@ -676,15 +680,16 @@ void ArkNativeEngine::StopCpuProfiler()
 #else
 void ArkNativeEngine::StartCpuProfiler(const std::string fileName)
 {
-    HILOG_ERROR("ARKCpuProfiler is not supported on windows");
+    HILOG_FATAL("ARKCpuProfiler is not supported on windows");
 }
 
 void ArkNativeEngine::StopCpuProfiler()
 {
-    HILOG_ERROR("ARKCpuProfiler is not supported on windows");
+    HILOG_FATAL("ARKCpuProfiler is not supported on windows");
 }
 #endif
 
+#if defined(ECMASCRIPT_SUPPORT_SNAPSHOT)
 void ArkNativeEngine::ResumeVM()
 {
     DFXJSNApi::ResumeVM(vm_);
@@ -704,6 +709,30 @@ bool ArkNativeEngine::CheckSafepoint()
 {
     return DFXJSNApi::CheckSafepoint(vm_);
 }
+#else
+void ArkNativeEngine::ResumeVM()
+{
+    HILOG_FATAL("ARK Snapshot is not supported on windows");
+}
+
+bool ArkNativeEngine::SuspendVM()
+{
+    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    return false;
+}
+
+bool ArkNativeEngine::IsSuspended()
+{
+    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    return false;
+}
+
+bool ArkNativeEngine::CheckSafepoint()
+{
+    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    return false;
+}
+#endif
 
 NativeValue* ArkNativeEngine::RunBufferScript(std::vector<uint8_t>& buffer)
 {
