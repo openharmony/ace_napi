@@ -533,7 +533,7 @@ bool JS_ToInt64WithBigInt(JSContext* context, JSValueConst value, int64_t* pres,
     JSValue val = JS_DupValue(context, value);
     JS_BigFloatExt* p = (JS_BigFloatExt*)JS_VALUE_GET_PTR(val);
     if (p) {
-        int opFlag = bf_get_int64(pres, &p->num, BF_GET_INT_MOD);
+        int opFlag = bf_get_int64(pres, &p->num, 0);
         if (lossless != nullptr) {
             *lossless = (opFlag == 0);
         }

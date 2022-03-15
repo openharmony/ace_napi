@@ -423,7 +423,7 @@ void NativeEngine::RunCleanup()
 void NativeEngine::CleanupHandles()
 {
     HILOG_INFO("%{public}s, start.", __func__);
-    while (request_waiting_ != 0) {
+    while (request_waiting_ > 0) {
         HILOG_INFO("%{public}s, request waiting:%{public}d.", __func__, request_waiting_);
         uv_run(loop_, UV_RUN_ONCE);
     }
