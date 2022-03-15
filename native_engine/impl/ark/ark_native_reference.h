@@ -28,19 +28,26 @@ using panda::Local;
 
 class ArkNativeReference : public NativeReference {
 public:
-    ArkNativeReference(ArkNativeEngine* engine, NativeValue* value, uint32_t initialRefcount,
-        NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr);
+    ArkNativeReference(ArkNativeEngine* engine,
+                       NativeValue* value,
+                       uint32_t initialRefcount,
+                       bool deleteSelf,
+                       NativeFinalize callback = nullptr,
+                       void* data = nullptr,
+                       void* hint = nullptr);
     ~ArkNativeReference() override;
 
     uint32_t Ref() override;
     uint32_t Unref() override;
     NativeValue* Get() override;
+    void* GetData() override;
     operator NativeValue*() override;
 
 private:
     ArkNativeEngine* engine_;
     Global<JSValueRef> value_;
     uint32_t refCount_;
+    bool deleteSelf_;
 
 #ifdef ENABLE_CONTAINER_SCOPE
     int32_t scopeId_ = -1;
