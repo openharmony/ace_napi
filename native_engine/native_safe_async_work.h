@@ -71,6 +71,7 @@ private:
     SafeAsyncCode CloseHandles();
     void CleanUp();
     bool IsSameTid();
+    bool IsMaxQueueSize();
 
     NativeEngine* engine_ = nullptr;
     NativeValue* func_ = nullptr;

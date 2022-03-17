@@ -118,22 +118,28 @@ bool NativeSafeAsyncWork::Init()
     return true;
 }
 
+bool NativeSafeAsyncWork::IsMaxQueueSize()
+{
+    return (queue_.size() > maxQueueSize_ &&
+           maxQueueSize_ > 0 &&
+           status_ != SafeAsyncStatus::SAFE_ASYNC_STATUS_CLOSING &&
+           status_ != SafeAsyncStatus::SAFE_ASYNC_STATUS_CLOSED);
+}
+
 SafeAsyncCode NativeSafeAsyncWork::Send(void* data, NativeThreadSafeFunctionCallMode mode)
 {
     HILOG_INFO("NativeSafeAsyncWork::Send called");
 
     std::unique_lock<std::mutex> lock(mutex_);
-
-    if (queue_.size() > maxQueueSize_ &&
-        maxQueueSize_ > 0 &&
-        status_ != SafeAsyncStatus::SAFE_ASYNC_STATUS_CLOSING &&
-        status_ != SafeAsyncStatus::SAFE_ASYNC_STATUS_CLOSED) {
+    if (IsMaxQueueSize()) {
         HILOG_INFO("queue size bigger than max queue size");
-
-        if (mode == NATIVE_TSFUNC_NONBLOCKING) {
+        if (mode == NATIVE_TSFUNC_BLOCKING) {
+            while (IsMaxQueueSize()) {
+                condition_.wait(lock);
+            }
+        } else {
             return SafeAsyncCode::SAFE_ASYNC_QUEUE_FULL;
         }
-        condition_.wait(lock);
     }
 
     if (status_ == SafeAsyncStatus::SAFE_ASYNC_STATUS_CLOSED ||
