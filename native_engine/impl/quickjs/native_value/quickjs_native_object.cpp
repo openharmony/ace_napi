@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -308,58 +308,51 @@ NativeValue* QuickJSNativeObject::GetAllPropertyNames(
 
 bool QuickJSNativeObject::AssociateTypeTag(NapiTypeTag* typeTag)
 {
-    const char name_lower[] = "ACENAPI_LOWER";
-    const char name_upper[] = "ACENAPI_UPPER";
+    constexpr uint32_t size = 2;
+    const char name[] = "ACENAPI_TYPETAG";
     bool result = false;
     bool hasPribate = false;
-    hasPribate = HasPrivateProperty(name_lower);
+    if (typeTag == nullptr) {
+        return false;
+    }
+    uint64_t words[size] = {typeTag->lower, typeTag->upper};
+    hasPribate = HasPrivateProperty(name);
     if (!hasPribate) {
-        JSValue valueLower = JS_NewInt64(engine_->GetContext(), (uint64_t)(typeTag->lower));
-        JSValue valueUpper = JS_NewInt64(engine_->GetContext(), (uint64_t)(typeTag->upper));
-
-        JSAtom keyLower = JS_NewAtom(engine_->GetContext(), name_lower);
-        result = JS_SetPropertyInternal(engine_->GetContext(), value_, keyLower,
-            JS_DupValue(engine_->GetContext(), valueLower), JS_PROP_C_W_E | JS_PROP_THROW);
-        JS_FreeAtom(engine_->GetContext(), keyLower);
-
-        JSAtom keyUpper = JS_NewAtom(engine_->GetContext(), name_upper);
-        result = result && JS_SetPropertyInternal(engine_->GetContext(), value_, keyUpper,
-            JS_DupValue(engine_->GetContext(), valueUpper), JS_PROP_C_W_E | JS_PROP_THROW);
-        JS_FreeAtom(engine_->GetContext(), keyUpper);
-
-        JS_FreeValue(engine_->GetContext(), valueLower);
-        JS_FreeValue(engine_->GetContext(), valueUpper);
+        JSAtom key = JS_NewAtom(engine_->GetContext(), name);
+        JSValue value = JS_CreateBigIntWords(engine_->GetContext(), 0, size, words);
+        result = JS_SetPropertyInternal(engine_->GetContext(), value_, key,
+            JS_DupValue(engine_->GetContext(), value), JS_PROP_C_W_E | JS_PROP_THROW);
+        JS_FreeAtom(engine_->GetContext(), key);
     }
     return result;
 }
 
 bool QuickJSNativeObject::CheckTypeTag(NapiTypeTag* typeTag)
 {
-    const char name_lower[] = "ACENAPI_LOWER";
-    const char name_upper[] = "ACENAPI_UPPER";
+    constexpr uint32_t size = 2;
+    const char name[] = "ACENAPI_TYPETAG";
     bool result = false;
-    result = HasPrivateProperty(name_lower);
+    bool ret = false;
+    if (typeTag == nullptr) {
+        return ret;
+    }
+    result = HasPrivateProperty(name);
     if (result) {
-        JSValue valueLower = JS_UNDEFINED;
-        JSAtom key = JS_NewAtom(engine_->GetContext(), name_lower);
-        valueLower = JS_GetPropertyInternal(engine_->GetContext(), value_, key, value_, false);
+        JSAtom key = JS_NewAtom(engine_->GetContext(), name);
+        JSValue value = JS_GetPropertyInternal(engine_->GetContext(), value_, key, value_, false);
         JS_FreeAtom(engine_->GetContext(), key);
 
-        JSValue valueUpper = JS_UNDEFINED;
-        key = JS_NewAtom(engine_->GetContext(), name_upper);
-        valueUpper = JS_GetPropertyInternal(engine_->GetContext(), value_, key, value_, false);
-        JS_FreeAtom(engine_->GetContext(), key);
-
-        int64_t bigintLower = 0;
-        int64_t bigintUpper = 0;
-        JS_ToInt64(engine_->GetContext(), &bigintLower, valueLower);
-        JS_ToInt64(engine_->GetContext(), &bigintUpper, valueUpper);
-
-        if (((uint64_t)bigintLower != typeTag->lower) || ((uint64_t)bigintUpper != typeTag->upper)) {
-            result = false;
+        int sign = 0;
+        size_t wordCount = size;
+        uint64_t words[size] = {0};
+        result = JS_GetBigIntWords(engine_->GetContext(), value, &sign, &wordCount, words);
+        if (result && wordCount >= size) {
+            if ((words[0] == typeTag->lower) && (words[1] == typeTag->upper)) {
+                ret = true;
+            }
         }
     }
-    return result;
+    return ret;
 }
 
 void QuickJSNativeObject::Freeze()
