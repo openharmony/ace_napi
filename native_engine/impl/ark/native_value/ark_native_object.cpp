@@ -81,7 +81,7 @@ void* ArkNativeObject::GetNativePointer()
     if (val->IsObject()) {
         Local<ObjectRef> ext(val);
         auto ref = reinterpret_cast<ArkNativeReference*>(ext->GetNativePointerField(0));
-        result = ref->GetData();
+        result = ref != nullptr ? ref->GetData() : nullptr;
     }
     return result;
 }
