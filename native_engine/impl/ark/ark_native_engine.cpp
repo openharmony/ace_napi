@@ -37,6 +37,7 @@
 #include "native_value/ark_native_typed_array.h"
 #include "native_value/ark_native_date.h"
 
+#include "parameters.h"
 #include "securec.h"
 #include "utils/log.h"
 
@@ -583,6 +584,9 @@ bool ArkNativeEngine::Throw(NativeErrorType type, const char* code, const char* 
 NativeEngine* ArkNativeEngine::CreateRuntimeFunc(NativeEngine* engine, void* jsEngine)
 {
     panda::RuntimeOption option;
+    int arkProperties = OHOS::system::GetIntParameter<int>("persist.ark.properties", -1);
+    option.SetArkProperties(arkProperties);
+    HILOG_INFO("ArkNativeEngine::CreateRuntime ark properties = %{public}d", arkProperties);
     option.SetGcType(panda::RuntimeOption::GC_TYPE::GEN_GC);
     const int64_t poolSize = 0x1000000;
     option.SetGcPoolSize(poolSize);
