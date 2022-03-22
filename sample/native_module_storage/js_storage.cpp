@@ -277,8 +277,8 @@ static napi_value JSStorageGet(napi_env env, napi_callback_info info)
             StorageAsyncContext* asyncContext = (StorageAsyncContext*)data;
             auto itr = g_keyValueStorage.find(asyncContext->key);
             if (itr != g_keyValueStorage.end()) {
-                if (strncpy_s(asyncContext->value, VALUE_BUFFER_SIZE, itr->second.c_str(), itr->second.length()) ==
-                    -1) {
+                if (strncpy_s(asyncContext->value, VALUE_BUFFER_SIZE, itr->second.c_str(), itr->second.length()) !=
+                    EOK) {
                     asyncContext->status = 1;
                 } else {
                     asyncContext->status = 0;
