@@ -64,10 +64,6 @@ void QuickJSNativeString::GetCString(char* buffer, size_t size, size_t* length)
 }
 void QuickJSNativeString::GetCString16(char16_t* buffer, size_t size, size_t* length)
 {
-    if (size < 0) {
-        HILOG_ERROR("GetCString16 parameter is invalid");
-        return;
-    }
     const char* str = JS_ToCStringLen(engine_->GetContext(), length, value_);
     if (str == nullptr) {
         HILOG_ERROR("JS_ToCStringLen return value is null");
