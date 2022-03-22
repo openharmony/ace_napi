@@ -60,9 +60,6 @@ void JerryScriptNativeString::GetCString16(char16_t* buffer, size_t size, size_t
     }
     char *str = new char[utf8Length];
     jerry_string_to_utf8_char_buffer(value_, (jerry_char_t*)str, utf8Length);
-    if (size < 0) {
-        return;
-    }
     if (length != nullptr) {
         *length = Utf8ToUtf16Length(str, utf8Length);
         if (buffer != nullptr) {
