@@ -980,21 +980,12 @@ bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
 #endif
 
 #if defined(ECMASCRIPT_SUPPORT_SNAPSHOT)
-bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat)
+bool ArkNativeEngine::StopHeapTracking(const std::string &filePath)
 {
-    if (dumpFormat == DumpFormat::JSON) {
-        return DFXJSNApi::StopHeapTracking(vm_, 0, filePath);
-    }
-    if (dumpFormat == DumpFormat::BINARY) {
-        return DFXJSNApi::StopHeapTracking(vm_, 1, filePath);
-    }
-    if (dumpFormat == DumpFormat::OTHER) {
-        return DFXJSNApi::StopHeapTracking(vm_, 2, filePath); // 2:enum is 2
-    }
-    return false;
+    return DFXJSNApi::StopHeapTracking(vm_, filePath);
 }
 #else
-bool ArkNativeEngine::StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat)
+bool ArkNativeEngine::StopHeapTracking(const std::string &filePath)
 {
     HILOG_FATAL("ARK does not support snapshot on windows");
     return false;

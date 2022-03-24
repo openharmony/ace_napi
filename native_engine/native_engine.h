@@ -211,7 +211,7 @@ public:
         DumpFormat dumpFormat = DumpFormat::JSON) = 0;
     virtual bool BuildNativeAndJsBackStackTrace(std::string &stackTraceStr) = 0;
     virtual bool StartHeapTracking(double timeInterval, bool isVmMode = true) = 0;
-    virtual bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) = 0;
+    virtual bool StopHeapTracking(const std::string &filePath) = 0;
 
     NativeErrorExtendedInfo* GetLastError();
     void SetLastError(int errorCode, uint32_t engineErrorCode = 0, void* engineReserved = nullptr);

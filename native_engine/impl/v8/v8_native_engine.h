@@ -228,7 +228,7 @@ public:
     {
         return false;
     }
-    bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override
+    bool StopHeapTracking(const std::string &filePath) override
     {
         return false;
     }

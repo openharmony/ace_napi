@@ -188,7 +188,7 @@ public:
         DumpFormat dumpFormat = DumpFormat::JSON) override;
     bool BuildNativeAndJsBackStackTrace(std::string &stackTraceStr) override;
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
-    bool StopHeapTracking(const std::string &filePath, DumpFormat dumpFormat = DumpFormat::JSON) override;
+    bool StopHeapTracking(const std::string &filePath) override;
     
     void PrintStatisticResult() override;
     void StartRuntimeStat() override;
