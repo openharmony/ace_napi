@@ -23,47 +23,47 @@
 class QuickJSNativeValue : public NativeValue {
 public:
     QuickJSNativeValue(QuickJSNativeEngine* engine, JSValue value);
-    virtual ~QuickJSNativeValue();
+    ~QuickJSNativeValue() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual NativeValueType TypeOf() override;
-    virtual bool InstanceOf(NativeValue* obj) override;
+    NativeValueType TypeOf() override;
+    bool InstanceOf(NativeValue* obj) override;
 
-    virtual bool IsArray() override;
-    virtual bool IsArrayBuffer() override;
-    virtual bool IsBuffer() override;
-    virtual bool IsDate() override;
-    virtual bool IsError() override;
-    virtual bool IsTypedArray() override;
-    virtual bool IsDataView() override;
-    virtual bool IsPromise() override;
-    virtual bool IsCallable() override;
+    bool IsArray() override;
+    bool IsArrayBuffer() override;
+    bool IsBuffer() override;
+    bool IsDate() override;
+    bool IsError() override;
+    bool IsTypedArray() override;
+    bool IsDataView() override;
+    bool IsPromise() override;
+    bool IsCallable() override;
 
-    virtual bool IsMapIterator() override;
-    virtual bool IsSetIterator() override;
-    virtual bool IsGeneratorObject() override;
-    virtual bool IsModuleNamespaceObject() override;
-    virtual bool IsProxy() override;
-    virtual bool IsRegExp() override;
-    virtual bool IsNumberObject() override;
-    virtual bool IsMap() override;
-    virtual bool IsSet() override;
-    virtual bool IsArgumentsObject() override;
-    virtual bool IsAsyncFunction() override;
-    virtual bool IsBooleanObject() override;
-    virtual bool IsGeneratorFunction() override;
-    virtual bool IsStringObject() override;
-    virtual bool IsSymbolObject() override;
-    virtual bool IsWeakMap() override;
-    virtual bool IsWeakSet() override;
+    bool IsMapIterator() override;
+    bool IsSetIterator() override;
+    bool IsGeneratorObject() override;
+    bool IsModuleNamespaceObject() override;
+    bool IsProxy() override;
+    bool IsRegExp() override;
+    bool IsNumberObject() override;
+    bool IsMap() override;
+    bool IsSet() override;
+    bool IsArgumentsObject() override;
+    bool IsAsyncFunction() override;
+    bool IsBooleanObject() override;
+    bool IsGeneratorFunction() override;
+    bool IsStringObject() override;
+    bool IsSymbolObject() override;
+    bool IsWeakMap() override;
+    bool IsWeakSet() override;
 
-    virtual NativeValue* ToBoolean() override;
-    virtual NativeValue* ToNumber() override;
-    virtual NativeValue* ToString() override;
-    virtual NativeValue* ToObject() override;
+    NativeValue* ToBoolean() override;
+    NativeValue* ToNumber() override;
+    NativeValue* ToString() override;
+    NativeValue* ToObject() override;
 
-    virtual bool StrictEquals(NativeValue* value) override;
+    bool StrictEquals(NativeValue* value) override;
 
 protected:
     QuickJSNativeEngine* engine_;

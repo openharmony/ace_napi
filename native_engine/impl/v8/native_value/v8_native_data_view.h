@@ -22,14 +22,14 @@ class V8NativeDataView : public V8NativeObject, public NativeDataView {
 public:
     V8NativeDataView(V8NativeEngine* engine, v8::Local<v8::Value> value);
     V8NativeDataView(V8NativeEngine* engine, NativeValue* value, size_t length, size_t offset);
-    virtual ~V8NativeDataView();
+    ~V8NativeDataView() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual void* GetBuffer() override;
-    virtual size_t GetLength() override;
-    virtual NativeValue* GetArrayBuffer() override;
-    virtual size_t GetOffset() override;
+    void* GetBuffer() override;
+    size_t GetLength() override;
+    NativeValue* GetArrayBuffer() override;
+    size_t GetOffset() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_DATA_VIEW_H */

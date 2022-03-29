@@ -23,14 +23,15 @@ public:
     JerryScriptNativeString(JerryScriptNativeEngine* engine, const char* value, size_t length);
     JerryScriptNativeString(JerryScriptNativeEngine* engine, const char16_t* value, size_t length);
     JerryScriptNativeString(JerryScriptNativeEngine* engine, jerry_value_t value);
-    virtual ~JerryScriptNativeString() override;
+    ~JerryScriptNativeString() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual void GetCString(char* buffer, size_t size, size_t* length) override;
-    virtual size_t GetLength() override;
-    virtual size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) override { return 0; }
-    virtual void GetCString16(char16_t* buffer, size_t size, size_t* length) override;
+    void GetCString(char* buffer, size_t size, size_t* length) override;
+    size_t GetLength() override;
+    size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) override { return 0; }
+    void GetCString16(char16_t* buffer, size_t size, size_t* length) override;
+
 private:
     char16_t* Utf8ToUtf16(const char* utf8Str, size_t u8len, char16_t* u16str, size_t u16len);
     static inline size_t Utf8CodePointLen(uint8_t ch);
@@ -50,7 +51,7 @@ private:
     constexpr static char32_t UNICODE_RESERVED_START = 55296;
     constexpr static char32_t UNICODE_RESERVED_END = 0x0000DFFF;
     constexpr static char32_t UNICODE_MAX_NUM = 0x0010FFFF;
-    constexpr static unsigned int UTF8_OFFSET = 6;
+    constexpr static uint32_t UTF8_OFFSET = 6;
 
     constexpr static char32_t UTF8_BYTE_MASK = 0x000000BF;
     constexpr static char32_t UTF8_BYTE_MARK = 0x00000080;

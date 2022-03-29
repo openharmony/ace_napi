@@ -61,8 +61,8 @@ NativeValue* JerryScriptNativeDataView::GetArrayBuffer()
 
 size_t JerryScriptNativeDataView::GetOffset()
 {
-    unsigned int offset = 0;
-    unsigned int length = 0;
+    size_t offset = 0;
+    size_t length = 0;
     jerry_value_t arrybuffer = jerry_get_dataview_buffer(value_, &offset, &length);
     jerry_release_value(arrybuffer);
     return offset;

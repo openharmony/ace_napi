@@ -25,14 +25,14 @@ public:
     V8NativeNumber(V8NativeEngine* engine, uint32_t value);
     V8NativeNumber(V8NativeEngine* engine, int64_t value);
     V8NativeNumber(V8NativeEngine* engine, double value);
-    virtual ~V8NativeNumber();
+    ~V8NativeNumber() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual operator int32_t() override;
-    virtual operator uint32_t() override;
-    virtual operator int64_t() override;
-    virtual operator double() override;
+    operator int32_t() override;
+    operator uint32_t() override;
+    operator int64_t() override;
+    operator double() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_NUMBER_H */

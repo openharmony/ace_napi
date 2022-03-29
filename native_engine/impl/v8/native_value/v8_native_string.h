@@ -22,13 +22,13 @@ class V8NativeString : public V8NativeValue, public NativeString {
 public:
     V8NativeString(V8NativeEngine* engine, const char* value, size_t length);
     V8NativeString(V8NativeEngine* engine, v8::Local<v8::Value> value);
-    virtual ~V8NativeString();
+    ~V8NativeString() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual void GetCString(char* buffer, size_t size, size_t* length) override;
-    virtual size_t GetLength() override;
-    virtual size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) override;
+    void GetCString(char* buffer, size_t size, size_t* length) override;
+    size_t GetLength() override;
+    size_t EncodeWriteUtf8(char* buffer, size_t bufferSize, int32_t* nchars) override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_STRING_H */

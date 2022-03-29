@@ -25,14 +25,14 @@ public:
     QuickJSNativeNumber(QuickJSNativeEngine* engine, uint32_t value);
     QuickJSNativeNumber(QuickJSNativeEngine* engine, int64_t value);
     QuickJSNativeNumber(QuickJSNativeEngine* engine, double value);
-    virtual ~QuickJSNativeNumber();
+    ~QuickJSNativeNumber() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual operator int32_t() override;
-    virtual operator uint32_t() override;
-    virtual operator int64_t() override;
-    virtual operator double() override;
+    operator int32_t() override;
+    operator uint32_t() override;
+    operator int64_t() override;
+    operator double() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_NUMBER_H */

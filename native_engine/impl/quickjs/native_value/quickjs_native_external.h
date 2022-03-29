@@ -25,7 +25,7 @@ public:
     ~QuickJSNativeExternal() override;
 
     void* GetInterface(int interfaceId) override;
-    virtual operator void*() override;
+    operator void*() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_EXTERNAL_H */

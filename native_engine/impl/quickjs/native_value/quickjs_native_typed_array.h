@@ -26,15 +26,15 @@ public:
                             NativeValue* value,
                             size_t length,
                             size_t offset);
-    virtual ~QuickJSNativeTypedArray() override;
+    ~QuickJSNativeTypedArray() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual NativeTypedArrayType GetTypedArrayType() override;
-    virtual NativeValue* GetArrayBuffer() override;
-    virtual void* GetData() override;
-    virtual size_t GetLength() override;
-    virtual size_t GetOffset() override;
+    NativeTypedArrayType GetTypedArrayType() override;
+    NativeValue* GetArrayBuffer() override;
+    void* GetData() override;
+    size_t GetLength() override;
+    size_t GetOffset() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_TYPED_ARRAY_H */

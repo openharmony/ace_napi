@@ -48,77 +48,77 @@ private:
 class QuickJSNativeEngine : public NativeEngine {
 public:
     QuickJSNativeEngine(JSRuntime* runtime, JSContext* contex, void* jsEngine);
-    virtual ~QuickJSNativeEngine();
+    ~QuickJSNativeEngine() override;
 
     JSRuntime* GetRuntime();
     JSContext* GetContext();
 
-    virtual void Loop(LoopMode mode, bool needSync = false) override;
+    void Loop(LoopMode mode, bool needSync = false) override;
 
-    virtual NativeValue* GetGlobal() override;
-    virtual NativeValue* CreateNull() override;
-    virtual NativeValue* CreateUndefined() override;
-    virtual NativeValue* CreateBoolean(bool value) override;
-    virtual NativeValue* CreateNumber(int32_t value) override;
-    virtual NativeValue* CreateNumber(uint32_t value) override;
-    virtual NativeValue* CreateNumber(int64_t value) override;
-    virtual NativeValue* CreateNumber(double value) override;
-    virtual NativeValue* CreateBigInt(int64_t value) override;
-    virtual NativeValue* CreateBigInt(uint64_t value) override;
-    virtual NativeValue* CreateString(const char* value, size_t length) override;
-    virtual NativeValue* CreateString16(const char16_t* value, size_t length) override;
-    virtual NativeValue* CreateSymbol(NativeValue* value) override;
-    virtual NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) override;
+    NativeValue* GetGlobal() override;
+    NativeValue* CreateNull() override;
+    NativeValue* CreateUndefined() override;
+    NativeValue* CreateBoolean(bool value) override;
+    NativeValue* CreateNumber(int32_t value) override;
+    NativeValue* CreateNumber(uint32_t value) override;
+    NativeValue* CreateNumber(int64_t value) override;
+    NativeValue* CreateNumber(double value) override;
+    NativeValue* CreateBigInt(int64_t value) override;
+    NativeValue* CreateBigInt(uint64_t value) override;
+    NativeValue* CreateString(const char* value, size_t length) override;
+    NativeValue* CreateString16(const char16_t* value, size_t length) override;
+    NativeValue* CreateSymbol(NativeValue* value) override;
+    NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) override;
 
-    virtual NativeValue* CreateObject() override;
-    virtual NativeValue* CreateFunction(const char* name, size_t length, NativeCallback cb, void* value) override;
-    virtual NativeValue* CreateArray(size_t length) override;
+    NativeValue* CreateObject() override;
+    NativeValue* CreateFunction(const char* name, size_t length, NativeCallback cb, void* value) override;
+    NativeValue* CreateArray(size_t length) override;
 
-    virtual NativeValue* CreateArrayBuffer(void** value, size_t length) override;
-    virtual NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
-    virtual NativeValue* CreateBuffer(void** value, size_t length) override;
-    virtual NativeValue* CreateBufferCopy(void** value, size_t length, const void* data) override;
-    virtual NativeValue* CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
-    virtual NativeValue* CreateTypedArray(NativeTypedArrayType type,
+    NativeValue* CreateArrayBuffer(void** value, size_t length) override;
+    NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
+    NativeValue* CreateBuffer(void** value, size_t length) override;
+    NativeValue* CreateBufferCopy(void** value, size_t length, const void* data) override;
+    NativeValue* CreateBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
+    NativeValue* CreateTypedArray(NativeTypedArrayType type,
                                           NativeValue* value,
                                           size_t length,
                                           size_t offset) override;
-    virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
-    virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
-    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+    NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
+    NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
                                           NativeReference* checkCallbackRef) override;
 
-    virtual NativeValue* CreateError(NativeValue* code, NativeValue* Message) override;
-    virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
+    NativeValue* CreateError(NativeValue* code, NativeValue* Message) override;
+    NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
 
-    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
+    NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount,
         NativeFinalize callback = nullptr, void* data = nullptr, void* hint = nullptr) override;
-    virtual NativeValue* CallFunction(
+    NativeValue* CallFunction(
         NativeValue* thisVar, NativeValue* function, NativeValue* const* argv, size_t argc) override;
 
-    virtual NativeValue* DefineClass(const char* name, NativeCallback callback, void* data,
+    NativeValue* DefineClass(const char* name, NativeCallback callback, void* data,
         const NativePropertyDescriptor* properties, size_t length) override;
 
-    virtual NativeValue* RunScript(NativeValue* script) override;
-    virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
-    virtual NativeValue* RunActor(std::vector<uint8_t>& buffer, const char *descriptor) override;
+    NativeValue* RunScript(NativeValue* script) override;
+    NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
+    NativeValue* RunActor(std::vector<uint8_t>& buffer, const char *descriptor) override;
 
     void SetPackagePath(const std::string& packagePath);
 
-    virtual bool Throw(NativeValue* error) override;
-    virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
+    bool Throw(NativeValue* error) override;
+    bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
-    virtual void* CreateRuntime() override;
+    void* CreateRuntime() override;
     bool CheckTransferList(JSValue transferList);
     bool DetachTransferList(JSValue transferList);
-    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
-    virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
-    virtual void DeleteSerializationData(NativeValue* value) const override;
-    virtual ExceptionInfo* GetExceptionForWorker() const override;
-    virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
+    NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
+    NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
+    void DeleteSerializationData(NativeValue* value) const override;
+    ExceptionInfo* GetExceptionForWorker() const override;
+    NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
 
     static NativeValue* JSValueToNativeValue(QuickJSNativeEngine* engine, JSValue value);
-    virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
+    NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
     JSValue GetModuleFromName(
         const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
         const std::string& instanceName, void** instance);
@@ -126,10 +126,10 @@ public:
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
 
-    virtual NativeValue* CreateDate(double time) override;
-    virtual NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
-    virtual bool TriggerFatalException(NativeValue* error) override;
-    virtual bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
+    NativeValue* CreateDate(double time) override;
+    NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
+    bool TriggerFatalException(NativeValue* error) override;
+    bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
 
     void StartCpuProfiler(const std::string fileName = "") override {}
     void StopCpuProfiler() override {}
@@ -162,7 +162,7 @@ public:
     {
         return false;
     }
-    
+
     void PrintStatisticResult() override {}
     void StartRuntimeStat() override {}
     void StopRuntimeStat() override {}
@@ -181,6 +181,7 @@ public:
 
     void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) override {}
     void HandleUncaughtException() override {}
+
 private:
     static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
 

@@ -22,14 +22,14 @@ class JerryScriptNativeDataView : public JerryScriptNativeObject, public NativeD
 public:
     JerryScriptNativeDataView(JerryScriptNativeEngine* engine, NativeValue* value, size_t length, size_t offset);
     JerryScriptNativeDataView(JerryScriptNativeEngine* engine, jerry_value_t value);
-    virtual ~JerryScriptNativeDataView() override;
+    ~JerryScriptNativeDataView() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual void* GetBuffer() override;
-    virtual size_t GetLength() override;
-    virtual NativeValue* GetArrayBuffer() override;
-    virtual size_t GetOffset() override;
+    void* GetBuffer() override;
+    size_t GetLength() override;
+    NativeValue* GetArrayBuffer() override;
+    size_t GetOffset() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_DATA_VIEW_H */

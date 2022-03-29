@@ -22,9 +22,9 @@ class V8NativeFunction : public V8NativeObject, public NativeFunction {
 public:
     V8NativeFunction(V8NativeEngine* engine, v8::Local<v8::Value> value);
     V8NativeFunction(V8NativeEngine* engine, const char* name, size_t length, NativeCallback cb, void* value);
-    virtual ~V8NativeFunction();
+    ~V8NativeFunction() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
 private:
     static void NativeFunctionCallback(const v8::FunctionCallbackInfo<v8::Value>& info);
