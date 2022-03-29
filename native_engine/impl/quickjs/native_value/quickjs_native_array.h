@@ -25,13 +25,13 @@ public:
     ~QuickJSNativeArray() override;
 
     bool SetElement(uint32_t index, NativeValue* value) override;
-    virtual NativeValue* GetElement(uint32_t index) override;
-    virtual bool HasElement(uint32_t index) override;
-    virtual bool DeleteElement(uint32_t index) override;
+    NativeValue* GetElement(uint32_t index) override;
+    bool HasElement(uint32_t index) override;
+    bool DeleteElement(uint32_t index) override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual uint32_t GetLength() override;
+    uint32_t GetLength() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_ARRAY_H */

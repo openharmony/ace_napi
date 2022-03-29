@@ -29,11 +29,11 @@ public:
 
     void* GetInterface(int interfaceId) override;
 
-    virtual operator int64_t() override;
-    virtual operator uint64_t() override;
-    virtual void Uint64Value(uint64_t* cValue, bool* lossless = nullptr) override;
-    virtual void Int64Value(int64_t* cValue, bool* lossless = nullptr) override;
-    virtual bool GetWordsArray(int* signBit, size_t* wordCount, uint64_t* words) override;
+    operator int64_t() override;
+    operator uint64_t() override;
+    void Uint64Value(uint64_t* cValue, bool* lossless = nullptr) override;
+    void Int64Value(int64_t* cValue, bool* lossless = nullptr) override;
+    bool GetWordsArray(int* signBit, size_t* wordCount, uint64_t* words) override;
 
 private:
     jerry_value_t CreateBigintByInt(int64_t value);

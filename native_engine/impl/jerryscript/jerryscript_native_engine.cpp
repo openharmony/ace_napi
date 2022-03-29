@@ -66,6 +66,7 @@ JerryScriptNativeEngine::JerryScriptNativeEngine(void* jsEngine) : NativeEngine(
             module->registerCallback(that, value);
             result = jerry_acquire_value(*value);
         }
+        delete[] moduleName;
         return result;
     });
     jerry_set_object_native_pointer(require, this, nullptr);

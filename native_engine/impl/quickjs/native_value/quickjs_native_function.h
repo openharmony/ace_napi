@@ -24,9 +24,9 @@ class QuickJSNativeFunction : public QuickJSNativeObject, public NativeFunction 
 public:
     QuickJSNativeFunction(QuickJSNativeEngine* engine, JSValue value);
     QuickJSNativeFunction(QuickJSNativeEngine* engine, const char* name, NativeCallback cb, void* value);
-    virtual ~QuickJSNativeFunction();
+    ~QuickJSNativeFunction() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
 private:
     static JSValue JSCFunctionData(JSContext* ctx,

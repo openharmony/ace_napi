@@ -22,14 +22,14 @@ class QuickJSNativeDataView : public QuickJSNativeObject, public NativeDataView 
 public:
     QuickJSNativeDataView(QuickJSNativeEngine* engine, JSValue value);
     QuickJSNativeDataView(QuickJSNativeEngine* engine, NativeValue* value, size_t length, size_t offset);
-    virtual ~QuickJSNativeDataView();
+    ~QuickJSNativeDataView() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual void* GetBuffer() override;
-    virtual size_t GetLength() override;
-    virtual NativeValue* GetArrayBuffer() override;
-    virtual size_t GetOffset() override;
+    void* GetBuffer() override;
+    size_t GetLength() override;
+    NativeValue* GetArrayBuffer() override;
+    size_t GetOffset() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_DATA_VIEW_H */

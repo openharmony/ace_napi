@@ -105,7 +105,7 @@ static void TsFuncCallJsMulti(napi_env env,
 static void TsFuncFinal(napi_env env, void* finalizeData, void* hint)
 {
     HILOG_INFO("TsFuncFinal called");
-    
+
     // expect thread id equal
     EXPECT_EQ(gettid(), g_mainTid);
 
@@ -121,7 +121,7 @@ static void TsFuncFinal(napi_env env, void* finalizeData, void* hint)
 static void TsFuncFinalTest5(napi_env env, void* finalizeData, void* hint)
 {
     HILOG_INFO("TsFuncFinalTest5 called");
-    
+
     // expect thread id equal
     EXPECT_EQ(gettid(), g_mainTid);
 
@@ -487,8 +487,8 @@ HWTEST_F(NapiThreadsafeTest, ThreadsafeTest005, testing::ext::TestSize.Level1)
     napi_env env = (napi_env)engine_;
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
-    callSuccessCountJS=0;
-    callSuccessCount=0;
+    callSuccessCountJS = 0;
+    callSuccessCount = 0;
     napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
     g_mainTid = gettid();
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
@@ -530,7 +530,7 @@ HWTEST_F(NapiThreadsafeTest, ThreadsafeTest006, testing::ext::TestSize.Level1)
     napi_env env = (napi_env)engine_;
     napi_threadsafe_function tsFunc = nullptr;
     napi_value resourceName = 0;
-    callSuccessCount=0;
+    callSuccessCount = 0;
     napi_create_string_latin1(env, __func__, NAPI_AUTO_LENGTH, &resourceName);
     g_mainTid = gettid();
     g_jsData.id = CALL_JS_CB_DATA_TEST_ID;
@@ -549,7 +549,7 @@ HWTEST_F(NapiThreadsafeTest, ThreadsafeTest006, testing::ext::TestSize.Level1)
                                                   &tsFunc);
     EXPECT_EQ(status, napi_ok);
     int threadCount = THREAD_COUNT_FOUR;
-    acquireFlag=true;
+    acquireFlag = true;
 
     for (int i = 0; i < threadCount; i++) {
         if (uv_thread_create(&g_uvThreadTest7, TsFuncDataSourceThreadCountTotal, tsFunc) != 0) {

@@ -23,12 +23,12 @@ public:
     V8NativeArrayBuffer(V8NativeEngine* engine, v8::Local<v8::Value> value);
     V8NativeArrayBuffer(V8NativeEngine* engine, uint8_t** data, size_t length);
     V8NativeArrayBuffer(V8NativeEngine* engine, uint8_t* data, size_t length, NativeFinalize cb, void* hint);
-    virtual ~V8NativeArrayBuffer();
+    ~V8NativeArrayBuffer() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual void* GetBuffer() override;
-    virtual size_t GetLength() override;
+    void* GetBuffer() override;
+    size_t GetLength() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_ARRAY_BUFFER_H */

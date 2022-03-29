@@ -48,12 +48,12 @@ int main(int argc, char** argv)
     g_nativeEngine = new JerryScriptNativeEngine(0); // default instance id 0
 
     uv_thread_t tid;
-    
+
     int ret = RUN_ALL_TESTS();
     g_nativeEngine->Loop(LOOP_DEFAULT);
 
     uv_thread_join(&tid);
-  
+
     delete g_nativeEngine;
     g_nativeEngine = nullptr;
     jerry_cleanup();

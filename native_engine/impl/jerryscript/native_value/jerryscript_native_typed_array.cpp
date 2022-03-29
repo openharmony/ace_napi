@@ -130,7 +130,7 @@ void* JerryScriptNativeTypedArray::GetData()
 
 size_t JerryScriptNativeTypedArray::GetOffset()
 {
-    size_t offset = 0;
-    jerry_get_typedarray_buffer(value_, (unsigned int*)&offset, nullptr);
+    jerry_length_t offset = 0;
+    jerry_get_typedarray_buffer(value_, (jerry_length_t*)&offset, nullptr);
     return offset;
 }

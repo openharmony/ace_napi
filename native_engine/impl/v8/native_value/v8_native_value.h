@@ -21,32 +21,32 @@
 class V8NativeValue : public NativeValue {
 public:
     V8NativeValue(V8NativeEngine* engine, v8::Local<v8::Value> value);
-    virtual ~V8NativeValue();
+    ~V8NativeValue() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual NativeValueType TypeOf() override;
-    virtual bool InstanceOf(NativeValue* obj) override;
+    NativeValueType TypeOf() override;
+    bool InstanceOf(NativeValue* obj) override;
 
-    virtual bool IsArray() override;
-    virtual bool IsArrayBuffer() override;
-    virtual bool IsDate() override;
-    virtual bool IsError() override;
-    virtual bool IsTypedArray() override;
-    virtual bool IsDataView() override;
-    virtual bool IsPromise() override;
-    virtual bool IsCallable() override;
+    bool IsArray() override;
+    bool IsArrayBuffer() override;
+    bool IsDate() override;
+    bool IsError() override;
+    bool IsTypedArray() override;
+    bool IsDataView() override;
+    bool IsPromise() override;
+    bool IsCallable() override;
     bool IsBuffer() override
     {
         return false;
     }
 
-    virtual NativeValue* ToBoolean() override;
-    virtual NativeValue* ToNumber() override;
-    virtual NativeValue* ToString() override;
-    virtual NativeValue* ToObject() override;
+    NativeValue* ToBoolean() override;
+    NativeValue* ToNumber() override;
+    NativeValue* ToString() override;
+    NativeValue* ToObject() override;
 
-    virtual bool StrictEquals(NativeValue* value) override;
+    bool StrictEquals(NativeValue* value) override;
 
 protected:
     V8NativeEngine* engine_;
