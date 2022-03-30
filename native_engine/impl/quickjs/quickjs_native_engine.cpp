@@ -108,7 +108,7 @@ QuickJSNativeEngine::QuickJSNativeEngine(JSRuntime* runtime, JSContext* context,
                 if (module->jsCode != nullptr) {
                     HILOG_INFO("load js code");
                     NativeValue* script = that->CreateString(module->jsCode, module->jsCodeLen);
-                    NativeValue* exportObject = that->LoadModule(script, "testjsnapi.js");
+                    NativeValue* exportObject = that->LoadModule(script, "jsnapi.js");
                     if (exportObject == nullptr) {
                         HILOG_ERROR("load module failed");
                         return result;
@@ -549,6 +549,7 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
             auto functionInfo = (NativeFunctionInfo*)JS_ExternalToNativeObject(ctx, classContext);
             if (functionInfo == nullptr) {
                 HILOG_ERROR("functionInfo is nullptr");
+                delete callbackInfo;
                 return JS_UNDEFINED;
             }
 
@@ -556,6 +557,7 @@ NativeValue* QuickJSNativeEngine::DefineClass(const char* name,
             NativeScopeManager* scopeManager = engine->GetScopeManager();
             if (scopeManager == nullptr) {
                 HILOG_ERROR("scopeManager is nullptr");
+                delete callbackInfo;
                 return JS_UNDEFINED;
             }
 
@@ -844,6 +846,8 @@ ExceptionInfo* QuickJSNativeEngine::GetExceptionForWorker() const
     const char* error = "Error: ";
     int len = strlen(exceptionStr) + strlen(error) + 1;
     if (len <= 0) {
+        delete exceptionInfo;
+        exceptionInfo = nullptr;
         return nullptr;
     }
     char* exceptionMessage = new char[len] { 0 };

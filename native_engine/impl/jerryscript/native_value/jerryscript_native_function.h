@@ -22,7 +22,7 @@ class JerryScriptNativeFunction : public JerryScriptNativeObject, public NativeF
 public:
     JerryScriptNativeFunction(JerryScriptNativeEngine* engine, const char* name, NativeCallback cb, void* value);
     JerryScriptNativeFunction(JerryScriptNativeEngine* engine, jerry_value_t value);
-    virtual ~JerryScriptNativeFunction() override;
+    ~JerryScriptNativeFunction() override;
 
     void* GetInterface(int interfaceId) override;
 

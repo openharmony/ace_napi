@@ -23,10 +23,10 @@
 class QuickJSNativeDeferred : public NativeDeferred {
 public:
     QuickJSNativeDeferred(QuickJSNativeEngine* engine, JSValue values[2]);
-    virtual ~QuickJSNativeDeferred();
+    ~QuickJSNativeDeferred() override;
 
-    virtual void Resolve(NativeValue* data) override;
-    virtual void Reject(NativeValue* reason) override;
+    void Resolve(NativeValue* data) override;
+    void Reject(NativeValue* reason) override;
 
 private:
     QuickJSNativeEngine* engine_;

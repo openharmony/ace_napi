@@ -23,15 +23,15 @@ public:
     QuickJSNativeArrayBuffer(QuickJSNativeEngine* engine, JSValue value);
     QuickJSNativeArrayBuffer(QuickJSNativeEngine* engine, uint8_t** data, size_t length);
     QuickJSNativeArrayBuffer(QuickJSNativeEngine* engine, uint8_t* data, size_t length, NativeFinalize cb, void* hint);
-    virtual ~QuickJSNativeArrayBuffer();
+    ~QuickJSNativeArrayBuffer() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual void* GetBuffer() override;
-    virtual size_t GetLength() override;
+    void* GetBuffer() override;
+    size_t GetLength() override;
 
-    virtual bool IsDetachedArrayBuffer() override;
-    virtual bool DetachArrayBuffer() override;
+    bool IsDetachedArrayBuffer() override;
+    bool DetachArrayBuffer() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_ARRAY_BUFFER_H */

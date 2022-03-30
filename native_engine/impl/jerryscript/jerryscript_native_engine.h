@@ -21,7 +21,7 @@
 
 class JerryScriptNativeEngine : public NativeEngine {
 public:
-    JerryScriptNativeEngine(void* jsEngine);
+    explicit JerryScriptNativeEngine(void* jsEngine);
     virtual ~JerryScriptNativeEngine();
 
     virtual void Loop(LoopMode mode, bool needSync = false) override;
@@ -130,7 +130,7 @@ public:
     {
         return false;
     }
-    
+
     void PrintStatisticResult() override {}
     void StartRuntimeStat() override {}
     void StopRuntimeStat() override {}

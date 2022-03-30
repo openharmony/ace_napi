@@ -25,7 +25,7 @@ public:
 
     void* GetInterface(int interfaceId) override;
 
-    virtual double GetTime() override;
+    double GetTime() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_QUICKJS_NATIVE_DATE_H */

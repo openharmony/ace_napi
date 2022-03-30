@@ -29,8 +29,8 @@ public:
     void SetNativePointer(void* pointer, NativeFinalize cb, void* hint) override;
     void* GetNativePointer() override;
     void AddFinalizer(void* pointer, NativeFinalize cb, void* hint) override;
-    virtual void Freeze() override;
-    virtual void Seal() override;
+    void Freeze() override;
+    void Seal() override;
     NativeValue* GetPropertyNames() override;
 
     NativeValue* GetPrototype() override;
@@ -54,8 +54,8 @@ public:
 
     NativeValue* GetAllPropertyNames(
         napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion) override;
-    virtual bool AssociateTypeTag(NapiTypeTag* typeTag) override;
-    virtual bool CheckTypeTag(NapiTypeTag* typeTag) override;
+    bool AssociateTypeTag(NapiTypeTag* typeTag) override;
+    bool CheckTypeTag(NapiTypeTag* typeTag) override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_ARK_NATIVE_VALUE_ARK_NATIVE_OBJECT_H */

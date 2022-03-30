@@ -22,16 +22,16 @@ class V8NativeArray : public V8NativeObject, public NativeArray {
 public:
     explicit V8NativeArray(V8NativeEngine* engine, v8::Local<v8::Value> value);
     explicit V8NativeArray(V8NativeEngine* engine, uint32_t length);
-    virtual ~V8NativeArray();
+    ~V8NativeArray() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual bool SetElement(uint32_t index, NativeValue* value) override;
-    virtual NativeValue* GetElement(uint32_t index) override;
-    virtual bool HasElement(uint32_t index) override;
-    virtual bool DeleteElement(uint32_t index) override;
+    bool SetElement(uint32_t index, NativeValue* value) override;
+    NativeValue* GetElement(uint32_t index) override;
+    bool HasElement(uint32_t index) override;
+    bool DeleteElement(uint32_t index) override;
 
-    virtual uint32_t GetLength() override;
+    uint32_t GetLength() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_ARRAY_H */

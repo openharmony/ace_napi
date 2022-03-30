@@ -22,11 +22,11 @@ class V8NativeExternal : public V8NativeValue, public NativeExternal {
 public:
     V8NativeExternal(V8NativeEngine* engine, void* value, NativeFinalize callback, void* hint);
     V8NativeExternal(V8NativeEngine* engine, v8::Local<v8::Value> value);
-    virtual ~V8NativeExternal();
+    ~V8NativeExternal() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual operator void*() override;
+    operator void*() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_EXTERNAL_H */

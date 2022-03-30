@@ -170,7 +170,7 @@ public:
         const std::string& moduleName, bool isAppModule, const std::string& param,
         const std::string& instanceName, void* instance);
 
-    virtual bool TriggerFatalException(NativeValue* error) override;
+    bool TriggerFatalException(NativeValue* error) override;
     NativeValue* CreateDate(double value) override;
     NativeValue* CreateBigWords(int sign_bit, size_t word_count, const uint64_t* words) override;
     bool AdjustExternalMemory(int64_t ChangeInBytes, int64_t* AdjustedValue) override;
@@ -189,7 +189,7 @@ public:
     bool BuildNativeAndJsBackStackTrace(std::string &stackTraceStr) override;
     bool StartHeapTracking(double timeInterval, bool isVmMode = true) override;
     bool StopHeapTracking(const std::string &filePath) override;
-    
+
     void PrintStatisticResult() override;
     void StartRuntimeStat() override;
     void StopRuntimeStat() override;
@@ -202,6 +202,7 @@ public:
     panda::Global<panda::ObjectRef> GetModuleFromName(
         const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
         const std::string& instanceName, void** instance);
+
 private:
     static NativeEngine* CreateRuntimeFunc(NativeEngine* engine, void* jsEngine);
 

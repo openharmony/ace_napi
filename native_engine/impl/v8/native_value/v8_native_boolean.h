@@ -22,11 +22,11 @@ class V8NativeBoolean : public V8NativeValue, public NativeBoolean {
 public:
     V8NativeBoolean(V8NativeEngine* engine, v8::Local<v8::Value> value);
     V8NativeBoolean(V8NativeEngine* engine, bool value);
-    virtual ~V8NativeBoolean();
+    ~V8NativeBoolean() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual operator bool() override;
+    operator bool() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_V8_NATIVE_VALUE_V8_NATIVE_BOOLEAN_H */

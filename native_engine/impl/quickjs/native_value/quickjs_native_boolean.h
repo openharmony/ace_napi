@@ -22,11 +22,11 @@ class QuickJSNativeBoolean : public QuickJSNativeValue, public NativeBoolean {
 public:
     QuickJSNativeBoolean(QuickJSNativeEngine* engine, JSValue value);
     QuickJSNativeBoolean(QuickJSNativeEngine* engine, bool value);
-    virtual ~QuickJSNativeBoolean();
+    ~QuickJSNativeBoolean() override;
 
-    virtual void* GetInterface(int interfaceId) override;
+    void* GetInterface(int interfaceId) override;
 
-    virtual operator bool() override;
+    operator bool() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_QUICKJS_NATIVE_VALUE_QUICKJS_NATIVE_BOOLEAN_H */

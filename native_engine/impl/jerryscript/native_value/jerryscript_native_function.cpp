@@ -76,11 +76,11 @@ jerry_value_t JerryScriptNativeFunction::NativeFunctionCallback(const jerry_valu
     }
 
     NativeValue* result = functionInfo->callback(functionInfo->engine, &callbackInfo);
-    
+
     if (callbackInfo.argv != nullptr) {
         delete[] callbackInfo.argv;
     }
-    
+
     jerry_value_t ret = 0;
     if (result != nullptr) {
         ret = jerry_acquire_value(*result);

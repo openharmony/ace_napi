@@ -23,9 +23,9 @@
 class V8NativeDeferred : public NativeDeferred {
 public:
     V8NativeDeferred(V8NativeEngine* engine, v8::Local<v8::Promise::Resolver> deferred);
-    virtual ~V8NativeDeferred();
-    virtual void Resolve(NativeValue* data) override;
-    virtual void Reject(NativeValue* reason) override;
+    ~V8NativeDeferred() override;
+    void Resolve(NativeValue* data) override;
+    void Reject(NativeValue* reason) override;
 
 private:
     V8NativeEngine* engine_;

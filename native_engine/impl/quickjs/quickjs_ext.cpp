@@ -409,7 +409,7 @@ bool ParseBigIntWordsInternal(JSContext* context, JSValue value, int* signBit, s
     if (wordCount == nullptr) {
         return false;
     }
-    
+
     JSValue jsValue = JS_GetPropertyStr(context, value, "count");
     if (!JS_IsException(jsValue)) {
         JS_ToInt32(context, &cntValue, jsValue);
@@ -430,7 +430,7 @@ bool ParseBigIntWordsInternal(JSContext* context, JSValue value, int* signBit, s
             *signBit = sigValue;
             JS_FreeValue(context, jsValue);
         }
-        
+
         jsValue = JS_GetPropertyStr(context, value, "words");
         if (!JS_IsException(jsValue)) {
             JSValue element;
