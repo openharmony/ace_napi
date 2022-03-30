@@ -64,10 +64,10 @@ ArkNativeTypedArray::ArkNativeTypedArray(ArkNativeEngine* engine,
             typedArray = panda::Float64ArrayRef::New(vm, buffer, offset, length);
             break;
         case NATIVE_BIGINT64_ARRAY:
-            // not support yet
+            typedArray = panda::BigInt64ArrayRef::New(vm, buffer, offset, length);
             break;
         case NATIVE_BIGUINT64_ARRAY:
-            // not support yet
+            typedArray = panda::BigUint64ArrayRef::New(vm, buffer, offset, length);
             break;
         default:;
     }
@@ -105,6 +105,10 @@ NativeTypedArrayType ArkNativeTypedArray::GetTypedArrayType()
         type = NATIVE_FLOAT32_ARRAY;
     } else if (value->IsFloat64Array()) {
         type = NATIVE_FLOAT64_ARRAY;
+    } else if (value->IsBigInt64Array()) {
+        type = NATIVE_BIGINT64_ARRAY;
+    } else if (value->IsBigUint64Array()) {
+        type = NATIVE_BIGUINT64_ARRAY;
     }
     return type;
 }
