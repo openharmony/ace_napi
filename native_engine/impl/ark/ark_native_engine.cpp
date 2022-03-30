@@ -797,7 +797,7 @@ NativeValue* ArkNativeEngine::LoadModule(NativeValue* str, const std::string& fi
 NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Local<JSValueRef> value)
 {
     NativeValue* result = nullptr;
-    if (value->IsNull() || value->IsUndefined() || value->IsSymbol() || value->IsPromise()) {
+    if (value->IsNull() || value->IsUndefined() || value->IsSymbol()) {
         result = new ArkNativeValue(engine, value);
     } else if (value->IsNumber()) {
         result = new ArkNativeNumber(engine, value);
@@ -819,7 +819,7 @@ NativeValue* ArkNativeEngine::ArkValueToNativeValue(ArkNativeEngine* engine, Loc
         result = new ArkNativeDate(engine, value);
     } else if (value->IsBigInt()) {
         result = new ArkNativeBigInt(engine, value);
-    } else if (value->IsObject()) {
+    } else if (value->IsObject() || value->IsPromise()) {
         result = new ArkNativeObject(engine, value);
     } else if (value->IsBoolean()) {
         result = new ArkNativeBoolean(engine, value);
