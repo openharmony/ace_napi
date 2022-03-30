@@ -27,7 +27,6 @@
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
 #include "native_value.h"
-#include "securec.h"
 #include "test.h"
 #include "utils/log.h"
 #undef private
@@ -127,7 +126,7 @@ static void GetFinalizeStatus()
 {
     while (!g_callFinalizeEnd) {
         sleep(1);
-    };
+    }
 }
 static void NewChildThreadMuti(void* data)
 {
@@ -2590,7 +2589,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Is_Detached_Arraybuffer_0200, testing::ext::
     double time = CREATE_DATE_TIME;
     napi_value date = nullptr;
     napi_status verification = napi_create_date(env, time, &date);
-    
+
     EXPECT_EQ(verification, napi_ok);
 
     bool result = false;
@@ -2914,7 +2913,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0100, testing::ext::TestSize.Lev
 
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(date, jsTime);
-    
+
     EXPECT_EQ(ret, napi_ok);
     EXPECT_EQ(out, napi_ok);
 
@@ -2965,7 +2964,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0300, testing::ext::TestSize.Lev
 
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(time, jsTime);
-    
+
     EXPECT_EQ(ret, napi_ok);
     EXPECT_EQ(out, napi_ok);
 
@@ -2994,7 +2993,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Create_Date_0400, testing::ext::TestSize.Lev
 
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(time, jsTime);
-    
+
     EXPECT_EQ(ret, napi_ok);
     EXPECT_EQ(out, napi_ok);
 
@@ -3495,7 +3494,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Check_Object_Type_Tag_0400, testing::ext::Te
     GTEST_LOG_(INFO) << "ACE_Napi_Check_Object_Type_Tag_0400 type tag obiect obiect complete";
 
     napi_value resultcopy = nullptr;
-    napi_status verifi =napi_create_object(env, &resultcopy);
+    napi_status verifi = napi_create_object(env, &resultcopy);
 
     EXPECT_EQ(verifi, napi_ok);
     EXPECT_NE(resultcopy, nullptr);
@@ -3680,7 +3679,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Add_Finalizer_0300, testing::ext::TestSize.L
 
     napi_status output = napi_delete_reference(env, result);
     EXPECT_EQ(output, napi_invalid_arg);
-    
+
     GTEST_LOG_(INFO) << "ACE_Napi_Add_Finalizer_0300 end";
 }
 
@@ -4070,11 +4069,11 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0300, testing::ext::T
 
     int32_t testNumber = 12345;
     napi_value numberAttribute = nullptr;
-    napi_status verifiint =napi_create_int32(env, testNumber, &numberAttribute);
+    napi_status verifiint = napi_create_int32(env, testNumber, &numberAttribute);
 
     EXPECT_EQ(verifiint, napi_ok);
 
-    napi_status verifiname =napi_set_named_property(env, result, "numberAttribute", numberAttribute);
+    napi_status verifiname = napi_set_named_property(env, result, "numberAttribute", numberAttribute);
 
     EXPECT_EQ(verifiname, napi_ok);
 
@@ -4281,7 +4280,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Get_All_Property_Names_0800, testing::ext::T
 
     napi_env env = (napi_env)engine_;
     napi_value result = nullptr;
-    napi_status verification =napi_create_string_utf8(env, "napi_get_all_property_namesTest",
+    napi_status verification = napi_create_string_utf8(env, "napi_get_all_property_namesTest",
         NAPI_AUTO_LENGTH, &result);
 
     EXPECT_EQ(verification, napi_ok);
@@ -8503,7 +8502,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0200, testing::ext::TestSize.Leve
 
     napi_status ret = napi_async_init(env, asyncResource, asyncResourceName, &result);
     EXPECT_EQ(ret, napi_ok);
-    
+
     EXPECT_NE(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0200 end";
@@ -8536,7 +8535,7 @@ HWTEST_F(NativeEngineTest, ACE_Napi_Async_Init_0300, testing::ext::TestSize.Leve
 
     napi_status ret = napi_async_init(nullptr, asyncResource, asyncResourceName, &result);
     EXPECT_EQ(ret, napi_invalid_arg);
-    
+
     EXPECT_EQ(result, nullptr);
 
     GTEST_LOG_(INFO) << "NativeEngineTest ACE_Napi_Async_Init_0300 end";

@@ -758,7 +758,7 @@ HWTEST_F(NapiExtTest, OpenCallbackScopeTest002, testing::ext::TestSize.Level1)
     EXPECT_NE(scope2, nullptr);
     EXPECT_EQ(openCallbackScopes2, openCallbackScopes1);
     EXPECT_EQ(asyncCallbackScopeDepth2, (asyncCallbackScopeDepth1 + 1));
-    
+
     callbackScopeManager->Close(scope2);
     int openCallbackScopes2After = callbackScopeManager->GetOpenCallbackScopes();
     int asyncCallbackScopeDepth2After = callbackScopeManager->GetAsyncCallbackScopeDepth();

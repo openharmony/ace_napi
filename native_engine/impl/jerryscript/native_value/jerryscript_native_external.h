@@ -22,11 +22,11 @@ class JerryScriptNativeExternal : public JerryScriptNativeObject, public NativeE
 public:
     JerryScriptNativeExternal(JerryScriptNativeEngine* engine, void* value, NativeFinalize callback, void* hint);
     JerryScriptNativeExternal(JerryScriptNativeEngine* engine, jerry_value_t value);
-    virtual ~JerryScriptNativeExternal() override;
+    ~JerryScriptNativeExternal() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual operator void*() override;
+    operator void*() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_EXTERNAL_H */

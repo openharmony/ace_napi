@@ -31,13 +31,13 @@ public:
                       NativeFinalize callback = nullptr,
                       void* data = nullptr,
                       void* hint = nullptr);
-    virtual ~V8NativeReference();
+    ~V8NativeReference() override;
 
-    virtual uint32_t Ref() override;
-    virtual uint32_t Unref() override;
-    virtual NativeValue* Get() override;
-    virtual void* GetData() override;
-    virtual operator NativeValue*() override;
+    uint32_t Ref() override;
+    uint32_t Unref() override;
+    NativeValue* Get() override;
+    void* GetData() override;
+    operator NativeValue*() override;
 
 private:
     static void FinalizeCallback(const v8::WeakCallbackInfo<V8NativeReference> &data);

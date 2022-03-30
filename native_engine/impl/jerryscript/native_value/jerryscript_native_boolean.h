@@ -21,11 +21,11 @@
 class JerryScriptNativeBoolean : public JerryScriptNativeValue, public NativeBoolean {
 public:
     JerryScriptNativeBoolean(JerryScriptNativeEngine* engine, bool value);
-    virtual ~JerryScriptNativeBoolean() override;
+    ~JerryScriptNativeBoolean() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual operator bool() override;
+    operator bool() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_BOOLEAN_H */

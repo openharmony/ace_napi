@@ -23,44 +23,44 @@ class JerryScriptNativeObject : public JerryScriptNativeValue, public NativeObje
 public:
     explicit JerryScriptNativeObject(JerryScriptNativeEngine* engine);
     JerryScriptNativeObject(JerryScriptNativeEngine* engine, jerry_value_t value);
-    virtual ~JerryScriptNativeObject() override;
+    ~JerryScriptNativeObject() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual void SetNativePointer(void* pointer, NativeFinalize cb, void* hint) override;
-    virtual void* GetNativePointer() override;
+    void SetNativePointer(void* pointer, NativeFinalize cb, void* hint) override;
+    void* GetNativePointer() override;
 
-    virtual void AddFinalizer(void* pointer, NativeFinalize cb, void* hint) override;
+    void AddFinalizer(void* pointer, NativeFinalize cb, void* hint) override;
 
-    virtual NativeValue* GetPropertyNames() override;
+    NativeValue* GetPropertyNames() override;
 
-    virtual NativeValue* GetPrototype() override;
+    NativeValue* GetPrototype() override;
 
-    virtual bool DefineProperty(NativePropertyDescriptor propertyDescriptor) override;
+    bool DefineProperty(NativePropertyDescriptor propertyDescriptor) override;
 
-    virtual bool SetProperty(NativeValue* key, NativeValue* value) override;
-    virtual NativeValue* GetProperty(NativeValue* key) override;
-    virtual bool HasProperty(NativeValue* key) override;
-    virtual bool DeleteProperty(NativeValue* key) override;
+    bool SetProperty(NativeValue* key, NativeValue* value) override;
+    NativeValue* GetProperty(NativeValue* key) override;
+    bool HasProperty(NativeValue* key) override;
+    bool DeleteProperty(NativeValue* key) override;
 
-    virtual bool SetProperty(const char* name, NativeValue* value) override;
-    virtual NativeValue* GetProperty(const char* name) override;
-    virtual bool HasProperty(const char* name) override;
-    virtual bool DeleteProperty(const char* name) override;
+    bool SetProperty(const char* name, NativeValue* value) override;
+    NativeValue* GetProperty(const char* name) override;
+    bool HasProperty(const char* name) override;
+    bool DeleteProperty(const char* name) override;
 
-    virtual bool SetPrivateProperty(const char* name, NativeValue* value) override;
-    virtual NativeValue* GetPrivateProperty(const char* name) override;
-    virtual bool HasPrivateProperty(const char* name) override;
-    virtual bool DeletePrivateProperty(const char* name) override;
+    bool SetPrivateProperty(const char* name, NativeValue* value) override;
+    NativeValue* GetPrivateProperty(const char* name) override;
+    bool HasPrivateProperty(const char* name) override;
+    bool DeletePrivateProperty(const char* name) override;
 
-    virtual NativeValue* GetAllPropertyNames(
+    NativeValue* GetAllPropertyNames(
         napi_key_collection_mode keyMode, napi_key_filter keyFilter, napi_key_conversion keyConversion) override;
 
-    virtual bool AssociateTypeTag(NapiTypeTag* typeTag) override;
-    virtual bool CheckTypeTag(NapiTypeTag* typeTag) override;
+    bool AssociateTypeTag(NapiTypeTag* typeTag) override;
+    bool CheckTypeTag(NapiTypeTag* typeTag) override;
 
-    virtual void Freeze() override;
-    virtual void Seal() override;
+    void Freeze() override;
+    void Seal() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_OBJECT_H */

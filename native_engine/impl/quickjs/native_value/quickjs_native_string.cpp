@@ -73,6 +73,7 @@ void QuickJSNativeString::GetCString16(char16_t* buffer, size_t size, size_t* le
         auto ret = Utf8ToUtf16Length(str, strlen(str));
         if (ret == -1) {
             HILOG_ERROR("JS_ToCStringLen length is invalid");
+            JS_FreeCString(engine_->GetContext(), str);
             return;
         }
         *length = ret;

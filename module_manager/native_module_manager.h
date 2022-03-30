@@ -46,7 +46,7 @@ struct NativeModule {
     const char* fileName = nullptr;
     RegisterCallback registerCallback = nullptr;
     int32_t version = 0;
-    unsigned int refCount = 0;
+    uint32_t refCount = 0;
     NativeModule* next = nullptr;
     const char* jsCode = nullptr;
     int32_t jsCodeLen = 0;
@@ -55,7 +55,7 @@ struct NativeModule {
 class NAPI_EXPORT NativeModuleManager {
 public:
     static NativeModuleManager* GetInstance();
-    static unsigned long Release();
+    static uint64_t Release();
 
     void Register(NativeModule* nativeModule);
     void SetAppLibPath(const char* appLibPath);

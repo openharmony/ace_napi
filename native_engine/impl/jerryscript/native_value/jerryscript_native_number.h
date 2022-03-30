@@ -22,14 +22,14 @@ class JerryScriptNativeNumber : public JerryScriptNativeValue, public NativeNumb
 public:
     JerryScriptNativeNumber(JerryScriptNativeEngine* engine, double value);
     JerryScriptNativeNumber(JerryScriptNativeEngine* engine, jerry_value_t value);
-    virtual ~JerryScriptNativeNumber() override;
+    ~JerryScriptNativeNumber() override;
 
     void* GetInterface(int interfaceId) override;
 
-    virtual operator int32_t() override;
-    virtual operator uint32_t() override;
-    virtual operator int64_t() override;
-    virtual operator double() override;
+    operator int32_t() override;
+    operator uint32_t() override;
+    operator int64_t() override;
+    operator double() override;
 };
 
 #endif /* FOUNDATION_ACE_NAPI_NATIVE_ENGINE_IMPL_JERRYSCRIPT_NATIVE_VALUE_JERRYSCRIPT_NATIVE_NUMBER_H */

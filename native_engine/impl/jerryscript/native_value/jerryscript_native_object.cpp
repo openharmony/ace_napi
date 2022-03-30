@@ -336,6 +336,7 @@ bool JerryScriptNativeObject::CheckTypeTag(NapiTypeTag* typeTag)
         bool sign = false;
 
         jerry_get_bigint_digits(value, (uint64_t*)(&typeTagOut), size, &sign);
+        jerry_release_value(value);
 
         if ((typeTagOut.lower != typeTag->lower) || (typeTagOut.upper != typeTag->upper)) {
             result = false;

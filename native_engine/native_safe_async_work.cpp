@@ -84,7 +84,7 @@ NativeSafeAsyncWork::NativeSafeAsyncWork(NativeEngine* engine,
     if (err != EOK) {
         return;
     }
-    
+
     asyncContext_.asyncResource = asyncResource;
     asyncContext_.asyncResourceName = asyncResourceName;
 }

@@ -22,10 +22,10 @@
 class JerryScriptNativeDeferred : public NativeDeferred {
 public:
     explicit JerryScriptNativeDeferred(jerry_value_t value);
-    virtual ~JerryScriptNativeDeferred() override;
+    ~JerryScriptNativeDeferred() override;
 
-    virtual void Resolve(NativeValue* data) override;
-    virtual void Reject(NativeValue* reason) override;
+    void Resolve(NativeValue* data) override;
+    void Reject(NativeValue* reason) override;
 
 private:
     jerry_value_t value_;

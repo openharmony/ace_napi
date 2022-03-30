@@ -20,11 +20,6 @@
 
 #include "native_engine/native_engine.h"
 
-namespace {
-const int MB = 1024 * 1024;
-const int MAX_SERIALIZER_MEMORY_USAGE = 1 * MB;
-} // namespace
-
 #define DCHECK(condition)           assert(condition)
 #define DCHECK_NOT_NULL(val) DCHECK((val) != nullptr)
 
@@ -85,6 +80,7 @@ public:
             isolate_->LowMemoryNotification();
         }
     }
+
 private:
     v8::Isolate* isolate_ { nullptr };
 };
@@ -94,9 +90,9 @@ public:
     // V8NativeEngine constructor
     V8NativeEngine(v8::Platform *platform, v8::Isolate* isolate, v8::Persistent<v8::Context>& context, void* jsEngine);
     // V8NativeEngine destructor
-    virtual ~V8NativeEngine();
+    ~V8NativeEngine() override;
 
-    virtual void Loop(LoopMode mode, bool needSync = false) override;
+    void Loop(LoopMode mode, bool needSync = false) override;
 
     v8::Isolate* GetIsolate();
     v8::Local<v8::Context> GetContext();
@@ -106,94 +102,94 @@ public:
     }
 
     // Get global native object value
-    virtual NativeValue* GetGlobal() override;
+    NativeValue* GetGlobal() override;
     // Create native null value
-    virtual NativeValue* CreateNull() override;
+    NativeValue* CreateNull() override;
     // Create native undefined value
-    virtual NativeValue* CreateUndefined() override;
+    NativeValue* CreateUndefined() override;
     // Create native boolean value
-    virtual NativeValue* CreateBoolean(bool value) override;
+    NativeValue* CreateBoolean(bool value) override;
     // Create number value by int32_t
-    virtual NativeValue* CreateNumber(int32_t value) override;
+    NativeValue* CreateNumber(int32_t value) override;
     // Create number value by uint32_t
-    virtual NativeValue* CreateNumber(uint32_t value) override;
+    NativeValue* CreateNumber(uint32_t value) override;
     // Create native number value by int64_t
-    virtual NativeValue* CreateNumber(int64_t value) override;
+    NativeValue* CreateNumber(int64_t value) override;
     // Create native number value by double
-    virtual NativeValue* CreateNumber(double value) override;
+    NativeValue* CreateNumber(double value) override;
     // Create native string value by const char pointer
-    virtual NativeValue* CreateString(const char* value, size_t length) override;
+    NativeValue* CreateString(const char* value, size_t length) override;
     // Create native symbol value
-    virtual NativeValue* CreateSymbol(NativeValue* value) override;
+    NativeValue* CreateSymbol(NativeValue* value) override;
     // Create native value of external pointer
-    virtual NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) override;
+    NativeValue* CreateExternal(void* value, NativeFinalize callback, void* hint) override;
     // Create native object value
-    virtual NativeValue* CreateObject() override;
+    NativeValue* CreateObject() override;
     // Create native function value
-    virtual NativeValue* CreateFunction(const char* name, size_t length, NativeCallback cb, void* value) override;
+    NativeValue* CreateFunction(const char* name, size_t length, NativeCallback cb, void* value) override;
     // Create native array value
-    virtual NativeValue* CreateArray(size_t length) override;
+    NativeValue* CreateArray(size_t length) override;
     // Create native array buffer value
-    virtual NativeValue* CreateArrayBuffer(void** value, size_t length) override;
+    NativeValue* CreateArrayBuffer(void** value, size_t length) override;
     // Create native array buffer value of external
-    virtual NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
+    NativeValue* CreateArrayBufferExternal(void* value, size_t length, NativeFinalize cb, void* hint) override;
     // Create native typed array value
-    virtual NativeValue* CreateTypedArray(NativeTypedArrayType type,
+    NativeValue* CreateTypedArray(NativeTypedArrayType type,
                                           NativeValue* value,
                                           size_t length,
                                           size_t offset) override;
     // Create native data view value
-    virtual NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
+    NativeValue* CreateDataView(NativeValue* value, size_t length, size_t offset) override;
     // Create native promise value
-    virtual NativeValue* CreatePromise(NativeDeferred** deferred) override;
-    virtual void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
+    NativeValue* CreatePromise(NativeDeferred** deferred) override;
+    void SetPromiseRejectCallback(NativeReference* rejectCallbackRef,
                                           NativeReference* checkCallbackRef) override;
     static void PromiseRejectCallback(v8::PromiseRejectMessage message);
     // Create native error value
-    virtual NativeValue* CreateError(NativeValue* code, NativeValue* message) override;
+    NativeValue* CreateError(NativeValue* code, NativeValue* message) override;
     // Call function
-    virtual NativeValue* CallFunction(NativeValue* thisVar,
+    NativeValue* CallFunction(NativeValue* thisVar,
                                       NativeValue* function,
                                       NativeValue* const* argv,
                                       size_t argc) override;
     // Run script
-    virtual NativeValue* RunScript(NativeValue* script) override;
+    NativeValue* RunScript(NativeValue* script) override;
     // Run buffer script
-    virtual NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
-    virtual NativeValue* RunActor(std::vector<uint8_t>& buffer, const char *descriptor) override;
+    NativeValue* RunBufferScript(std::vector<uint8_t>& buffer) override;
+    NativeValue* RunActor(std::vector<uint8_t>& buffer, const char *descriptor) override;
     // Define native class
-    virtual NativeValue* DefineClass(const char* name,
+    NativeValue* DefineClass(const char* name,
                                      NativeCallback callback,
                                      void* data,
                                      const NativePropertyDescriptor* properties,
                                      size_t length) override;
 
-    virtual NativeAsyncWork* CreateAsyncWork(NativeValue* asyncResource,
+    NativeAsyncWork* CreateAsyncWork(NativeValue* asyncResource,
                                              NativeValue* asyncResourceName,
                                              NativeAsyncExecuteCallback execute,
                                              NativeAsyncCompleteCallback complete,
                                              void* data) override;
 
     // Create instance by defined class
-    virtual NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
+    NativeValue* CreateInstance(NativeValue* constructor, NativeValue* const* argv, size_t argc) override;
 
     // Create native reference
-    virtual NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) override;
+    NativeReference* CreateReference(NativeValue* value, uint32_t initialRefcount) override;
     // Throw exception
-    virtual bool Throw(NativeValue* error) override;
+    bool Throw(NativeValue* error) override;
     // Throw exception
-    virtual bool Throw(NativeErrorType type, const char* code, const char* message) override;
+    bool Throw(NativeErrorType type, const char* code, const char* message) override;
 
-    virtual void* CreateRuntime() override;
-    virtual NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
-    virtual NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
-    virtual ExceptionInfo* GetExceptionForWorker() const override;
-    virtual void DeleteSerializationData(NativeValue* value) const override;
+    void* CreateRuntime() override;
+    NativeValue* Serialize(NativeEngine* context, NativeValue* value, NativeValue* transfer) override;
+    NativeValue* Deserialize(NativeEngine* context, NativeValue* recorder) override;
+    ExceptionInfo* GetExceptionForWorker() const override;
+    void DeleteSerializationData(NativeValue* value) const override;
     void SetPackagePath(const std::string& packagePath);
 
     static NativeValue* V8ValueToNativeValue(V8NativeEngine* engine, v8::Local<v8::Value> value);
-    virtual NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
-    virtual NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
+    NativeValue* LoadModule(NativeValue* str, const std::string& fileName) override;
+    NativeValue* ValueToNativeValue(JSValueWrapper& value) override;
 
     v8::Local<v8::Object> GetModuleFromName(
         const std::string& moduleName, bool isAppModule, const std::string& id, const std::string& param,
@@ -232,7 +228,7 @@ public:
     {
         return false;
     }
-    
+
     void PrintStatisticResult() override {}
     void StartRuntimeStat() override {}
     void StopRuntimeStat() override {}
@@ -251,6 +247,7 @@ public:
 
     void RegisterUncaughtExceptionHandler(UncaughtExceptionCallback callback) override {}
     void HandleUncaughtException() override {}
+
 private:
     static void ExecuteWrap(NativeEngine* engine, void* data);
     static void CompleteWrap(NativeEngine* engine, int status, void* data);

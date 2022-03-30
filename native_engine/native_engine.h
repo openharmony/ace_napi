@@ -101,7 +101,7 @@ using UncaughtExceptionCallback = std::function<void(NativeValue* value)>;
 
 class NAPI_EXPORT NativeEngine {
 public:
-    NativeEngine(void* jsEngine);
+    explicit NativeEngine(void* jsEngine);
     virtual ~NativeEngine();
 
     virtual NativeScopeManager* GetScopeManager();
@@ -268,12 +268,12 @@ public:
     {
         return isStopping_.load();
     }
-    
+
     void SetStopping(bool value)
     {
         isStopping_.store(value);
     }
-    
+
     virtual void PrintStatisticResult() = 0;
     virtual void StartRuntimeStat() = 0;
     virtual void StopRuntimeStat() = 0;
