@@ -397,11 +397,11 @@ NativeValue* ArkNativeEngine::CreateTypedArray(NativeTypedArrayType type,
             typedArray = panda::Float64ArrayRef::New(vm_, buffer, offset, length);
             break;
         case NATIVE_BIGINT64_ARRAY:
-            // not support yet
-            return nullptr;
+            typedArray = panda::BigInt64ArrayRef::New(vm_, buffer, offset, length);
+            break;
         case NATIVE_BIGUINT64_ARRAY:
-            // not support yet
-            return nullptr;
+            typedArray = panda::BigUint64ArrayRef::New(vm_, buffer, offset, length);
+            break;
         default:
             return nullptr;
     }
