@@ -278,7 +278,6 @@ void NativeSafeAsyncWork::ProcessAsyncHandle()
     HILOG_INFO("queue size %d", (int32_t)size);
     if (size > 0) {
         data = queue_.front();
-        queue_.pop();
 
         // when queue is full, notify send.
         if (size == maxQueueSize_ && maxQueueSize_ > 0) {
@@ -290,6 +289,7 @@ void NativeSafeAsyncWork::ProcessAsyncHandle()
         } else {
             CallJs(engine_, func_, context_, data);
         }
+        queue_.pop();
         size--;
     }
 
