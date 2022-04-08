@@ -37,17 +37,7 @@ public:
 #endif
 
 private:
-    static Local<JSValueRef> NativeFunctionCallBack(EcmaVM* vm,
-                                                    Local<JSValueRef> thisObj,
-                                                    const Local<JSValueRef> argv[],
-                                                    int32_t length,
-                                                    void* data);
-    static Local<JSValueRef> NativeClassFunctionCallBack(EcmaVM* vm,
-                                                         Local<JSValueRef> function,
-                                                         Local<JSValueRef> newTarget,
-                                                         const Local<JSValueRef> argv[],
-                                                         int32_t length,
-                                                         void* data);
+    static Local<JSValueRef> NativeFunctionCallBack(panda::JsiRuntimeCallInfo *info);
 #ifdef ENABLE_CONTAINER_SCOPE
     int32_t scopeId_ = -1;
 #endif
