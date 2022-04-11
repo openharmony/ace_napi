@@ -290,7 +290,7 @@ HWTEST_F(NativeEngineTest, FunctionTest, testing::ext::TestSize.Level0)
         napi_set_property(env, result, messageKey, messageValue);
 
         if (argv != nullptr) {
-            delete argv;
+            delete []argv;
         }
 
         return result;
@@ -885,7 +885,7 @@ HWTEST_F(NativeEngineTest, IsCallableTest, testing::ext::TestSize.Level0)
         napi_set_property(env, result, messageKey, messageValue);
 
         if (argv != nullptr) {
-            delete argv;
+            delete []argv;
         }
         return result;
     };
