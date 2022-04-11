@@ -103,7 +103,7 @@ JSValue QuickJSNativeFunction::JSCFunctionData(JSContext* ctx,
     value = info->callback(info->engine, &callbackInfo);
 
     if (callbackInfo.argv != nullptr) {
-        delete callbackInfo.argv;
+        delete []callbackInfo.argv;
     }
 
     JSValue result = JS_UNDEFINED;
