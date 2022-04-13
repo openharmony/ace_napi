@@ -151,7 +151,7 @@ NativeModule* NativeModuleManager::LoadNativeModule(const char* moduleName,
 }
 
 bool NativeModuleManager::GetNativeModulePath(
-    const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX], int32_t pathLength) const
+    const char* moduleName, bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX], int32_t pathLength) const
 {
 #ifdef WINDOWS_PLATFORM
     const char* soPostfix = ".dll";
@@ -169,6 +169,10 @@ bool NativeModuleManager::GetNativeModulePath(
     const char* soPostfix = ".so";
     const char* sysPrefix = "/system/lib/module";
     const char* zfix = ".z";
+#endif
+
+#ifdef ANDROID_PLATFORM
+    isAppModule = true;
 #endif
     int32_t lengthOfModuleName = strlen(moduleName);
     char dupModuleName[NAPI_PATH_MAX] = { 0 };

@@ -57,6 +57,8 @@ template("ace_napi_impl") {
       defines += [ "WINDOWS_PLATFORM" ]
     } else if (use_mac) {
       defines += [ "MAC_PLATFORM" ]
+    } else if (is_cross_platform_build && defined(is_android) && is_android) {
+      defines += [ "ANDROID_PLATFORM" ]
     } else {
       external_deps = hilog_deps
     }
