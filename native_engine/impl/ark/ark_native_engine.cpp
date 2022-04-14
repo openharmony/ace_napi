@@ -473,6 +473,7 @@ NativeValue* ArkNativeEngine::CallFunction(NativeValue* thisVar,
     if (!excep.IsNull()) {
         Local<StringRef> exceptionMsg = excep->ToString(vm_);
         exceptionStr_ = exceptionMsg->ToString();
+        return nullptr;
     }
 
     return ArkValueToNativeValue(this, value);
