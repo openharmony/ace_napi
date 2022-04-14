@@ -18,9 +18,26 @@
 
 #include <string>
 
+#include "utils/macros.h"
+
 #define __FILENAME__ strrchr(__FILE__, '/') + 1
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(ANDROID_PLATFORM) && !defined(WINDOWS_PLATFORM)
+#if defined(MAC_PLATFORM) || defined(WINDOWS_PLATFORM) || defined(ANDROID_PLATFORM)
+enum class LogLevel : uint32_t {
+    Debug = 0,
+    Info,
+    Warn,
+    Error,
+    Fatal,
+};
+
+NAPI_EXPORT void PrintLog(LogLevel level, const char* fmt, ...);
+
+#define HILOG_PRINT(Level, fmt, ...)                                                                            \
+    PrintLog(LogLevel::Level, "[%-20s(%s)] " fmt, __FILENAME__, __FUNCTION__, ##__VA_ARGS__);
+
+#else
+
 #include "hilog/log.h"
 
 #undef LOG_DOMAIN
@@ -40,42 +57,6 @@ static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, LOG_DOMAIN,
 #define HILOG_PRINT(Level, fmt, ...)                                                                            \
     (void)OHOS::HiviewDFX::HiLog::Level(LOG_LABEL, "[%{public}s(%{public}s)] " fmt, __FILENAME__, __FUNCTION__, \
                                         ##__VA_ARGS__)
-#else
-#include <stdarg.h>
-#include <stdio.h>
-#include <securec.h>
-
-constexpr uint32_t MAX_BUFFER_SIZE = 4096;
-
-static void StripFormatString(const std::string& prefix, std::string& str)
-{
-    for (auto pos = str.find(prefix, 0); pos != std::string::npos; pos = str.find(prefix, pos)) {
-        str.erase(pos, prefix.size());
-    }
-}
-
-[[maybe_unused]] static void PrintLog(const char* fmt, ...)
-{
-    std::string newFmt(fmt);
-    StripFormatString("{public}", newFmt);
-    StripFormatString("{private}", newFmt);
-
-    va_list args;
-    va_start(args, fmt);
-
-    char buf[MAX_BUFFER_SIZE] = { '\0' };
-    int ret = vsnprintf_s(buf, sizeof(buf), sizeof(buf) - 1, newFmt.c_str(), args);
-    if (ret < 0) {
-        return;
-    }
-    va_end(args);
-
-    printf("%s\r\n", buf);
-    fflush(stdout);
-}
-
-#define HILOG_PRINT(Level, fmt, ...)                                                                            \
-    PrintLog("[%-20s(%s)] " fmt, __FILENAME__, __FUNCTION__, ##__VA_ARGS__);
 
 #endif
 
