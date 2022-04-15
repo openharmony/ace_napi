@@ -126,67 +126,112 @@ if (defined(ohos_lite)) {
   import("//build/ohos.gni")
   import("//foundation/ace/ace_engine/ace_config.gni")
 
-  ohos_shared_library("ace_napi") {
-    defines = []
-    public_configs = [ ":ace_napi_config" ]
-    public_deps = [ "//third_party/libuv:uv" ]
-    deps = []
+  if (target_os == "ios") {
+    ohos_source_set("ace_napi") {
+      defines = []
+      public_configs = [ ":ace_napi_config" ]
+      public_deps = [ "//third_party/libuv:uv" ]
+      deps = []
 
-    include_dirs = [
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/interfaces/innerkits",
-      "//foundation/ace/napi/interfaces/kits",
-      "//third_party/libuv/include",
-      "//third_party/node/src",
-      "//utils/native/base/include",
-    ]
+      include_dirs = [
+        "//foundation/ace/napi",
+        "//foundation/ace/napi/interfaces/innerkits",
+        "//foundation/ace/napi/interfaces/kits",
+        "//third_party/libuv/include",
+        "//third_party/node/src",
+        "//utils/native/base/include",
+      ]
 
-    sources = napi_sources
+      sources = napi_sources
 
-    if (current_cpu == "arm64") {
-      defines += [ "_ARM64_" ]
-    }
-
-    if (use_mingw_win) {
-      defines += [ "WINDOWS_PLATFORM" ]
-    } else if (use_mac) {
-      defines += [ "MAC_PLATFORM" ]
-    } else if (is_cross_platform_build && defined(is_android) && is_android) {
-      defines += [ "ANDROID_PLATFORM" ]
-    } else {
-      if (is_standard_system) {
-        external_deps = [
-          "hitrace_native:libhitrace",
-          "hiviewdfx_hilog_native:libhilog",
-        ]
-        defines += [ "ENABLE_HITRACE" ]
-        if (product_name != "ohos-sdk") {
-          if (napi_enable_container_scope) {
-            deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
-            defines += [ "ENABLE_CONTAINER_SCOPE" ]
-          }
-        }
-      } else {
-        external_deps = [ "hilog:libhilog" ]
+      if (current_cpu == "arm64") {
+        defines += [ "_ARM64_" ]
       }
+
+      defines += [ "IOS_PLATFORM" ]
+
+      deps += [
+        "//third_party/libuv:uv",
+        "//utils/native/base:utilsecurec",
+      ]
+
+      # Use static libuv for cross build
+      if (is_cross_platform_build) {
+        public_deps -= [ "//third_party/libuv:uv" ]
+        deps -= [ "//third_party/libuv:uv" ]
+        deps += [ "//third_party/libuv:uv_static" ]
+      }
+
+      cflags_cc = [ "-Wno-missing-braces" ]
+
+      subsystem_name = "ace"
+      part_name = "napi"
     }
+  } else {
+    ohos_shared_library("ace_napi") {
+      defines = []
+      public_configs = [ ":ace_napi_config" ]
+      public_deps = [ "//third_party/libuv:uv" ]
+      deps = []
 
-    deps += [
-      "//third_party/libuv:uv",
-      "//utils/native/base:utilsecurec",
-    ]
+      include_dirs = [
+        "//foundation/ace/napi",
+        "//foundation/ace/napi/interfaces/innerkits",
+        "//foundation/ace/napi/interfaces/kits",
+        "//third_party/libuv/include",
+        "//third_party/node/src",
+        "//utils/native/base/include",
+      ]
 
-    # Use static libuv for cross build
-    if (is_cross_platform_build) {
-      public_deps -= [ "//third_party/libuv:uv" ]
-      deps -= [ "//third_party/libuv:uv" ]
-      deps += [ "//third_party/libuv:uv_static" ]
+      sources = napi_sources
+
+      if (current_cpu == "arm64") {
+        defines += [ "_ARM64_" ]
+      }
+
+      if (use_mingw_win) {
+        defines += [ "WINDOWS_PLATFORM" ]
+      } else if (use_mac) {
+        defines += [ "MAC_PLATFORM" ]
+      } else if (target_os == "ios") {
+        defines += [ "IOS_PLATFORM" ]
+      } else if (is_cross_platform_build && defined(is_android) && is_android) {
+        defines += [ "ANDROID_PLATFORM" ]
+      } else {
+        if (is_standard_system) {
+          external_deps = [
+            "hitrace_native:libhitrace",
+            "hiviewdfx_hilog_native:libhilog",
+          ]
+          defines += [ "ENABLE_HITRACE" ]
+          if (product_name != "ohos-sdk") {
+            if (napi_enable_container_scope) {
+              deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+              defines += [ "ENABLE_CONTAINER_SCOPE" ]
+            }
+          }
+        } else {
+          external_deps = [ "hilog:libhilog" ]
+        }
+      }
+
+      deps += [
+        "//third_party/libuv:uv",
+        "//utils/native/base:utilsecurec",
+      ]
+
+      # Use static libuv for cross build
+      if (is_cross_platform_build) {
+        public_deps -= [ "//third_party/libuv:uv" ]
+        deps -= [ "//third_party/libuv:uv" ]
+        deps += [ "//third_party/libuv:uv_static" ]
+      }
+
+      cflags_cc = [ "-Wno-missing-braces" ]
+
+      subsystem_name = "ace"
+      part_name = "napi"
     }
-
-    cflags_cc = [ "-Wno-missing-braces" ]
-
-    subsystem_name = "ace"
-    part_name = "napi"
   }
 
   template("ace_napi_lib") {
@@ -199,12 +244,25 @@ if (defined(ohos_lite)) {
       deps_ =
           [ "native_engine/impl/${engine_path}:ace_napi_impl_${engine_path}" ]
     }
-    ohos_shared_library(target_name) {
-      public_configs =
-          [ "native_engine/impl/${engine_path}:ace_napi_${engine_path}_config" ]
-      deps = deps_
-      subsystem_name = "ace"
-      part_name = "napi"
+
+    if (target_os == "ios") {
+      ohos_source_set(target_name) {
+        public_configs = [
+          "native_engine/impl/${engine_path}:ace_napi_${engine_path}_config",
+        ]
+        deps = deps_
+        subsystem_name = "ace"
+        part_name = "napi"
+      }
+    } else {
+      ohos_shared_library(target_name) {
+        public_configs = [
+          "native_engine/impl/${engine_path}:ace_napi_${engine_path}_config",
+        ]
+        deps = deps_
+        subsystem_name = "ace"
+        part_name = "napi"
+      }
     }
   }
   napi_libs = []
