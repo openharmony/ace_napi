@@ -21,6 +21,7 @@ napi_sources = [
   "//foundation/ace/napi/native_engine/native_safe_async_work.cpp",
   "//foundation/ace/napi/reference_manager/native_reference_manager.cpp",
   "//foundation/ace/napi/scope_manager/native_scope_manager.cpp",
+  "//foundation/ace/napi/utils/log.cpp",
 ]
 
 declare_args() {
