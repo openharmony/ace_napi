@@ -268,7 +268,7 @@ if (defined(ohos_lite)) {
   napi_libs = []
 
   foreach(item, ace_platforms) {
-    if (item.name == "ohos" || item.name == "android") {
+    if (item.name == "ohos" || item.name == "android" || item.name == "ios" ) {
       engine_config = item.config
       support_engines = engine_config.js_engines
       foreach(engine, support_engines) {
