@@ -66,7 +66,7 @@ private:
     NativeModuleManager();
     virtual ~NativeModuleManager();
 
-    bool GetNativeModulePath(const char* moduleName, const bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX],
+    bool GetNativeModulePath(const char* moduleName, bool isAppModule, char nativeModulePath[][NAPI_PATH_MAX],
         int32_t pathLength) const;
     NativeModule* FindNativeModuleByDisk(const char* moduleName, bool internal, const bool isAppModule, bool isArk);
     NativeModule* FindNativeModuleByCache(const char* moduleName) const;
