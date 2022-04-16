@@ -114,7 +114,7 @@ public:
     virtual void Loop(LoopMode mode, bool needSync = false);
     virtual void SetPostTask(PostTask postTask);
     virtual void TriggerPostTask();
-#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(IOS_PLATFORM)
     virtual void CheckUVLoop();
     virtual void CancelCheckUVLoop();
 #endif
@@ -315,7 +315,7 @@ protected:
 private:
     bool isMainThread_ { true };
 
-#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(IOS_PLATFORM)
     static void UVThreadRunner(void* nativeEngine);
     void PostLoopTask();
 

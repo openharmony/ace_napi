@@ -295,12 +295,6 @@ void NativeEngine::UVThreadRunner(void* nativeEngine)
         }
     }
 }
-
-#else
-void NativeEngine::CheckUVLoop(){}
-void NativeEngine::CancelCheckUVLoop(){}
-void NativeEngine::PostLoopTask(){}
-void NativeEngine::UVThreadRunner(void* nativeEngine){}
 #endif
 
 void NativeEngine::SetPostTask(PostTask postTask)
