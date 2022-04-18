@@ -96,7 +96,6 @@ void NativeModuleManager::Register(NativeModule* nativeModule)
 void NativeModuleManager::CreateLdNamespace(const char* lib_ld_path)
 {
 #if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(__BIONIC__) && !defined(IOS_PLATFORM)
-    Dl_namespace ns_;
     dlns_init(&ns_, DL_NAMESPACE);
     dlns_create(&ns_, lib_ld_path);
 #endif
