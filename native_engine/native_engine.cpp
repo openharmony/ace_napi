@@ -15,7 +15,7 @@
 
 #include "native_engine.h"
 
-#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(IOS_PLATFORM)
 #include <sys/epoll.h>
 #endif
 #include <uv.h>
@@ -249,7 +249,7 @@ void NativeEngine::EncodeToUtf8(NativeValue* nativeValue,
     *written = nativeString->EncodeWriteUtf8(buffer, bufferSize, nchars);
 }
 
-#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM) && !defined(IOS_PLATFORM)
 void NativeEngine::CheckUVLoop()
 {
     checkUVLoop_ = true;

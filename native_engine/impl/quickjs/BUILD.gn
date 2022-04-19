@@ -57,6 +57,8 @@ template("ace_napi_impl") {
       defines += [ "WINDOWS_PLATFORM" ]
     } else if (use_mac) {
       defines += [ "MAC_PLATFORM" ]
+    } else if (is_cross_platform_build && target_os == "ios") {
+      defines += [ "IOS_PLATFORM" ]
     } else if (is_cross_platform_build && defined(is_android) && is_android) {
       defines += [ "ANDROID_PLATFORM" ]
     } else {
@@ -82,6 +84,10 @@ template("ace_napi_impl") {
 
 foreach(item, ace_platforms) {
   if (item.name == "ohos" || item.name == "android") {
+    engine_config = {
+    }
+    support_engines = {
+    }
     engine_config = item.config
     support_engines = engine_config.js_engines
     foreach(engine, support_engines) {
