@@ -46,7 +46,7 @@ NAPI_EXPORT void PrintLog(LogLevel level, const char* fmt, ...)
     va_end(args);
 }
 
-#elif defined(MAC_PLATFORM) || defined(WINDOWS_PLATFORM)
+#elif defined(MAC_PLATFORM) || defined(WINDOWS_PLATFORM) || defined(IOS_PLATFORM)
 
 #include <securec.h>
 
