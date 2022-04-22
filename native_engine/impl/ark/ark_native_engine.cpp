@@ -88,7 +88,6 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                 if (module != nullptr) {
                     auto it = engine->loadedModules_.find(module);
                     if (it != engine->loadedModules_.end()) {
-                        HILOG_INFO("load module %{public}s success, module already exists", module->name);
                         return scope.Escape(it->second.ToLocal(ecmaVm));
                     }
 
@@ -119,7 +118,6 @@ ArkNativeEngine::ArkNativeEngine(EcmaVM* vm, void* jsEngine) : NativeEngine(jsEn
                         return scope.Escape(exports.ToLocal(ecmaVm));
                     }
                 }
-                HILOG_INFO("load module %{public}s success", module->name);
                 return scope.Escape(exports.ToLocal(ecmaVm));
             },
             nullptr,
