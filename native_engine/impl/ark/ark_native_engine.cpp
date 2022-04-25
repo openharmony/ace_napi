@@ -684,12 +684,12 @@ void ArkNativeEngine::StopCpuProfiler()
 #else
 void ArkNativeEngine::StartCpuProfiler(const std::string fileName)
 {
-    HILOG_FATAL("ARKCpuProfiler is not supported on windows");
+    HILOG_WARN("ARKCpuProfiler is not supported on windows");
 }
 
 void ArkNativeEngine::StopCpuProfiler()
 {
-    HILOG_FATAL("ARKCpuProfiler is not supported on windows");
+    HILOG_WARN("ARKCpuProfiler is not supported on windows");
 }
 #endif
 
@@ -716,24 +716,24 @@ bool ArkNativeEngine::CheckSafepoint()
 #else
 void ArkNativeEngine::ResumeVM()
 {
-    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    HILOG_WARN("ARK Snapshot is not supported on windows");
 }
 
 bool ArkNativeEngine::SuspendVM()
 {
-    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    HILOG_WARN("ARK Snapshot is not supported on windows");
     return false;
 }
 
 bool ArkNativeEngine::IsSuspended()
 {
-    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    HILOG_WARN("ARK Snapshot is not supported on windows");
     return false;
 }
 
 bool ArkNativeEngine::CheckSafepoint()
 {
-    HILOG_FATAL("ARK Snapshot is not supported on windows");
+    HILOG_WARN("ARK Snapshot is not supported on windows");
     return false;
 }
 #endif
@@ -954,7 +954,7 @@ void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, D
 #else
 void ArkNativeEngine::DumpHeapSnapShot(const std::string &path, bool isVmMode, DumpFormat dumpFormat)
 {
-    HILOG_FATAL("ARK does not support snapshot on windows");
+    HILOG_WARN("ARK does not support snapshot on windows");
 }
 #endif
 
@@ -966,7 +966,8 @@ bool ArkNativeEngine::BuildNativeAndJsBackStackTrace(std::string &stackTraceStr)
 #else
 bool ArkNativeEngine::BuildNativeAndJsBackStackTrace(std::string &stackTraceStr)
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
+    return false;
 }
 #endif
 
@@ -978,7 +979,7 @@ bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
 #else
 bool ArkNativeEngine::StartHeapTracking(double timeInterval, bool isVmMode)
 {
-    HILOG_FATAL("ARK does not support snapshot on windows");
+    HILOG_WARN("ARK does not support snapshot on windows");
     return false;
 }
 #endif
@@ -991,7 +992,7 @@ bool ArkNativeEngine::StopHeapTracking(const std::string &filePath)
 #else
 bool ArkNativeEngine::StopHeapTracking(const std::string &filePath)
 {
-    HILOG_FATAL("ARK does not support snapshot on windows");
+    HILOG_WARN("ARK does not support snapshot on windows");
     return false;
 }
 #endif
@@ -1029,34 +1030,34 @@ size_t ArkNativeEngine::GetHeapUsedSize()
 #else
 void ArkNativeEngine::PrintStatisticResult()
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
 }
 
 void ArkNativeEngine::StartRuntimeStat()
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
 }
 
 void ArkNativeEngine::StopRuntimeStat()
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
 }
 
 size_t ArkNativeEngine::GetArrayBufferSize()
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
     return 0;
 }
 
 size_t ArkNativeEngine::GetHeapTotalSize()
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
     return 0;
 }
 
 size_t ArkNativeEngine::GetHeapUsedSize()
 {
-    HILOG_FATAL("ARK does not support dfx on windows");
+    HILOG_WARN("ARK does not support dfx on windows");
     return 0;
 }
 #endif
