@@ -17,10 +17,11 @@
 #define FOUNDATION_ACE_NAPI_REFERENCE_MANAGER_NATIVE_REFERENCE_MANAGER_H
 
 #include "native_engine/native_reference.h"
+#include "utils/macros.h"
 
 struct NativeReferenceHandler;
 
-class NativeReferenceManager {
+class NAPI_EXPORT NativeReferenceManager {
 public:
     NativeReferenceManager();
     virtual ~NativeReferenceManager();
