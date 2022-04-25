@@ -207,7 +207,7 @@ if (defined(ohos_lite)) {
           defines += [ "ENABLE_HITRACE" ]
           if (product_name != "ohos-sdk") {
             if (napi_enable_container_scope) {
-              deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+              deps += [ ":ace_container_scope" ]
               defines += [ "ENABLE_CONTAINER_SCOPE" ]
             }
           }
@@ -233,6 +233,22 @@ if (defined(ohos_lite)) {
       subsystem_name = "ace"
       part_name = "napi"
     }
+  }
+
+  config("container_scope_config") {
+    visibility = [ ":*" ]
+    include_dirs = [ "$ace_root/frameworks" ]
+  }
+
+  ohos_shared_library("ace_container_scope") {
+    public_configs = [ ":container_scope_config" ]
+
+    configs = [ "$ace_root:ace_config" ]
+
+    sources = [ "$ace_root/frameworks/core/common/container_scope.cpp" ]
+
+    subsystem_name = "ace"
+    part_name = "napi"
   }
 
   template("ace_napi_lib") {
