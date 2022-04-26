@@ -12,16 +12,16 @@
 # limitations under the License.
 
 napi_sources = [
-  "//foundation/ace/napi/callback_scope_manager/native_callback_scope_manager.cpp",
-  "//foundation/ace/napi/module_manager/native_module_manager.cpp",
-  "//foundation/ace/napi/native_engine/native_api.cpp",
-  "//foundation/ace/napi/native_engine/native_async_work.cpp",
-  "//foundation/ace/napi/native_engine/native_engine.cpp",
-  "//foundation/ace/napi/native_engine/native_node_api.cpp",
-  "//foundation/ace/napi/native_engine/native_safe_async_work.cpp",
-  "//foundation/ace/napi/reference_manager/native_reference_manager.cpp",
-  "//foundation/ace/napi/scope_manager/native_scope_manager.cpp",
-  "//foundation/ace/napi/utils/log.cpp",
+  "//foundation/arkui/napi/callback_scope_manager/native_callback_scope_manager.cpp",
+  "//foundation/arkui/napi/module_manager/native_module_manager.cpp",
+  "//foundation/arkui/napi/native_engine/native_api.cpp",
+  "//foundation/arkui/napi/native_engine/native_async_work.cpp",
+  "//foundation/arkui/napi/native_engine/native_engine.cpp",
+  "//foundation/arkui/napi/native_engine/native_node_api.cpp",
+  "//foundation/arkui/napi/native_engine/native_safe_async_work.cpp",
+  "//foundation/arkui/napi/reference_manager/native_reference_manager.cpp",
+  "//foundation/arkui/napi/scope_manager/native_scope_manager.cpp",
+  "//foundation/arkui/napi/utils/log.cpp",
 ]
 
 declare_args() {

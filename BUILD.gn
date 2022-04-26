@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//foundation/ace/napi/napi.gni")
+import("//foundation/arkui/napi/napi.gni")
 
 config("ace_napi_config") {
   include_dirs = [
-    "//foundation/ace/napi",
-    "//foundation/ace/napi/interfaces/innerkits",
-    "//foundation/ace/napi/interfaces/kits",
+    "//foundation/arkui/napi",
+    "//foundation/arkui/napi/interfaces/inner_api",
+    "//foundation/arkui/napi/interfaces/kits",
     "//third_party/libuv/include",
     "//third_party/node/src",
   ]
@@ -29,9 +29,9 @@ if (defined(ohos_lite)) {
 
   config("ace_napi_jerryscript_config") {
     include_dirs = [
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/native_engine",
-      "//foundation/ace/napi/native_engine/impl/jerryscript",
+      "//foundation/arkui/napi",
+      "//foundation/arkui/napi/native_engine",
+      "//foundation/arkui/napi/native_engine/impl/jerryscript",
       "//third_party/jerryscript/jerry-ext/include",
       "//third_party/jerryscript/jerry-core/include",
       "//third_party/jerryscript/jerry-port/default/include",
@@ -43,9 +43,9 @@ if (defined(ohos_lite)) {
     public_configs = [ ":ace_napi_config" ]
 
     include_dirs = [
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/interfaces/innerkits",
-      "//foundation/ace/napi/interfaces/kits",
+      "//foundation/arkui/napi",
+      "//foundation/arkui/napi/interfaces/inner_api",
+      "//foundation/arkui/napi/interfaces/kits",
       "//third_party/libuv/include",
       "//third_party/node/src",
       "//third_party/bounds_checking_function/include",
@@ -72,9 +72,9 @@ if (defined(ohos_lite)) {
     public_configs = [ ":ace_napi_jerryscript_config" ]
 
     include_dirs = [
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/native_engine",
-      "//foundation/ace/napi/native_engine/impl/jerryscript",
+      "//foundation/arkui/napi",
+      "//foundation/arkui/napi/native_engine",
+      "//foundation/arkui/napi/native_engine/impl/jerryscript",
       "//third_party/jerryscript/jerry-ext/include",
       "//third_party/jerryscript/jerry-core/include",
       "//third_party/jerryscript/jerry-port/default/include",
@@ -124,7 +124,7 @@ if (defined(ohos_lite)) {
   }
 } else {
   import("//build/ohos.gni")
-  import("//foundation/ace/ace_engine/ace_config.gni")
+  import("//foundation/arkui/ace_engine/ace_config.gni")
 
   if (target_os == "ios") {
     ohos_source_set("ace_napi") {
@@ -134,9 +134,9 @@ if (defined(ohos_lite)) {
       deps = []
 
       include_dirs = [
-        "//foundation/ace/napi",
-        "//foundation/ace/napi/interfaces/innerkits",
-        "//foundation/ace/napi/interfaces/kits",
+        "//foundation/arkui/napi",
+        "//foundation/arkui/napi/interfaces/inner_api",
+        "//foundation/arkui/napi/interfaces/kits",
         "//third_party/libuv/include",
         "//third_party/node/src",
         "//utils/native/base/include",
@@ -164,7 +164,7 @@ if (defined(ohos_lite)) {
 
       cflags_cc = [ "-Wno-missing-braces" ]
 
-      subsystem_name = "ace"
+      subsystem_name = "arkui"
       part_name = "napi"
     }
   } else {
@@ -175,9 +175,9 @@ if (defined(ohos_lite)) {
       deps = []
 
       include_dirs = [
-        "//foundation/ace/napi",
-        "//foundation/ace/napi/interfaces/innerkits",
-        "//foundation/ace/napi/interfaces/kits",
+        "//foundation/arkui/napi",
+        "//foundation/arkui/napi/interfaces/inner_api",
+        "//foundation/arkui/napi/interfaces/kits",
         "//third_party/libuv/include",
         "//third_party/node/src",
         "//utils/native/base/include",
@@ -230,7 +230,7 @@ if (defined(ohos_lite)) {
 
       cflags_cc = [ "-Wno-missing-braces" ]
 
-      subsystem_name = "ace"
+      subsystem_name = "arkui"
       part_name = "napi"
     }
   }
@@ -247,7 +247,7 @@ if (defined(ohos_lite)) {
 
     sources = [ "$ace_root/frameworks/core/common/container_scope.cpp" ]
 
-    subsystem_name = "ace"
+    subsystem_name = "arkui"
     part_name = "napi"
   }
 
@@ -268,7 +268,7 @@ if (defined(ohos_lite)) {
           "native_engine/impl/${engine_path}:ace_napi_${engine_path}_config",
         ]
         deps = deps_
-        subsystem_name = "ace"
+        subsystem_name = "arkui"
         part_name = "napi"
       }
     } else {
@@ -277,7 +277,7 @@ if (defined(ohos_lite)) {
           "native_engine/impl/${engine_path}:ace_napi_${engine_path}_config",
         ]
         deps = deps_
-        subsystem_name = "ace"
+        subsystem_name = "arkui"
         part_name = "napi"
       }
     }
@@ -328,7 +328,7 @@ if (defined(ohos_lite)) {
 
   ohos_ndk_headers("napi_header") {
     dest_dir = "$ndk_headers_out_dir/napi"
-    sources = [ "//foundation/ace/napi/interfaces/kits/napi/native_api.h" ]
+    sources = [ "//foundation/arkui/napi/interfaces/kits/napi/native_api.h" ]
   }
 
   group("napi_packages_ndk") {

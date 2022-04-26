@@ -35,10 +35,10 @@ NAPI（Native API）组件是一套对外接口基于Node.js N-API规范开发�
 
 ## 目录<a name="section161941989596"></a>
 
-NAPI组件源代码在/foundation/ace/napi下，目录结构如下图所示：
+NAPI组件源代码在/foundation/arkui/napi下，目录结构如下图所示：
 
 ```
-foundation/ace/napi
+foundation/arkui/napi
    ├── interfaces
    │   └── kits
    │       └── napi           # NAPI头文件目录
@@ -56,7 +56,7 @@ NAPI适合封装IO、CPU密集型、OS底层等能力并对外暴露JS接口，�
 
 ## 接口说明<a name="section1611515555510"></a>
 
-接口实现详见：**foundation/ace/napi**。
+接口实现详见：**foundation/arkui/napi**。
 
 **表 1**  NAPI接口说明
 
@@ -240,10 +240,10 @@ ohos_shared_library("app") {
     "app.cpp",
   ]
   # 指定编译依赖
-  deps = [ "//foundation/ace/napi:ace_napi" ]
+  deps = [ "//foundation/arkui/napi:ace_napi" ]
   # 指定库生成的路径
   relative_install_dir = "module"
-  subsystem_name = "ace"
+  subsystem_name = "arkui"
   part_name = "napi"
 }
 ```
@@ -265,9 +265,9 @@ export default {
 
 JS UI框架子系统
 
-ace\_ace\_engine
+arkui\_ace\_engine
 
-ace\_ace\_engine\_lite
+arkui\_ace\_engine\_lite
 
-**ace\_napi**
+**arkui\_napi**
 

@@ -14,27 +14,27 @@
 common_include = [
   "./common",
   "./engine",
-  "//foundation/ace/napi",
-  "//foundation/ace/napi/interfaces/innerkits",
-  "//foundation/ace/napi/interfaces/kits",
-  "//foundation/ace/napi/native_engine",
+  "//foundation/arkui/napi",
+  "//foundation/arkui/napi/interfaces/inner_api",
+  "//foundation/arkui/napi/interfaces/kits",
+  "//foundation/arkui/napi/native_engine",
   "//third_party/googletest/include",
   "//third_party/node/src",
   "//utils/native/base/include",
 ]
 
 quickjs_include = common_include
-quickjs_include += [ "//foundation/ace/napi/native_engine/impl/quickjs" ]
+quickjs_include += [ "//foundation/arkui/napi/native_engine/impl/quickjs" ]
 
 ark_include = common_include
 ark_include += [
   "//ark/js_runtime",
-  "//foundation/ace/napi/native_engine/impl/ark",
+  "//foundation/arkui/napi/native_engine/impl/ark",
 ]
 
 jerryscript_include = common_include
 jerryscript_include += [
-  "//foundation/ace/napi/native_engine/impl/jerryscript",
+  "//foundation/arkui/napi/native_engine/impl/jerryscript",
   "//third_party/jerryscript",
   "//third_party/jerryscript/jerry-core/include",
 ]
@@ -48,18 +48,18 @@ common_deps = [
 
 quickjs_deps = common_deps
 quickjs_deps += [
-  "//foundation/ace/napi:ace_napi_quickjs",
+  "//foundation/arkui/napi:ace_napi_quickjs",
   "//third_party/quickjs:qjs",
 ]
 
 ark_deps = common_deps
 ark_deps += [
   "//ark/js_runtime:libark_jsruntime",
-  "//foundation/ace/napi:ace_napi_ark",
+  "//foundation/arkui/napi:ace_napi_ark",
 ]
 
 jerryscript_deps = common_deps
 jerryscript_deps += [
-  "//foundation/ace/napi:ace_napi_jerryscript",
+  "//foundation/arkui/napi:ace_napi_jerryscript",
   "//third_party/jerryscript:libjerryscript",
 ]
