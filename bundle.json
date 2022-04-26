@@ -57,6 +57,15 @@
                       ]
                     },
                     "name": "//foundation/ace/napi:ace_napi"
+                  },
+                  {
+                    "header": {
+                      "header_base": "//foundation/ace/ace_engine/frameworks/core/common/",
+                      "header_files": [
+                          "container_scope.h"
+                      ]
+                    },
+                    "name": "//foundation/ace/napi:ace_container_scope"
                   }
             ],
             "test": [

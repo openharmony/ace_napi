@@ -71,7 +71,7 @@ template("ace_napi_impl") {
 
     if (product_name != "ohos-sdk") {
       if (napi_enable_container_scope) {
-        deps += [ "$ace_root/frameworks/core:ace_container_scope" ]
+        deps += [ "//foundation/ace/napi:ace_container_scope" ]
         defines += [ "ENABLE_CONTAINER_SCOPE" ]
       }
     }
