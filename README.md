@@ -9,7 +9,7 @@
 
 ## Introduction<a name="section11660541593"></a>
 
-The  **foundation/ace/napi**  repository contains a development framework for extending the JS Native Module and provides APIs developed based on Node.js N-API for external use.
+The  **foundation/arkui/napi**  repository contains a development framework for extending the JS Native Module and provides APIs developed based on Node.js N-API for external use.
 
 **Figure  1**  Architecture<a name="fig1049423884819"></a>  
 
@@ -38,7 +38,7 @@ The  **foundation/ace/napi**  repository contains a development framework for ex
 The source code directory structure of this repository is as follows:
 
 ```
-foundation/ace/napi
+foundation/arkui/napi
    ├── interfaces
    │   └── kits
    │       └── napi           # NAPI header files
@@ -56,7 +56,7 @@ NAPI is suitable for processing I/O- and CPU-intensive tasks and system tasks. I
 
 ## Available APIs<a name="section1611515555510"></a>
 
-For details about the API implementation, see the  **foundation/ace/napi**  repository.
+For details about the API implementation, see the  **foundation/arkui/napi**  repository.
 
 **Table  1**  Available NAPIs
 
@@ -240,10 +240,10 @@ ohos_shared_library("app") {
     "app.cpp",
   ]
   # Specify build dependencies.
-  deps = [ "//foundation/ace/napi:ace_napi" ]
+  deps = [ "//foundation/arkui/napi:ace_napi" ]
   # Specify the directory where the library is generated.
   relative_install_dir = "module"
-  subsystem_name = "ace"
+  subsystem_name = "arkui"
   part_name = "napi"
 }
 ```
@@ -265,9 +265,9 @@ export default {
 
 JS UI framework
 
-ace\_ace\_engine
+arkui\_ace\_engine
 
 ace\_ace\_engine\_lite
 
-**ace\_napi**
+**arkui\_napi**
 

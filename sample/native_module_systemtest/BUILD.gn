@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("//foundation/ace/napi/napi.gni")
+import("//foundation/arkui/napi/napi.gni")
 
 if (is_standard_system) {
   module_output_path = "ace_engine_standard/native_module_systemtest"
@@ -22,15 +22,15 @@ ohos_unittest("test_quickjs_systemtest") {
   module_out_path = module_output_path
 
   include_dirs = [
-    "//foundation/ace/napi",
-    "//foundation/ace/napi/interfaces/innerkits",
-    "//foundation/ace/napi/interfaces/kits",
-    "//foundation/ace/napi/native_engine",
-    "//foundation/ace/napi/native_engine/impl/quickjs",
+    "//foundation/arkui/napi",
+    "//foundation/arkui/napi/interfaces/inner_api",
+    "//foundation/arkui/napi/interfaces/kits",
+    "//foundation/arkui/napi/native_engine",
+    "//foundation/arkui/napi/native_engine/impl/quickjs",
     "//third_party/googletest/include",
     "//third_party/node/src",
     "//utils/native/base/include",
-    "//foundation/ace/napi/interfaces/kits/napi",
+    "//foundation/arkui/napi/interfaces/kits/napi",
   ]
 
   cflags = [
@@ -47,7 +47,7 @@ ohos_unittest("test_quickjs_systemtest") {
   defines = [ "NAPI_TEST" ]
 
   deps = [
-    "//foundation/ace/napi/:ace_napi_quickjs",
+    "//foundation/arkui/napi/:ace_napi_quickjs",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gtest_main",
     "//third_party/libuv:uv",

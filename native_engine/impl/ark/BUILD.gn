@@ -13,12 +13,12 @@
 
 import("//ark/js_runtime/js_runtime_config.gni")
 import("//build/ohos.gni")
-import("//foundation/ace/ace_engine/ace_config.gni")
-import("//foundation/ace/napi/napi.gni")
+import("//foundation/arkui/ace_engine/ace_config.gni")
+import("//foundation/arkui/napi/napi.gni")
 
 config("ace_napi_ark_config") {
   include_dirs = [
-    "//foundation/ace/napi",
+    "//foundation/arkui/napi",
     "//third_party/libuv/include",
     "//utils/native/base/include",
   ]
@@ -37,7 +37,7 @@ template("ace_napi_impl") {
     defines = invoker.engine_defines
     configs = [ "//ark/js_runtime:ark_jsruntime_public_config" ]
 
-    include_dirs = [ "//foundation/ace/napi/native_engine/impl/ark" ]
+    include_dirs = [ "//foundation/arkui/napi/native_engine/impl/ark" ]
 
     sources = [
       "ark_native_deferred.cpp",
@@ -66,12 +66,12 @@ template("ace_napi_impl") {
 
     deps = [
       "//ark/js_runtime:libark_jsruntime",
-      "//foundation/ace/napi:ace_napi",
+      "//foundation/arkui/napi:ace_napi",
     ]
 
     if (product_name != "ohos-sdk") {
       if (napi_enable_container_scope) {
-        deps += [ "//foundation/ace/napi:ace_container_scope" ]
+        deps += [ "//foundation/arkui/napi:ace_container_scope" ]
         defines += [ "ENABLE_CONTAINER_SCOPE" ]
       }
     }
@@ -87,7 +87,7 @@ template("ace_napi_impl") {
     }
 
     part_name = "napi"
-    subsystem_name = "ace"
+    subsystem_name = "arkui"
   }
 }
 

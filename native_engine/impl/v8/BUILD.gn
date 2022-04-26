@@ -12,11 +12,11 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/ace/ace_engine/ace_config.gni")
+import("//foundation/arkui/ace_engine/ace_config.gni")
 
 config("ace_napi_v8_config") {
   include_dirs = [
-    "//foundation/ace/napi",
+    "//foundation/arkui/napi",
     "//third_party/libuv/include",
     "//third_party/v8/include",
     "//utils/native/base/include",
@@ -27,7 +27,7 @@ template("ace_napi_impl") {
   ohos_source_set(target_name) {
     public_configs = [ ":ace_napi_v8_config" ]
 
-    include_dirs = [ "//foundation/ace/napi/native_engine/impl/v8" ]
+    include_dirs = [ "//foundation/arkui/napi/native_engine/impl/v8" ]
 
     defines = invoker.engine_defines
 
@@ -57,7 +57,7 @@ template("ace_napi_impl") {
     configs = [ "//third_party/v8:v8_header_features" ]
 
     deps = [
-      "//foundation/ace/napi:ace_napi",
+      "//foundation/arkui/napi:ace_napi",
       "//third_party/v8:v8_shared",
     ]
 
