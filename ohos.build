@@ -1,5 +1,5 @@
 {
-  "subsystem": "ace",
+  "subsystem": "arkui",
   "parts": {
     "napi": {
       "version": "1.0.0",
@@ -9,34 +9,34 @@
         "phone"
       ],
       "module_list": [
-        "//foundation/ace/napi:napi_packages",
-        "//foundation/ace/napi:napi_packages_ndk"
+        "//foundation/arkui/napi:napi_packages",
+        "//foundation/arkui/napi:napi_packages_ndk"
       ],
       "inner_kits": [
         {
           "header": {
-            "header_base": "//foundation/ace/napi/interfaces/kits",
+            "header_base": "//foundation/arkui/napi/interfaces/kits",
             "header_files": [
               "napi/native_api.h"
             ]
           },
-          "name": "//foundation/ace/napi:ace_napi"
+          "name": "//foundation/arkui/napi:ace_napi"
         },
         {
           "header": {
-            "header_base": "//foundation/ace/napi/interfaces/innerkits",
+            "header_base": "//foundation/arkui/napi/interfaces/inner_api",
             "header_files": [
               "napi/native_common.h",
               "napi/native_node_api.h"
             ]
           },
-          "name": "//foundation/ace/napi:ace_napi"
+          "name": "//foundation/arkui/napi:ace_napi"
         }
       ],
       "test_list": [
-        "//foundation/ace/napi:napi_packages_test",
-        "//foundation/ace/napi/sample/native_module_systemtest/:systemtest",
-        "//foundation/ace/napi/test/unittest:unittest"
+        "//foundation/arkui/napi:napi_packages_test",
+        "//foundation/arkui/napi/sample/native_module_systemtest/:systemtest",
+        "//foundation/arkui/napi/test/unittest:unittest"
       ]
     }
   }

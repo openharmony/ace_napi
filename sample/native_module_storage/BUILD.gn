@@ -17,7 +17,7 @@ ohos_shared_library("storage") {
   include_dirs = [
     "//third_party/libuv/include",
     "//third_party/node/src",
-    "//foundation/ace/napi/interfaces/kits",
+    "//foundation/arkui/napi/interfaces/kits",
     "//utils/native/base/include",
   ]
 
@@ -29,12 +29,12 @@ ohos_shared_library("storage") {
   sources = [ "js_storage.cpp" ]
 
   deps = [
-    "//foundation/ace/napi/:ace_napi",
+    "//foundation/arkui/napi/:ace_napi",
     "//utils/native/base:utilsecurec",
   ]
 
   relative_install_dir = "module"
 
-  subsystem_name = "ace"
+  subsystem_name = "arkui"
   part_name = "napi"
 }
