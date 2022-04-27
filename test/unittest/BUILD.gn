@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//foundation/ace/napi/napi.gni")
+import("//foundation/arkui/napi/napi.gni")
 
 if (defined(ohos_lite)) {
   import("//build/lite/config/component/lite_component.gni")
@@ -27,12 +27,12 @@ if (defined(ohos_lite)) {
     include_dirs = [
       "//utils/native/base/include",
       "//third_party/node/src",
-      "//foundation/ace/napi",
-      "//foundation/ace/napi/interfaces/innerkits",
-      "//foundation/ace/napi/interfaces/kits",
+      "//foundation/arkui/napi",
+      "//foundation/arkui/napi/interfaces/inner_api",
+      "//foundation/arkui/napi/interfaces/kits",
       "//third_party/googletest/include",
-      "//foundation/ace/napi/native_engine",
-      "//foundation/ace/napi/native_engine/impl/jerryscript",
+      "//foundation/arkui/napi/native_engine",
+      "//foundation/arkui/napi/native_engine/impl/jerryscript",
     ]
 
     cflags = [ "-g3" ]
@@ -47,7 +47,7 @@ if (defined(ohos_lite)) {
 
     deps = [
       "//base//hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//foundation/ace/napi/:ace_napi_jerryscript",
+      "//foundation/arkui/napi/:ace_napi_jerryscript",
       "//test/developertest/third_party/lib/cpp:gtest_main",
       "//third_party/jerryscript/jerry-core:jerry-core_shared",
       "//third_party/jerryscript/jerry-ext:jerry-ext_shared",
@@ -60,8 +60,8 @@ if (defined(ohos_lite)) {
   }
 } else {
   import("//build/test.gni")
-  import("//foundation/ace/ace_engine/ace_config.gni")
-  import("//foundation/ace/napi/test/unittest/ut.gni")
+  import("//foundation/arkui/ace_engine/ace_config.gni")
+  import("//foundation/arkui/napi/test/unittest/ut.gni")
 
   if (is_standard_system) {
     module_output_path = "ace_engine_standard/napi"

@@ -19,7 +19,7 @@ if (defined(ohos_lite)) {
   shared_library("demo") {
     include_dirs = [
       "//third_party/node/src",
-      "//foundation/ace/napi/interfaces/kits",
+      "//foundation/arkui/napi/interfaces/kits",
     ]
 
     sources = [
@@ -32,7 +32,7 @@ if (defined(ohos_lite)) {
 
     deps = [
       "//base//hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//foundation/ace/napi:ace_napi",
+      "//foundation/arkui/napi:ace_napi",
     ]
   }
 } else {
@@ -41,7 +41,7 @@ if (defined(ohos_lite)) {
   ohos_shared_library("demo") {
     include_dirs = [
       "//third_party/node/src",
-      "//foundation/ace/napi/interfaces/kits",
+      "//foundation/arkui/napi/interfaces/kits",
     ]
 
     sources = [
@@ -49,7 +49,7 @@ if (defined(ohos_lite)) {
       "native_module_demo.cpp",
     ]
 
-    deps = [ "//foundation/ace/napi:ace_napi" ]
+    deps = [ "//foundation/arkui/napi:ace_napi" ]
 
     if ("${current_os}_${current_cpu}" != "mingw_x86_64" &&
         "${current_os}_${current_cpu}" != "mac_x64") {
@@ -62,7 +62,7 @@ if (defined(ohos_lite)) {
 
     relative_install_dir = "module"
 
-    subsystem_name = "ace"
+    subsystem_name = "arkui"
     part_name = "napi"
   }
 }
